@@ -1,1 +1,11 @@
 @import "tailwindcss";
+
+@layer components {
+  .btn-primary {
+    @apply flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full bg-white px-6 py-[25px] text-center text-[20px] font-bold leading-none text-black transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[18px] bg-white px-6 py-[25px] text-center text-[20px] font-bold leading-none text-black transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
