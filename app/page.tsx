@@ -1,9 +1,14 @@
-"use client";
+import Header from '@/components/ui/Header';
+import PagePlaceholder from '@/components/ui/PagePlaceholder';
 
-import { supabase } from "@/app/lib/supabaseClient";
-
-export default function Home() {
-  return(
-    <h1>Hello World!</h1>
+export default function HomePage() {
+  return (
+    <>
+      <Header />
+      <PagePlaceholder
+        title="Home"
+        subtitle="The main page is currently being built."
+      />
+    </>
   );
 }
