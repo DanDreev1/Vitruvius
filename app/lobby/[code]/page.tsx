@@ -1,4 +1,5 @@
 import LobbyClient from '@/components/lobby/LobbyClient';
+import LobbyScreen from './LobbyScreen';
 
 export default async function LobbyPage({
   params,
@@ -7,5 +8,5 @@ export default async function LobbyPage({
 }) {
   const { code } = await params;
 
-  return <LobbyClient code={code} />;
+  return <LobbyScreen code={code} />;
 }
