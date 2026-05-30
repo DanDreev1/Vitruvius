@@ -22,12 +22,12 @@ export default function Header({
 
   return (
     <header
-      className="hidden min-[320px]:block w-full bg-[#182135]"
+      className="hidden min-[500px]:block w-full bg-[#182135]"
       style={{
         fontFamily: '"Monsteratt Alternatives", "Montserrat Alternates", sans-serif',
       }}
     >
-      <div className="flex h-[56px] items-center justify-between px-3 min-[480px]:h-[68px] min-[480px]:px-5 min-[768px]:h-[86px] min-[768px]:px-7">
+      <div className="flex h-[56px] items-center justify-between px-3 min-[480px]:h-[90px] min-[480px]:px-10 min-[768px]:h-[120px] min-[768px]:px-20">
         <Link
           href="/"
           aria-label="Go to home page"
@@ -39,10 +39,10 @@ export default function Header({
             priority
             width={160}
             height={90}
-            className="h-[22px] w-auto min-[480px]:h-[28px] min-[768px]:h-[42px]"
+            className="h-[22px] w-auto min-[480px]:h-[32px] min-[768px]:h-[42px]"
           />
 
-          <span className="font-montserrat-alt select-none text-[20px] font-extrabold leading-none tracking-[-0.03em] text-[#D6B25E] min-[480px]:text-[26px] min-[768px]:text-[40px]">
+          <span className="font-montserrat-alt select-none text-[24px] font-extrabold leading-none tracking-[-0.03em] text-[#D6B25E] min-[480px]:text-[26px] min-[768px]:text-[40px]">
             Vitruvius
           </span>
         </Link>
@@ -50,7 +50,7 @@ export default function Header({
         <div className="flex items-center gap-3 min-[480px]:gap-5 min-[768px]:gap-7">
           <Link
             href={creatorsHref}
-            className="font-montserrat-alt text-[12px] font-extrabold leading-none text-[#8D8D8D] transition-colors duration-200 hover:text-white min-[480px]:text-[14px] min-[768px]:text-[22px]"
+            className="font-montserrat-alt text-[12px] font-extrabold leading-none text-[#8D8D8D] transition-colors duration-200 hover:text-white min-[480px]:text-[18px] min-[768px]:text-[22px]"
           >
             Creators
           </Link>
@@ -58,7 +58,7 @@ export default function Header({
           <Link
             href={profileHref}
             aria-label="Open profile page"
-            className="flex h-[30px] w-[30px] items-center justify-center overflow-hidden rounded-full border border-white bg-black transition-colors duration-200 hover:border-[#D6B25E] min-[480px]:h-[36px] min-[480px]:w-[36px] min-[768px]:h-[48px] min-[768px]:w-[48px]"
+            className="flex h-[30px] w-[30px] items-center justify-center overflow-hidden rounded-full border border-white bg-black transition-colors duration-200 hover:border-[#D6B25E] min-[480px]:h-[40px] min-[480px]:w-[40px] min-[768px]:h-[48px] min-[768px]:w-[48px]"
           >
             <Image
               src={currentAvatar}

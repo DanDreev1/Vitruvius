@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
@@ -21,7 +22,6 @@ export default function HomePage() {
       setIsCreatingRoom(true);
 
       const result = await createRoom();
-
       router.push(`/lobby/${result.code}`);
     } catch (error) {
       console.error(error);
@@ -45,7 +45,6 @@ export default function HomePage() {
       setIsJoiningRoom(true);
 
       const result = await joinRoomByCode(roomCode);
-
       router.push(`/lobby/${result.code}`);
     } catch (error) {
       console.error(error);
@@ -66,96 +65,91 @@ export default function HomePage() {
     <>
       <Header />
 
-      <main className="mx-auto flex min-h-[calc(100vh-56px)] w-full max-w-[1440px] flex-col px-4 pb-10 pt-8 min-[480px]:min-h-[calc(100vh-68px)] min-[480px]:px-6 min-[480px]:pt-10 min-[768px]:min-h-[calc(100vh-86px)] min-[768px]:px-10 min-[768px]:pt-14">
-        <section className="flex flex-1 flex-col items-center justify-center">
-          <div className="w-full max-w-[760px]">
-            <div className="mb-10 text-center min-[768px]:mb-14">
-              <h1
-                className="text-[34px] font-extrabold leading-none tracking-[-0.04em] text-[#D6B25E] min-[480px]:text-[48px] min-[768px]:text-[72px]"
-                style={{
-                  fontFamily:
-                    '"Monsteratt Alternatives", "Montserrat Alternates", sans-serif',
-                }}
-              >
-                VITRUVIUS
-              </h1>
+      <main className="flex min-h-[calc(100dvh-56px)] items-center justify-center px-5 py-8 sm:min-h-[calc(100dvh-68px)] sm:px-6 sm:py-10 md:min-h-[calc(100dvh-86px)] md:px-10 md:py-12">
+        <section className="flex w-full max-w-[520px] flex-col items-center sm:max-w-[560px] md:max-w-[680px]">
+            <Image
+            src="/Logo_Icon.png"
+            alt="Vitruvius logo"
+            width={260}
+            height={150}
+            priority
+            className="mb-4 h-auto w-[100px] sm:mb-5 sm:w-[120px] md:mb-6 md:w-[200px]"
+            />
 
-              <p
-                className="mx-auto mt-4 max-w-[560px] text-[14px] font-medium leading-[1.45] text-[#8E929B] min-[480px]:text-[16px] min-[768px]:mt-5 min-[768px]:text-[18px]"
-                style={{
-                  fontFamily:
-                    '"Monsteratt Alternatives", "Montserrat Alternates", sans-serif',
-                }}
-              >
-                Create a room, join your master by code or open the studio.
-              </p>
-            </div>
+            <h1 className="font-montserrat-alt text-center text-[46px] font-extrabold leading-none tracking-[-0.05em] text-[#D6B25E] sm:text-[58px] md:text-[88px]">
+            Vitruvius
+            </h1>
 
-            <div className="flex flex-col gap-4 min-[768px]:gap-5">
-              <button
+            <p className="font-montserrat-alt mt-3 text-center text-[14px] font-extrabold leading-[1.12] text-white sm:mt-4 sm:text-[16px] md:mt-5 md:text-[24px]">
+            Gather your party around one digital
+            <br />
+            table
+            </p>
+
+            <div className="mt-7 flex w-full max-w-[460px] flex-col gap-4 sm:mt-8 sm:max-w-[500px] sm:gap-5 md:mt-10 md:max-w-[620px] md:gap-6">
+            <button
                 type="button"
                 onClick={handleCreateRoom}
                 disabled={isCreatingRoom || isJoiningRoom}
-                className="btn-primary"
-              >
-                {isCreatingRoom ? 'Creating room...' : 'Create Room'}
-              </button>
+                className="btn-primary font-montserrat-alt min-h-[56px] px-5 py-4 text-[17px] font-extrabold sm:min-h-[62px] sm:text-[18px] md:min-h-[74px] md:text-[22px]"
+            >
+                {isCreatingRoom ? 'Creating Room...' : 'Create Room'}
+            </button>
 
-              <div className="rounded-[26px] bg-[#182135] p-3 min-[480px]:p-4">
-                <div className="flex flex-col gap-3 min-[768px]:gap-4">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    value={roomCode}
-                    onChange={(event) => handleRoomCodeChange(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        void handleJoinRoom();
-                      }
-                    }}
-                    placeholder="Enter the code"
-                    maxLength={6}
-                    className="w-full rounded-[18px] border border-white/10 bg-[#0B1020] px-6 py-[25px] text-center text-[20px] font-bold leading-none text-white outline-none transition-colors duration-200 placeholder:text-[#8E929B] focus:border-[#D6B25E]"
-                    style={{
-                      fontFamily:
-                        '"Monsteratt Alternatives", "Montserrat Alternates", sans-serif',
-                    }}
-                  />
+            <div className="grid grid-cols-[1fr_96px] gap-2.5 sm:grid-cols-[1fr_110px] sm:gap-3 md:grid-cols-[1fr_150px] md:gap-4">
+                <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={roomCode}
+                onChange={(event) => handleRoomCodeChange(event.target.value)}
+                onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                    void handleJoinRoom();
+                    }
+                }}
+                placeholder="Enter the code"
+                maxLength={6}
+                className="font-montserrat h-[56px] rounded-full bg-white px-5 text-[17px] font-medium text-black outline-none placeholder:text-[#9A9A9A] sm:h-[62px] sm:px-6 sm:text-[18px] md:h-[74px] md:px-8 md:text-[22px]"
+                />
 
-                  <button
-                    type="button"
-                    onClick={handleJoinRoom}
-                    disabled={isJoiningRoom || isCreatingRoom}
-                    className="btn-secondary"
-                  >
-                    {isJoiningRoom ? 'Joining...' : 'Join'}
-                  </button>
-                </div>
-              </div>
+                <button
+                type="button"
+                onClick={handleJoinRoom}
+                disabled={isJoiningRoom || isCreatingRoom}
+                className="btn-primary font-montserrat-alt min-h-[56px] px-4 py-4 text-[17px] font-extrabold sm:min-h-[62px] sm:text-[18px] md:min-h-[74px] md:text-[22px]"
+                >
+                {isJoiningRoom ? 'Joining...' : 'Join'}
+                </button>
+            </div>
 
-              <button
+            <div className="flex items-center gap-3 md:gap-4">
+                <div className="h-px flex-1 bg-white/60" />
+                <span className="font-montserrat-alt text-[16px] font-extrabold text-white sm:text-[18px] md:text-[22px]">
+                Or
+                </span>
+                <div className="h-px flex-1 bg-white/60" />
+            </div>
+
+            <p className="font-montserrat-alt text-center text-[18px] font-extrabold leading-[1.15] text-white sm:text-[22px] md:text-[32px]">
+                Prepare for the game in advance
+            </p>
+
+            <button
                 type="button"
                 onClick={() => router.push('/workshop')}
                 disabled={isCreatingRoom || isJoiningRoom}
-                className="btn-primary"
-              >
-                Vitruvius Studio
-              </button>
+                className="btn-primary font-montserrat-alt min-h-[56px] px-5 py-4 text-[17px] font-extrabold sm:min-h-[62px] sm:text-[18px] md:min-h-[74px] md:text-[22px]"
+            >
+                Vitruvian Studio
+            </button>
 
-              {errorMessage ? (
-                <p
-                  className="mt-2 text-center text-[14px] font-semibold text-[#FF7A7A] min-[768px]:text-[16px]"
-                  style={{
-                    fontFamily:
-                      '"Monsteratt Alternatives", "Montserrat Alternates", sans-serif',
-                  }}
-                >
-                  {errorMessage}
+            {errorMessage ? (
+                <p className="font-montserrat mt-1 text-center text-[13px] font-semibold text-[#FF7A7A] md:text-[15px]">
+                {errorMessage}
                 </p>
-              ) : null}
+            ) : null}
             </div>
-          </div>
         </section>
       </main>
     </>
