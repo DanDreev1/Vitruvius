@@ -42,7 +42,7 @@ export default function Header({
             className="h-[22px] w-auto min-[480px]:h-[28px] min-[768px]:h-[42px]"
           />
 
-          <span className="select-none text-[20px] font-extrabold leading-none tracking-[-0.03em] text-[#D6B25E] min-[480px]:text-[26px] min-[768px]:text-[40px]">
+          <span className="font-montserrat-alt select-none text-[20px] font-extrabold leading-none tracking-[-0.03em] text-[#D6B25E] min-[480px]:text-[26px] min-[768px]:text-[40px]">
             Vitruvius
           </span>
         </Link>
@@ -50,7 +50,7 @@ export default function Header({
         <div className="flex items-center gap-3 min-[480px]:gap-5 min-[768px]:gap-7">
           <Link
             href={creatorsHref}
-            className="text-[12px] font-extrabold leading-none text-[#8D8D8D] transition-colors duration-200 hover:text-white min-[480px]:text-[14px] min-[768px]:text-[22px]"
+            className="font-montserrat-alt text-[12px] font-extrabold leading-none text-[#8D8D8D] transition-colors duration-200 hover:text-white min-[480px]:text-[14px] min-[768px]:text-[22px]"
           >
             Creators
           </Link>
