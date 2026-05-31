@@ -16,10 +16,12 @@ body {
 
 @layer components {
   .btn-primary {
-    @apply flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full bg-white px-6 py-[25px] text-center text-[20px] font-bold leading-none text-black transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50;
+    font-family: var(--font-montserrat-alternates), sans-serif;
+    @apply flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full bg-white min-h-[56px] px-5 py-4 text-[17px] sm:min-h-[62px] sm:text-[18px] md:min-h-[74px] md:text-[22px] text-center font-bold leading-none text-black transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[18px] bg-white px-6 py-[25px] text-center text-[20px] font-bold leading-none text-black transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50;
+    font-family: var(--font-montserrat-alternates), sans-serif;
+    @apply flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-3xl bg-white min-h-[56px] px-5 py-4 text-[17px] sm:min-h-[62px] sm:text-[18px] md:min-h-[74px] md:text-[22px] text-center font-bold leading-none text-black transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50;
   }
 }

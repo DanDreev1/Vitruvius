@@ -25,8 +25,25 @@ export async function joinRoomByCode(rawCode: string): Promise<JoinRoomResult> {
     throw new Error('Room not found');
   }
 
-  if (session.phase !== 'lobby') {
-    throw new Error('This room is no longer available to join');
+  if (session.phase === 'ended') {
+    throw new Error('This room is no longer available');
+  }
+
+  if (session.phase === 'active') {
+    const { data: existingParticipant, error: participantError } = await supabase
+      .from('session_participants')
+      .select('id')
+      .eq('session_id', session.id)
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (participantError) {
+      throw new Error(participantError.message);
+    }
+
+    if (!existingParticipant) {
+      throw new Error('This game has already started');
+    }
   }
 
   const { data: existingParticipant, error: existingParticipantError } =

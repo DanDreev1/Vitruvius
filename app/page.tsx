@@ -91,7 +91,7 @@ export default function HomePage() {
                 type="button"
                 onClick={handleCreateRoom}
                 disabled={isCreatingRoom || isJoiningRoom}
-                className="btn-primary font-montserrat-alt min-h-[56px] px-5 py-4 text-[17px] font-extrabold sm:min-h-[62px] sm:text-[18px] md:min-h-[74px] md:text-[22px]"
+                className="btn-primary"
             >
                 {isCreatingRoom ? 'Creating Room...' : 'Create Room'}
             </button>
@@ -117,7 +117,7 @@ export default function HomePage() {
                 type="button"
                 onClick={handleJoinRoom}
                 disabled={isJoiningRoom || isCreatingRoom}
-                className="btn-primary font-montserrat-alt min-h-[56px] px-4 py-4 text-[17px] font-extrabold sm:min-h-[62px] sm:text-[18px] md:min-h-[74px] md:text-[22px]"
+                className="btn-primary"
                 >
                 {isJoiningRoom ? 'Joining...' : 'Join'}
                 </button>
@@ -139,7 +139,7 @@ export default function HomePage() {
                 type="button"
                 onClick={() => router.push('/workshop')}
                 disabled={isCreatingRoom || isJoiningRoom}
-                className="btn-primary font-montserrat-alt min-h-[56px] px-5 py-4 text-[17px] font-extrabold sm:min-h-[62px] sm:text-[18px] md:min-h-[74px] md:text-[22px]"
+                className="btn-primary"
             >
                 Vitruvian Studio
             </button>
