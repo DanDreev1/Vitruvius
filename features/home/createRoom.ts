@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
+import { LOBBY_TIMEOUT_MS } from '@/features/lobby/constants';
 import { getOrCreateGuestUser } from './getOrCreateGuestUser';
 import { generateUniqueRoomCode } from './generateUniqueRoomCode';
 
@@ -10,6 +11,7 @@ type CreateRoomResult = {
 export async function createRoom(): Promise<CreateRoomResult> {
   const user = await getOrCreateGuestUser();
   const code = await generateUniqueRoomCode();
+  const cleanupAt = new Date(Date.now() + LOBBY_TIMEOUT_MS).toISOString();
 
   const { data: session, error: sessionError } = await supabase
     .from('live_sessions')
@@ -18,7 +20,7 @@ export async function createRoom(): Promise<CreateRoomResult> {
       created_by: user.id,
       phase: 'lobby',
       ended_at: null,
-      cleanup_at: null,
+      cleanup_at: cleanupAt,
     })
     .select('id, code')
     .single();

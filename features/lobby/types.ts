@@ -3,6 +3,7 @@ export type LiveSession = {
     code: string;
     created_by: string;
     phase: 'lobby' | 'active' | 'ended';
+    cleanup_at: string | null;
 };
 
 export type SessionParticipant = {
@@ -14,7 +15,6 @@ export type SessionParticipant = {
     avatar_url: string | null;
     is_ready: boolean;
     joined_at: string;
-    left_at: string | null;
     selected_character_id: string | null;
     selected_world_id: string | null;
 };

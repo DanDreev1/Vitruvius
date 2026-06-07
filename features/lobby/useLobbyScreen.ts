@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { getOrCreateGuestUser } from '@/features/home/getOrCreateGuestUser';
 import {
@@ -22,6 +22,7 @@ import {
   EMPTY_WORLD_MESSAGE,
   LOBBY_DISBANDED_MESSAGE,
   LOBBY_NOT_FOUND_MESSAGE,
+  LOBBY_TIMEOUT_MESSAGE,
   START_GAME_VALIDATION_MESSAGE
 } from './constants';
 import { useLobbyRealtime } from './useLobbyRealtime';
@@ -34,6 +35,20 @@ import type {
   World
 } from './types';
 
+function isLobbyTimeoutExpired(cleanupAt: string | null) {
+  if (!cleanupAt) return false;
+
+  const cleanupAtMs = Date.parse(cleanupAt);
+
+  return Number.isFinite(cleanupAtMs) && cleanupAtMs <= Date.now();
+}
+
+function getLobbyClosedMessage(cleanupAt: string | null) {
+  return isLobbyTimeoutExpired(cleanupAt)
+    ? LOBBY_TIMEOUT_MESSAGE
+    : LOBBY_DISBANDED_MESSAGE;
+}
+
 export function useLobbyScreen({ code }: LobbyScreenProps) {
   const router = useRouter();
 
@@ -44,6 +59,7 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [worlds, setWorlds] = useState<World[]>([]);
   const [copied, setCopied] = useState(false);
+  const lobbyExitHandledRef = useRef(false);
 
   const { activeSlide, setActiveSlide, onTouchStart, onTouchEnd } = useLobbySwipe();
 
@@ -51,20 +67,43 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     return participants.find((p) => p.user_id === currentUserId) ?? null;
   }, [participants, currentUserId]);
 
+  const currentSessionId = session?.id ?? null;
+  const currentSessionCode = session?.code ?? null;
+  const currentSessionCleanupAt = session?.cleanup_at ?? null;
+  const currentSessionPhase = session?.phase ?? null;
+
   const isMaster = currentParticipant?.role === 'master';
   const readyCount = participants.filter((p) => p.is_ready).length;
+
+  const handleLobbyExit = useCallback(
+    (message: string | null) => {
+      if (lobbyExitHandledRef.current) return false;
+
+      lobbyExitHandledRef.current = true;
+
+      if (message) {
+        alert(message);
+      }
+
+      router.push('/');
+      return true;
+    },
+    [router]
+  );
 
   const syncLobbyState = useCallback(
     async (sessionId: string, userId: string) => {
       const result = await refreshLobbyState(sessionId, userId);
 
       if (!result.liveSession) {
-        alert(LOBBY_DISBANDED_MESSAGE);
-        router.push('/');
+        handleLobbyExit(getLobbyClosedMessage(currentSessionCleanupAt));
         return null;
       }
 
       if (result.liveSession.phase === 'active') {
+        if (lobbyExitHandledRef.current) return null;
+
+        lobbyExitHandledRef.current = true;
         router.push(`/game/${result.liveSession.code}`);
         return null;
       }
@@ -74,10 +113,11 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
 
       return result;
     },
-    [router]
+    [currentSessionCleanupAt, handleLobbyExit, router]
   );
 
   const bootstrapLobby = useCallback(async () => {
+    await Promise.resolve();
     setIsLoading(true);
 
     try {
@@ -88,6 +128,16 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
 
       if (!liveSession) {
         alert(LOBBY_NOT_FOUND_MESSAGE);
+        router.push('/');
+        return;
+      }
+
+      if (isLobbyTimeoutExpired(liveSession.cleanup_at)) {
+        if (lobbyExitHandledRef.current) return;
+
+        lobbyExitHandledRef.current = true;
+        await disbandLobby(liveSession.id);
+        alert(LOBBY_TIMEOUT_MESSAGE);
         router.push('/');
         return;
       }
@@ -114,44 +164,67 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
   }, [code, router, syncLobbyState]);
 
   useEffect(() => {
-    void bootstrapLobby();
+    const bootstrapTimeoutId = window.setTimeout(() => {
+      void bootstrapLobby();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(bootstrapTimeoutId);
+    };
   }, [bootstrapLobby]);
 
-  const handleParticipantsChange = useCallback(async () => {
-    if (!session?.id || !currentUserId) return;
+  const handleLobbyTimeout = useCallback(async () => {
+    if (!currentSessionId || currentSessionPhase !== 'lobby' || lobbyExitHandledRef.current) {
+      return;
+    }
+
+    lobbyExitHandledRef.current = true;
+
     try {
-      await syncLobbyState(session.id, currentUserId);
+      await disbandLobby(currentSessionId);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      alert(LOBBY_TIMEOUT_MESSAGE);
+      router.push('/');
+    }
+  }, [currentSessionId, currentSessionPhase, router]);
+
+  const handleParticipantsChange = useCallback(async () => {
+    if (!currentSessionId || !currentUserId) return;
+    try {
+      await syncLobbyState(currentSessionId, currentUserId);
     } catch (error) {
       console.error(error);
     }
-  }, [currentUserId, session?.id, syncLobbyState]);
+  }, [currentSessionId, currentUserId, syncLobbyState]);
 
   const handleSessionChange = useCallback(async () => {
-    if (!session?.id || !currentUserId) return;
+    if (!currentSessionId || !currentUserId) return;
     try {
-      await syncLobbyState(session.id, currentUserId);
+      await syncLobbyState(currentSessionId, currentUserId);
     } catch (error) {
       console.error(error);
     }
-  }, [currentUserId, session?.id, syncLobbyState]);
+  }, [currentSessionId, currentUserId, syncLobbyState]);
 
   useLobbyRealtime({
-    sessionId: session?.id ?? null,
-    enabled: !!session?.id && !!currentUserId,
+    sessionId: currentSessionId,
+    enabled: !!currentSessionId && !!currentUserId,
     onParticipantsChange: handleParticipantsChange,
     onSessionChange: handleSessionChange
   });
 
   const handleCopyCode = useCallback(async () => {
-    if (!session?.code) return;
+    if (!currentSessionCode) return;
 
-    await navigator.clipboard.writeText(session.code);
+    await navigator.clipboard.writeText(currentSessionCode);
     setCopied(true);
 
     window.setTimeout(() => {
       setCopied(false);
     }, 1500);
-  }, [session?.code]);
+  }, [currentSessionCode]);
 
   const handleToggleReady = useCallback(async () => {
     if (!currentParticipant) return;
@@ -208,10 +281,13 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
   const handleLeaveLobby = useCallback(async () => {
     if (!currentParticipant) return;
 
+    lobbyExitHandledRef.current = true;
+
     try {
       await leaveLobby(currentParticipant.id);
       router.push('/');
     } catch (error) {
+      lobbyExitHandledRef.current = false;
       console.error(error);
     }
   }, [currentParticipant, router]);
@@ -222,10 +298,13 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     const confirmed = window.confirm('Are you sure you want to disband this lobby?');
     if (!confirmed) return;
 
+    lobbyExitHandledRef.current = true;
+
     try {
       await disbandLobby(session.id);
       router.push('/');
     } catch (error) {
+      lobbyExitHandledRef.current = false;
       console.error(error);
     }
   }, [isMaster, router, session]);
@@ -241,9 +320,11 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     }
 
     try {
+      lobbyExitHandledRef.current = true;
       await startLobbyGame(session.id);
       router.push(`/game/${session.code}`);
     } catch (error) {
+      lobbyExitHandledRef.current = false;
       console.error(error);
     }
   }, [currentParticipant, isMaster, participants, router, session]);
@@ -259,6 +340,7 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     copied,
     isMaster,
     readyCount,
+    lobbyCleanupAt: currentSessionCleanupAt,
     emptyCharacterMessage: EMPTY_CHARACTER_MESSAGE,
     emptyWorldMessage: EMPTY_WORLD_MESSAGE,
     setActiveSlide,
@@ -271,6 +353,7 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     handleSelectWorld,
     handleLeaveLobby,
     handleDisbandLobby,
+    handleLobbyTimeout,
     handleStartGame
   };
 }

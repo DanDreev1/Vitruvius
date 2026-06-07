@@ -10,7 +10,7 @@ import type {
 export async function getLiveSessionByCode(code: string) {
     const { data, error } = await supabase
         .from('live_sessions')
-        .select('id, code, created_by, phase')
+        .select('id, code, created_by, phase, cleanup_at')
         .eq('code', code)
         .maybeSingle();
 
@@ -22,7 +22,7 @@ export async function getLiveSessionByCode(code: string) {
 export async function getLiveSessionById(sessionId: string) {
     const { data, error } = await supabase
         .from('live_sessions')
-        .select('id, code, created_by, phase')
+        .select('id, code, created_by, phase, cleanup_at')
         .eq('id', sessionId)
         .maybeSingle();
 
@@ -43,12 +43,10 @@ export async function getActiveParticipants(sessionId: string) {
       avatar_url,
       is_ready,
       joined_at,
-      left_at,
       selected_character_id,
       selected_world_id
     `)
         .eq('session_id', sessionId)
-        .is('left_at', null)
         .order('joined_at', { ascending: true });
 
     if (error) throw new Error(error.message);
@@ -79,10 +77,7 @@ export async function ensureParticipant(
 ) {
     const { data: existingParticipant, error } = await supabase
         .from('session_participants')
-        .select(`
-      id,
-      left_at
-    `)
+        .select('id')
         .eq('session_id', sessionId)
         .eq('user_id', userId)
         .maybeSingle();
@@ -90,18 +85,6 @@ export async function ensureParticipant(
     if (error) throw new Error(error.message);
 
     if (existingParticipant) {
-        if (existingParticipant.left_at) {
-            const { error: reactivateError } = await supabase
-                .from('session_participants')
-                .update({
-                    left_at: null,
-                    is_ready: false
-                })
-                .eq('id', existingParticipant.id);
-
-            if (reactivateError) throw new Error(reactivateError.message);
-        }
-
         return;
     }
 
@@ -200,10 +183,7 @@ export async function selectParticipantWorld(
 export async function leaveLobby(participantId: string) {
     const { error } = await supabase
         .from('session_participants')
-        .update({
-            left_at: new Date().toISOString(),
-            is_ready: false
-        })
+        .delete()
         .eq('id', participantId);
 
     if (error) throw new Error(error.message);
@@ -230,7 +210,8 @@ export async function startLobbyGame(sessionId: string) {
         .from('live_sessions')
         .update({
             phase: 'active',
-            started_at: new Date().toISOString()
+            started_at: new Date().toISOString(),
+            cleanup_at: null
         })
         .eq('id', sessionId);
 

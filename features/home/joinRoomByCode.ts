@@ -17,7 +17,7 @@ export async function joinRoomByCode(rawCode: string): Promise<JoinRoomResult> {
 
   const { data: session, error: sessionError } = await supabase
     .from('live_sessions')
-    .select('id, code, phase')
+    .select('id, code, phase, cleanup_at')
     .eq('code', code)
     .single();
 
@@ -29,48 +29,25 @@ export async function joinRoomByCode(rawCode: string): Promise<JoinRoomResult> {
     throw new Error('This room is no longer available');
   }
 
+  if (session.cleanup_at && Date.parse(session.cleanup_at) <= Date.now()) {
+    throw new Error('This room is no longer available');
+  }
+
   if (session.phase === 'active') {
-    const { data: existingParticipant, error: participantError } = await supabase
-      .from('session_participants')
-      .select('id')
-      .eq('session_id', session.id)
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (participantError) {
-      throw new Error(participantError.message);
-    }
-
-    if (!existingParticipant) {
-      throw new Error('This game has already started');
-    }
+    throw new Error('This game has already started');
   }
 
-  const { data: existingParticipant, error: existingParticipantError } =
-    await supabase
-      .from('session_participants')
-      .select('id, role')
-      .eq('session_id', session.id)
-      .eq('user_id', user.id)
-      .maybeSingle();
+  const { error: insertParticipantError } = await supabase
+    .from('session_participants')
+    .insert({
+      session_id: session.id,
+      user_id: user.id,
+      role: 'player',
+      is_ready: false,
+    });
 
-  if (existingParticipantError) {
-    throw new Error(existingParticipantError.message);
-  }
-
-  if (!existingParticipant) {
-    const { error: insertParticipantError } = await supabase
-      .from('session_participants')
-      .insert({
-        session_id: session.id,
-        user_id: user.id,
-        role: 'player',
-        is_ready: false,
-      });
-
-    if (insertParticipantError) {
-      throw new Error(insertParticipantError.message);
-    }
+  if (insertParticipantError) {
+    throw new Error(insertParticipantError.message);
   }
 
   return {

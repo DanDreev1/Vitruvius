@@ -3,6 +3,7 @@
 import { useLobbyScreen } from '@/features/lobby/useLobbyScreen';
 import type { LobbyScreenProps } from '@/features/lobby/types';
 import BackHomeButton from '@/components/ui/BackHomeButton';
+import { LobbyCountdown } from './LobbyCountdown';
 
 export default function LobbyScreen({ code }: LobbyScreenProps) {
     const {
@@ -16,6 +17,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
         copied,
         isMaster,
         readyCount,
+        lobbyCleanupAt,
         emptyCharacterMessage,
         emptyWorldMessage,
         setActiveSlide,
@@ -28,6 +30,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
         handleSelectWorld,
         handleLeaveLobby,
         handleDisbandLobby,
+        handleLobbyTimeout,
         handleStartGame
     } = useLobbyScreen({ code });
 
@@ -62,6 +65,11 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                     {copied ? 'Copied' : 'Copy'}
                                 </button>
                             </div>
+
+                            <LobbyCountdown
+                                cleanupAt={lobbyCleanupAt}
+                                onExpire={handleLobbyTimeout}
+                            />
                         </div>
 
                         {/* ONLY THIS AREA SLIDES */}
