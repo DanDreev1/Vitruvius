@@ -1,5 +1,4 @@
-import LobbyClient from '@/components/lobby/LobbyClient';
-import LobbyScreen from './LobbyScreen';
+import LobbyScreen from '@/components/lobby/LobbyScreen';
 
 export default async function LobbyPage({
   params,
