@@ -1,7 +1,4 @@
-import {
-  GAME_SCENE_HEIGHT,
-  GAME_SCENE_WIDTH,
-} from '@/lib/game/sceneConfig';
+import { GAME_SCENE_HEIGHT, GAME_SCENE_WIDTH } from "@/lib/game/sceneConfig";
 import type {
   DensityPreset,
   GameParticipant,
@@ -9,10 +6,10 @@ import type {
   ResolvedSeatPosition,
   SeatedPlayer,
   TableDefinition,
-} from '@/lib/game/types';
+} from "@/lib/game/types";
 
-import MasterSeat from './MasterSeat';
-import PlayerSeat from './PlayerSeat';
+import MasterSeat from "./MasterSeat";
+import PlayerSeat from "./PlayerSeat";
 
 type GameSceneProps = {
   table: TableDefinition;
@@ -21,6 +18,7 @@ type GameSceneProps = {
   masterSeat: ResolvedSeatPosition;
   seatedPlayers: SeatedPlayer[];
   onHoverChange?: (data: HoverCardData | null) => void;
+  onTabletClick?: (targetUserId: string) => void;
 };
 
 export default function GameScene({
@@ -30,6 +28,7 @@ export default function GameScene({
   masterSeat,
   seatedPlayers,
   onHoverChange,
+  onTabletClick,
 }: GameSceneProps) {
   return (
     <div
@@ -44,8 +43,8 @@ export default function GameScene({
         style={{
           width: `${table.width}px`,
           height: `${table.height}px`,
-          transform: 'translate(-50%, -50%)',
-          boxShadow: '0 30px 80px rgba(0, 0, 0, 0.35)',
+          transform: "translate(-50%, -50%)",
+          boxShadow: "0 30px 80px rgba(0, 0, 0, 0.35)",
         }}
       />
 
@@ -54,14 +53,16 @@ export default function GameScene({
         seat={masterSeat}
         density={density}
         onHoverChange={onHoverChange}
+        onTabletClick={onTabletClick}
       />
 
       {seatedPlayers.map((item) => (
         <PlayerSeat
-            key={item.participant.id}
-            seatedPlayer={item}
-            density={density}
-            onHoverChange={onHoverChange}
+          key={item.participant.id}
+          seatedPlayer={item}
+          density={density}
+          onHoverChange={onHoverChange}
+          onTabletClick={onTabletClick}
         />
       ))}
     </div>

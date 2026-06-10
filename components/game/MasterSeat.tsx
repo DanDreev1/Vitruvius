@@ -1,17 +1,18 @@
-import { getSeatVisualConfig } from '@/lib/game/getSeatVisualConfig';
+import { getSeatVisualConfig } from "@/lib/game/getSeatVisualConfig";
 import {
   DensityPreset,
   GameParticipant,
   HoverCardData,
   ResolvedSeatPosition,
-} from '@/lib/game/types';
-import Image from 'next/image';
+} from "@/lib/game/types";
+import Image from "next/image";
 
 type MasterSeatProps = {
   participant: GameParticipant;
   seat: ResolvedSeatPosition;
   density: DensityPreset;
   onHoverChange?: (data: HoverCardData | null) => void;
+  onTabletClick?: (targetUserId: string) => void;
 };
 
 export default function MasterSeat({
@@ -19,6 +20,7 @@ export default function MasterSeat({
   seat,
   density,
   onHoverChange,
+  onTabletClick,
 }: MasterSeatProps) {
   const visual = getSeatVisualConfig(seat.seatFacing, density);
   const avatarSize = density.avatarSize + 10;
@@ -29,7 +31,7 @@ export default function MasterSeat({
       style={{
         left: `${seat.x}px`,
         top: `${seat.y}px`,
-        transform: 'translate(-50%, -50%)',
+        transform: "translate(-50%, -50%)",
       }}
     >
       <div className="relative">
@@ -38,7 +40,7 @@ export default function MasterSeat({
           style={{
             width: avatarSize,
             height: avatarSize,
-            opacity: participant.connectionStatus === 'offline' ? 0.45 : 1,
+            opacity: participant.connectionStatus === "offline" ? 0.45 : 1,
           }}
           onMouseEnter={() =>
             onHoverChange?.({
@@ -70,7 +72,9 @@ export default function MasterSeat({
           />
         </div>
 
-        <div
+        <button
+          type="button"
+          onClick={() => onTabletClick?.(participant.userId)}
           className="absolute rounded-[999px] bg-black/90"
           style={{
             width: density.tabletWidth,

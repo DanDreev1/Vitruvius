@@ -17,13 +17,14 @@ import RotateScreenPlaceholder from "./RotateScreenPlaceholder";
 type GameViewportProps = {
   master: GameParticipant;
   players: GameParticipant[];
+  onTabletClick?: (targetUserId: string) => void;
 };
 
 function clampValue(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-export default function GameViewport({ master, players }: GameViewportProps) {
+export default function GameViewport({ master, players, onTabletClick }: GameViewportProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -226,7 +227,7 @@ export default function GameViewport({ master, players }: GameViewportProps) {
           <div
             className="pointer-events-none absolute inset-0 z-40 bg-black transition-opacity duration-1000 ease-out"
             style={{
-              opacity: hoveredCard ? 0.90 : 0,
+              opacity: hoveredCard ? 0.9 : 0,
             }}
           />
 
@@ -245,6 +246,7 @@ export default function GameViewport({ master, players }: GameViewportProps) {
               masterSeat={resolvedScene.masterSeat}
               seatedPlayers={resolvedScene.seatedPlayers}
               onHoverChange={setHoveredCard}
+              onTabletClick={onTabletClick}
             />
           </div>
 

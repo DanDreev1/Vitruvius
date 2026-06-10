@@ -6,14 +6,21 @@ export type SeatFacing = 'up' | 'right' | 'down' | 'left';
 export type SeatAnchorSide = 'top' | 'right' | 'bottom' | 'left';
 export type BadgeSide = 'top' | 'right' | 'bottom' | 'left';
 
+export type TabletViewMode = 'self' | 'readonly-other' | 'master';
+
+export type OpenTabletState = {
+  targetUserId: string;
+  mode: TabletViewMode;
+} | null;
+
 export type GameParticipant = {
   id: string;
   userId: string;
-  role: ParticipantRole;
+  role: 'master' | 'player';
   displayName: string;
   avatarUrl?: string | null;
   joinedAt: string;
-  connectionStatus: ConnectionStatus;
+  connectionStatus: 'online' | 'offline';
 };
 
 export type AnchoredSeatPosition = {

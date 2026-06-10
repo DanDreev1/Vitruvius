@@ -1,12 +1,11 @@
-import PagePlaceholder from '@/components/ui/PagePlaceholder';
+import GameClient from '@/components/game/GameClient';
 
-export default function GamePage() {
-  return (
-    <>
-      <PagePlaceholder
-        title="Game"
-        subtitle="The game table is currently under development."
-      />
-    </>
-  );
+export default async function GamePage({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}) {
+  const { code } = await params;
+
+  return <GameClient code={code} />;
 }

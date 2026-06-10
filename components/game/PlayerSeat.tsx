@@ -1,21 +1,19 @@
-import { getSeatVisualConfig } from '@/lib/game/getSeatVisualConfig';
-import {
-  DensityPreset,
-  HoverCardData,
-  SeatedPlayer,
-} from '@/lib/game/types';
-import Image from 'next/image';
+import { getSeatVisualConfig } from "@/lib/game/getSeatVisualConfig";
+import { DensityPreset, HoverCardData, SeatedPlayer } from "@/lib/game/types";
+import Image from "next/image";
 
 type PlayerSeatProps = {
   seatedPlayer: SeatedPlayer;
   density: DensityPreset;
   onHoverChange?: (data: HoverCardData | null) => void;
+  onTabletClick?: (targetUserId: string) => void;
 };
 
 export default function PlayerSeat({
   seatedPlayer,
   density,
   onHoverChange,
+  onTabletClick,
 }: PlayerSeatProps) {
   const { participant, seat } = seatedPlayer;
   const visual = getSeatVisualConfig(seat.seatFacing, density);
@@ -26,7 +24,7 @@ export default function PlayerSeat({
       style={{
         left: `${seat.x}px`,
         top: `${seat.y}px`,
-        transform: 'translate(-50%, -50%)',
+        transform: "translate(-50%, -50%)",
       }}
     >
       <div className="relative">
@@ -35,7 +33,7 @@ export default function PlayerSeat({
           style={{
             width: density.avatarSize,
             height: density.avatarSize,
-            opacity: participant.connectionStatus === 'offline' ? 0.45 : 1,
+            opacity: participant.connectionStatus === "offline" ? 0.45 : 1,
           }}
           onMouseEnter={() =>
             onHoverChange?.({
@@ -67,7 +65,9 @@ export default function PlayerSeat({
           />
         </div>
 
-        <div
+        <button
+          type="button"
+          onClick={() => onTabletClick?.(participant.userId)}
           className="absolute rounded-[999px] bg-black/90"
           style={{
             width: density.tabletWidth,
