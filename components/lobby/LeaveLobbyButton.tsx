@@ -3,8 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
-import { leaveLobby } from '@/features/lobby/leaveLobby';
-
 type LeaveLobbyButtonProps = {
   sessionId: string;
   isMaster: boolean;
@@ -32,8 +30,6 @@ export function LeaveLobbyButton({
           return;
         }
       }
-
-      await leaveLobby({ sessionId });
 
       router.push('/');
     } catch (error) {

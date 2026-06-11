@@ -1,9 +1,12 @@
 'use client';
 
+import { useRef } from 'react';
 import { useLobbyScreen } from '@/features/lobby/useLobbyScreen';
 import type { LobbyScreenProps } from '@/features/lobby/types';
 import BackHomeButton from '@/components/ui/BackHomeButton';
 import { LobbyCountdown } from './LobbyCountdown';
+import { LobbyExitModal } from './LobbyExitModal';
+import { NicknameModal } from './NicknameModal';
 
 export default function LobbyScreen({ code }: LobbyScreenProps) {
     const {
@@ -17,6 +20,19 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
         copied,
         isMaster,
         readyCount,
+        canToggleReady,
+        readyFeedbackMessage,
+        startGameMinPlayersFeedbackMessage,
+        startGameNicknameFeedbackMessage,
+        startGameReadyFeedbackMessage,
+        isNicknameModalOpen,
+        nicknameDraft,
+        nicknameError,
+        isSavingNickname,
+        isAvatarUploadDisabled,
+        avatarStatusMessage,
+        isLobbyExitModalOpen,
+        isLobbyExitSubmitting,
         lobbyCleanupAt,
         emptyCharacterMessage,
         emptyWorldMessage,
@@ -26,13 +42,27 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
         handleCopyCode,
         handleToggleReady,
         handleChangeNickname,
+        handleCloseNicknameModal,
+        handleNicknameDraftChange,
+        handleSaveNickname,
+        handleAvatarChangeRequest,
+        handleAvatarFileChange,
         handleSelectCharacter,
         handleSelectWorld,
-        handleLeaveLobby,
-        handleDisbandLobby,
+        handleRequestLobbyExit,
+        handleCloseLobbyExitModal,
+        handleConfirmLobbyExit,
         handleLobbyTimeout,
         handleStartGame
     } = useLobbyScreen({ code });
+
+    const avatarInputRef = useRef<HTMLInputElement | null>(null);
+    const lobbyActionFeedbackMessages = [
+        readyFeedbackMessage,
+        startGameMinPlayersFeedbackMessage,
+        startGameNicknameFeedbackMessage,
+        startGameReadyFeedbackMessage
+    ].filter((message): message is string => Boolean(message));
 
     return (
         <div className="min-h-screen text-white">
@@ -42,8 +72,9 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                     <section className="relative mb-0 flex min-w-0 flex-col items-center justify-center lg:pr-10">
                         <div className="absolute left-4 top-4 z-20 lg:left-8 lg:top-8">
                             <BackHomeButton
-                                onClick={isMaster ? handleDisbandLobby : handleLeaveLobby}
-                                disabled={isLoading}
+                                onClick={handleRequestLobbyExit}
+                                disabled={isLoading || isLobbyExitSubmitting}
+                                label="Leave game"
                             />
                         </div>
 
@@ -115,15 +146,60 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                                     </h2>
 
                                                     <div className="mb-8 flex w-full items-center justify-center gap-5">
-                                                        {currentParticipant?.avatar_url ? (
-                                                            <img
-                                                                src={currentParticipant.avatar_url}
-                                                                alt="Profile avatar"
-                                                                className="h-[100px] w-[100px] rounded-full object-cover"
+                                                        <div className="flex shrink-0 flex-col items-center">
+                                                            <button
+                                                                type="button"
+                                                                className="group relative h-[112px] w-[112px] rounded-full focus:outline-none disabled:cursor-not-allowed"
+                                                                onClick={() => {
+                                                                    if (handleAvatarChangeRequest()) {
+                                                                        avatarInputRef.current?.click();
+                                                                    }
+                                                                }}
+                                                                disabled={isAvatarUploadDisabled}
+                                                                aria-label="Change avatar"
+                                                                title="Change avatar"
+                                                            >
+                                                                <span
+                                                                    className="block h-[100px] w-[100px] overflow-hidden rounded-full border-2 border-white/10 bg-[#8B8B8B] transition-colors group-hover:border-[#D6B25E] group-focus-visible:border-[#D6B25E]"
+                                                                    aria-hidden="true"
+                                                                >
+                                                                    {currentParticipant?.avatar_url ? (
+                                                                        <img
+                                                                            src={currentParticipant.avatar_url}
+                                                                            alt="Profile avatar"
+                                                                            className="h-full w-full object-cover"
+                                                                        />
+                                                                    ) : null}
+                                                                </span>
+
+                                                                <span
+                                                                    className="absolute bottom-0 right-0 flex h-[48px] w-[48px] items-center justify-center rounded-full border-2 border-[#0B1020] bg-white shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition-transform group-hover:scale-105"
+                                                                    aria-hidden="true"
+                                                                >
+                                                                    <span
+                                                                        className="block h-6 w-6 bg-contain bg-center bg-no-repeat"
+                                                                        style={{ backgroundImage: "url('/PaintBrush.png')" }}
+                                                                    />
+                                                                </span>
+                                                            </button>
+
+                                                            <input
+                                                                ref={avatarInputRef}
+                                                                type="file"
+                                                                accept="image/*"
+                                                                className="hidden"
+                                                                disabled={isAvatarUploadDisabled}
+                                                                onChange={(event) => {
+                                                                    const file = event.currentTarget.files?.[0] ?? null;
+                                                                    void handleAvatarFileChange(file);
+                                                                    event.currentTarget.value = '';
+                                                                }}
                                                             />
-                                                        ) : (
-                                                            <div className="h-[100px] w-[100px] rounded-full bg-[#D9D9D9]" />
-                                                        )}
+
+                                                            <p className="font-montserrat mt-2 min-h-[18px] max-w-[150px] text-center text-[12px] font-semibold leading-tight text-[#D6B25E]">
+                                                                {avatarStatusMessage ?? ''}
+                                                            </p>
+                                                        </div>
 
                                                         <div className="min-w-0 text-left">
                                                             <p className="font-montserrat text-[22px] font-bold leading-none md:text-[30px]">
@@ -323,7 +399,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                     type="button"
                                     onClick={handleToggleReady}
                                     className="btn-primary"
-                                    disabled={isLoading || !currentParticipant}
+                                    disabled={isLoading || !canToggleReady}
                                 >
                                     {currentParticipant?.is_ready ? 'Not Ready' : 'Ready'}
                                 </button>
@@ -333,12 +409,30 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                         type="button"
                                         onClick={handleStartGame}
                                         className="btn-primary"
-                                        disabled={isLoading}
+                                        disabled={isLoading || !currentParticipant}
                                     >
                                         Start Game
                                     </button>
                                 )}
                             </div>
+
+                            {lobbyActionFeedbackMessages.length > 0 ? (
+                                <div className="mt-4 rounded-[18px] border border-[#D6B25E]/30 bg-[#D6B25E]/10 px-4 py-3 text-left shadow-[0_12px_28px_rgba(0,0,0,0.18)]">
+                                    <p className="font-montserrat-alt text-[15px] font-bold leading-none text-[#D6B25E]">
+                                        Action needed
+                                    </p>
+                                    <div className="mt-2 space-y-1">
+                                        {lobbyActionFeedbackMessages.map((message) => (
+                                            <p
+                                                key={message}
+                                                className="font-montserrat text-[14px] font-semibold leading-[1.45] text-[#F0E8CF]"
+                                            >
+                                                {message}
+                                            </p>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
 
                             <p className="font-montserrat mt-4 text-center text-[14px] text-white/60">
                                 Ready: {readyCount}/{participants.length}
@@ -347,6 +441,23 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                     </aside>
                 </div>
             </main>
+
+            <NicknameModal
+                isOpen={isNicknameModalOpen}
+                value={nicknameDraft}
+                error={nicknameError}
+                isSaving={isSavingNickname}
+                onChange={handleNicknameDraftChange}
+                onClose={handleCloseNicknameModal}
+                onSave={handleSaveNickname}
+            />
+
+            <LobbyExitModal
+                isOpen={isLobbyExitModalOpen}
+                isSubmitting={isLobbyExitSubmitting}
+                onClose={handleCloseLobbyExitModal}
+                onConfirm={handleConfirmLobbyExit}
+            />
         </div>
     );
 }

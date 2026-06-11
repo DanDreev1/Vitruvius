@@ -1,4 +1,8 @@
 import { supabase } from '@/lib/supabaseClient';
+import {
+    LOBBY_AVATAR_STORAGE_BUCKET,
+    LOBBY_TEMP_AVATAR_STORAGE_OBJECT_NAME
+} from './constants';
 import type {
     Character,
     LiveSession,
@@ -96,7 +100,7 @@ export async function ensureParticipant(
             session_id: sessionId,
             user_id: userId,
             role: defaultRole,
-            display_name: defaultRole === 'master' ? 'Master' : 'Player',
+            display_name: null,
             avatar_url: null,
             is_ready: false
         });
@@ -150,6 +154,39 @@ export async function updateParticipantNickname(
         .eq('id', participantId);
 
     if (error) throw new Error(error.message);
+}
+
+export async function uploadParticipantAvatar(
+    participantId: string,
+    userId: string,
+    file: File
+) {
+    const version = Date.now();
+    const filePath = `${userId}/${LOBBY_TEMP_AVATAR_STORAGE_OBJECT_NAME}`;
+
+    const { error: uploadError } = await supabase.storage
+        .from(LOBBY_AVATAR_STORAGE_BUCKET)
+        .upload(filePath, file, {
+            cacheControl: '60',
+            upsert: true
+        });
+
+    if (uploadError) throw new Error(uploadError.message);
+
+    const { data } = supabase.storage
+        .from(LOBBY_AVATAR_STORAGE_BUCKET)
+        .getPublicUrl(filePath);
+
+    const avatarUrl = `${data.publicUrl}?v=${version}`;
+
+    const { error: updateError } = await supabase
+        .from('session_participants')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', participantId);
+
+    if (updateError) throw new Error(updateError.message);
+
+    return avatarUrl;
 }
 
 export async function selectParticipantCharacter(

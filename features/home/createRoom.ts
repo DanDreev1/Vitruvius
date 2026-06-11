@@ -35,7 +35,7 @@ export async function createRoom(): Promise<CreateRoomResult> {
       session_id: session.id,
       user_id: user.id,
       role: 'master',
-      is_ready: true,
+      is_ready: false,
     });
 
   if (participantError) {

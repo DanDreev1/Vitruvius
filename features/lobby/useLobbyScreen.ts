@@ -14,15 +14,24 @@ import {
   selectParticipantCharacter,
   selectParticipantWorld,
   startLobbyGame,
+  uploadParticipantAvatar,
   updateParticipantNickname,
   updateParticipantReady
 } from './api';
 import {
   EMPTY_CHARACTER_MESSAGE,
   EMPTY_WORLD_MESSAGE,
+  LOBBY_AVATAR_ALLOWED_MIME_TYPES,
+  LOBBY_AVATAR_COOLDOWN_NOTICE_MS,
+  LOBBY_AVATAR_MAX_FILE_SIZE_BYTES,
+  LOBBY_AVATAR_UPDATE_COOLDOWN_MS,
   LOBBY_DISBANDED_MESSAGE,
+  LOBBY_MIN_PARTICIPANTS,
   LOBBY_NOT_FOUND_MESSAGE,
   LOBBY_TIMEOUT_MESSAGE,
+  START_GAME_MIN_PLAYERS_REQUIRED_MESSAGE,
+  READY_NICKNAME_REQUIRED_MESSAGE,
+  START_GAME_NICKNAME_REQUIRED_MESSAGE,
   START_GAME_VALIDATION_MESSAGE
 } from './constants';
 import { useLobbyRealtime } from './useLobbyRealtime';
@@ -49,6 +58,18 @@ function getLobbyClosedMessage(cleanupAt: string | null) {
     : LOBBY_DISBANDED_MESSAGE;
 }
 
+function formatCooldownDuration(remainingMs: number) {
+  const totalSeconds = Math.max(0, Math.ceil(remainingMs / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+function hasConfiguredNickname(participant: SessionParticipant | null) {
+  return Boolean(participant?.display_name?.trim());
+}
+
 export function useLobbyScreen({ code }: LobbyScreenProps) {
   const router = useRouter();
 
@@ -59,6 +80,22 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
   const [characters, setCharacters] = useState<Character[]>([]);
   const [worlds, setWorlds] = useState<World[]>([]);
   const [copied, setCopied] = useState(false);
+  const [isNicknameModalOpen, setIsNicknameModalOpen] = useState(false);
+  const [nicknameDraft, setNicknameDraft] = useState('');
+  const [nicknameError, setNicknameError] = useState<string | null>(null);
+  const [isSavingNickname, setIsSavingNickname] = useState(false);
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
+  const [avatarUploadError, setAvatarUploadError] = useState<string | null>(null);
+  const [avatarCooldownEndsAt, setAvatarCooldownEndsAt] = useState<number | null>(null);
+  const [avatarCooldownNow, setAvatarCooldownNow] = useState(() => Date.now());
+  const [showAvatarCooldownNotice, setShowAvatarCooldownNotice] = useState(false);
+  const [canBypassAvatarCooldownOnce, setCanBypassAvatarCooldownOnce] = useState(false);
+  const [isLobbyExitModalOpen, setIsLobbyExitModalOpen] = useState(false);
+  const [isLobbyExitSubmitting, setIsLobbyExitSubmitting] = useState(false);
+  const [hasAttemptedReadyWithoutNickname, setHasAttemptedReadyWithoutNickname] = useState(false);
+  const [hasAttemptedStartWithoutEnoughPlayers, setHasAttemptedStartWithoutEnoughPlayers] = useState(false);
+  const [hasAttemptedStartWithoutNicknames, setHasAttemptedStartWithoutNicknames] = useState(false);
+  const [hasAttemptedStartWithoutAllReady, setHasAttemptedStartWithoutAllReady] = useState(false);
   const lobbyExitHandledRef = useRef(false);
 
   const { activeSlide, setActiveSlide, onTouchStart, onTouchEnd } = useLobbySwipe();
@@ -74,6 +111,77 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
 
   const isMaster = currentParticipant?.role === 'master';
   const readyCount = participants.filter((p) => p.is_ready).length;
+  const hasEnoughParticipants = participants.length >= LOBBY_MIN_PARTICIPANTS;
+  const allParticipantsReady =
+    participants.length > 0 && participants.every((participant) => participant.is_ready);
+  const currentParticipantHasNickname = hasConfiguredNickname(currentParticipant);
+  const participantsWithoutNickname = participants.filter(
+    (participant) => !hasConfiguredNickname(participant)
+  );
+  const hasParticipantsWithoutNickname = participantsWithoutNickname.length > 0;
+  const canToggleReady = Boolean(currentParticipant);
+  const readyFeedbackMessage =
+    currentParticipant && !currentParticipantHasNickname && hasAttemptedReadyWithoutNickname
+      ? READY_NICKNAME_REQUIRED_MESSAGE
+      : null;
+  const startGameMinPlayersFeedbackMessage =
+    isMaster && !hasEnoughParticipants && hasAttemptedStartWithoutEnoughPlayers
+      ? START_GAME_MIN_PLAYERS_REQUIRED_MESSAGE
+      : null;
+  const startGameNicknameFeedbackMessage =
+    isMaster && hasParticipantsWithoutNickname && hasAttemptedStartWithoutNicknames
+      ? START_GAME_NICKNAME_REQUIRED_MESSAGE
+      : null;
+  const startGameReadyFeedbackMessage =
+    isMaster && !allParticipantsReady && hasAttemptedStartWithoutAllReady
+      ? START_GAME_VALIDATION_MESSAGE
+      : null;
+  const avatarCooldownRemainingMs = avatarCooldownEndsAt
+    ? Math.max(0, avatarCooldownEndsAt - avatarCooldownNow)
+    : 0;
+  const isAvatarCooldownActive = avatarCooldownRemainingMs > 0;
+  const isAvatarUploadDisabled =
+    isAvatarUploading || !currentParticipant;
+  let avatarStatusMessage: string | null = null;
+
+  if (isAvatarUploading) {
+    avatarStatusMessage = 'Uploading avatar...';
+  } else if (avatarUploadError) {
+    avatarStatusMessage = avatarUploadError;
+  } else if (showAvatarCooldownNotice && isAvatarCooldownActive) {
+    avatarStatusMessage = `Change avatar in ${formatCooldownDuration(avatarCooldownRemainingMs)}`;
+  }
+
+  useEffect(() => {
+    if (!avatarCooldownEndsAt) return;
+
+    const intervalId = window.setInterval(() => {
+      setAvatarCooldownNow(Date.now());
+    }, 1000);
+
+    const timeoutId = window.setTimeout(() => {
+      setAvatarCooldownEndsAt(null);
+      setAvatarCooldownNow(Date.now());
+      setShowAvatarCooldownNotice(false);
+    }, Math.max(0, avatarCooldownEndsAt - Date.now()));
+
+    return () => {
+      window.clearInterval(intervalId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [avatarCooldownEndsAt]);
+
+  useEffect(() => {
+    if (!showAvatarCooldownNotice) return;
+
+    const timeoutId = window.setTimeout(() => {
+      setShowAvatarCooldownNotice(false);
+    }, LOBBY_AVATAR_COOLDOWN_NOTICE_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [showAvatarCooldownNotice]);
 
   const handleLobbyExit = useCallback(
     (message: string | null) => {
@@ -110,6 +218,25 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
 
       setSession(result.liveSession);
       setParticipants(result.participants);
+
+      if (hasConfiguredNickname(result.me)) {
+        setHasAttemptedReadyWithoutNickname(false);
+      }
+
+      if (result.participants.every(hasConfiguredNickname)) {
+        setHasAttemptedStartWithoutNicknames(false);
+      }
+
+      if (result.participants.length >= LOBBY_MIN_PARTICIPANTS) {
+        setHasAttemptedStartWithoutEnoughPlayers(false);
+      }
+
+      if (
+        result.participants.length > 0 &&
+        result.participants.every((participant) => participant.is_ready)
+      ) {
+        setHasAttemptedStartWithoutAllReady(false);
+      }
 
       return result;
     },
@@ -228,6 +355,10 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
 
   const handleToggleReady = useCallback(async () => {
     if (!currentParticipant) return;
+    if (!hasConfiguredNickname(currentParticipant)) {
+      setHasAttemptedReadyWithoutNickname(true);
+      return;
+    }
 
     try {
       await updateParticipantReady(currentParticipant.id, !currentParticipant.is_ready);
@@ -236,21 +367,147 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     }
   }, [currentParticipant]);
 
-  const handleChangeNickname = useCallback(async () => {
+  const handleChangeNickname = useCallback(() => {
     if (!currentParticipant) return;
 
-    const nextNickname = window
-      .prompt('Enter a new nickname', currentParticipant.display_name ?? '')
-      ?.trim();
+    setNicknameDraft(currentParticipant.display_name ?? '');
+    setNicknameError(null);
+    setIsNicknameModalOpen(true);
+  }, [currentParticipant]);
 
-    if (!nextNickname) return;
+  const handleCloseNicknameModal = useCallback(() => {
+    if (isSavingNickname) return;
+
+    setIsNicknameModalOpen(false);
+    setNicknameError(null);
+  }, [isSavingNickname]);
+
+  const handleNicknameDraftChange = useCallback((value: string) => {
+    setNicknameDraft(value);
+    setNicknameError(null);
+  }, []);
+
+  const handleSaveNickname = useCallback(async () => {
+    if (!currentParticipant || isSavingNickname) return;
+
+    const nextNickname = nicknameDraft.trim();
+
+    if (!nextNickname) {
+      setNicknameError('Nickname cannot be empty');
+      return;
+    }
+
+    setIsSavingNickname(true);
+    setNicknameError(null);
 
     try {
       await updateParticipantNickname(currentParticipant.id, nextNickname);
+      setParticipants((currentParticipants) =>
+        currentParticipants.map((participant) =>
+          participant.id === currentParticipant.id
+            ? { ...participant, display_name: nextNickname }
+            : participant
+        )
+      );
+      setHasAttemptedReadyWithoutNickname(false);
+      setIsNicknameModalOpen(false);
     } catch (error) {
       console.error(error);
+      setNicknameError('Could not save nickname');
+    } finally {
+      setIsSavingNickname(false);
     }
-  }, [currentParticipant]);
+  }, [currentParticipant, isSavingNickname, nicknameDraft]);
+
+  const handleAvatarChangeRequest = useCallback(() => {
+    if (!currentParticipant || isAvatarUploading) return false;
+
+    const now = Date.now();
+    const isCooldownBlocked =
+      avatarCooldownEndsAt &&
+      avatarCooldownEndsAt > now &&
+      !canBypassAvatarCooldownOnce;
+
+    if (isCooldownBlocked) {
+      setAvatarCooldownNow(now);
+      setAvatarUploadError(null);
+      setShowAvatarCooldownNotice(true);
+      return false;
+    }
+
+    setAvatarUploadError(null);
+    setShowAvatarCooldownNotice(false);
+    return true;
+  }, [
+    avatarCooldownEndsAt,
+    canBypassAvatarCooldownOnce,
+    currentParticipant,
+    isAvatarUploading
+  ]);
+
+  const handleAvatarFileChange = useCallback(
+    async (file: File | null) => {
+      if (!file || !currentParticipant || !currentUserId || isAvatarUploading) return;
+
+      const now = Date.now();
+      const isCooldownBlocked =
+        avatarCooldownEndsAt &&
+        avatarCooldownEndsAt > now &&
+        !canBypassAvatarCooldownOnce;
+
+      if (isCooldownBlocked) {
+        setAvatarCooldownNow(now);
+        setAvatarUploadError(null);
+        setShowAvatarCooldownNotice(true);
+        return;
+      }
+
+      if (!LOBBY_AVATAR_ALLOWED_MIME_TYPES.includes(file.type)) {
+        setAvatarUploadError('Only JPG, PNG, WEBP, or GIF images are allowed');
+        return;
+      }
+
+      if (file.size > LOBBY_AVATAR_MAX_FILE_SIZE_BYTES) {
+        setAvatarUploadError('Avatar must be 5 MB or smaller');
+        return;
+      }
+
+      setIsAvatarUploading(true);
+      setAvatarUploadError(null);
+      setShowAvatarCooldownNotice(false);
+
+      try {
+        const avatarUrl = await uploadParticipantAvatar(
+          currentParticipant.id,
+          currentUserId,
+          file
+        );
+
+        setParticipants((currentParticipants) =>
+          currentParticipants.map((participant) =>
+            participant.id === currentParticipant.id
+              ? { ...participant, avatar_url: avatarUrl }
+              : participant
+          )
+        );
+        setAvatarCooldownEndsAt(Date.now() + LOBBY_AVATAR_UPDATE_COOLDOWN_MS);
+        setCanBypassAvatarCooldownOnce(false);
+        setShowAvatarCooldownNotice(false);
+      } catch (error) {
+        console.error(error);
+        setAvatarUploadError('Could not upload avatar');
+      } finally {
+        setIsAvatarUploading(false);
+      }
+    },
+    [
+      avatarCooldownEndsAt,
+      canBypassAvatarCooldownOnce,
+      currentParticipant,
+      currentUserId,
+      isAvatarUploading
+    ]
+  );
 
   const handleSelectCharacter = useCallback(
     async (character: Character) => {
@@ -258,6 +515,22 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
 
       try {
         await selectParticipantCharacter(currentParticipant.id, character);
+        setParticipants((currentParticipants) =>
+          currentParticipants.map((participant) =>
+            participant.id === currentParticipant.id
+              ? {
+                ...participant,
+                selected_character_id: character.id,
+                display_name: character.name,
+                avatar_url: character.avatar_url
+              }
+              : participant
+          )
+        );
+        setAvatarUploadError(null);
+        setShowAvatarCooldownNotice(false);
+        setCanBypassAvatarCooldownOnce(true);
+        setHasAttemptedReadyWithoutNickname(false);
       } catch (error) {
         console.error(error);
       }
@@ -278,44 +551,54 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     [currentParticipant]
   );
 
-  const handleLeaveLobby = useCallback(async () => {
+  const handleRequestLobbyExit = useCallback(() => {
     if (!currentParticipant) return;
 
+    setIsLobbyExitModalOpen(true);
+  }, [currentParticipant]);
+
+  const handleCloseLobbyExitModal = useCallback(() => {
+    if (isLobbyExitSubmitting) return;
+
+    setIsLobbyExitModalOpen(false);
+  }, [isLobbyExitSubmitting]);
+
+  const handleConfirmLobbyExit = useCallback(async () => {
+    if (!currentParticipant || isLobbyExitSubmitting) return;
+    if (isMaster && !session) return;
+
+    setIsLobbyExitSubmitting(true);
     lobbyExitHandledRef.current = true;
 
     try {
-      await leaveLobby(currentParticipant.id);
+      if (isMaster && session) {
+        await disbandLobby(session.id);
+      } else {
+        await leaveLobby(currentParticipant.id);
+      }
+
       router.push('/');
     } catch (error) {
       lobbyExitHandledRef.current = false;
+      setIsLobbyExitSubmitting(false);
       console.error(error);
     }
-  }, [currentParticipant, router]);
-
-  const handleDisbandLobby = useCallback(async () => {
-    if (!session || !isMaster) return;
-
-    const confirmed = window.confirm('Are you sure you want to disband this lobby?');
-    if (!confirmed) return;
-
-    lobbyExitHandledRef.current = true;
-
-    try {
-      await disbandLobby(session.id);
-      router.push('/');
-    } catch (error) {
-      lobbyExitHandledRef.current = false;
-      console.error(error);
-    }
-  }, [isMaster, router, session]);
+  }, [currentParticipant, isLobbyExitSubmitting, isMaster, router, session]);
 
   const handleStartGame = useCallback(async () => {
     if (!session || !currentParticipant || !isMaster) return;
+    if (!hasEnoughParticipants) {
+      setHasAttemptedStartWithoutEnoughPlayers(true);
+      return;
+    }
 
-    const allReady = participants.length > 0 && participants.every((p) => p.is_ready);
+    if (participants.some((participant) => !hasConfiguredNickname(participant))) {
+      setHasAttemptedStartWithoutNicknames(true);
+      return;
+    }
 
-    if (!allReady) {
-      alert(START_GAME_VALIDATION_MESSAGE);
+    if (!allParticipantsReady) {
+      setHasAttemptedStartWithoutAllReady(true);
       return;
     }
 
@@ -327,7 +610,15 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
       lobbyExitHandledRef.current = false;
       console.error(error);
     }
-  }, [currentParticipant, isMaster, participants, router, session]);
+  }, [
+    allParticipantsReady,
+    currentParticipant,
+    hasEnoughParticipants,
+    isMaster,
+    participants,
+    router,
+    session
+  ]);
 
   return {
     isLoading,
@@ -340,6 +631,20 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     copied,
     isMaster,
     readyCount,
+    canToggleReady,
+    readyFeedbackMessage,
+    startGameMinPlayersFeedbackMessage,
+    startGameNicknameFeedbackMessage,
+    startGameReadyFeedbackMessage,
+    isNicknameModalOpen,
+    nicknameDraft,
+    nicknameError,
+    isSavingNickname,
+    isAvatarUploading,
+    isAvatarUploadDisabled,
+    avatarStatusMessage,
+    isLobbyExitModalOpen,
+    isLobbyExitSubmitting,
     lobbyCleanupAt: currentSessionCleanupAt,
     emptyCharacterMessage: EMPTY_CHARACTER_MESSAGE,
     emptyWorldMessage: EMPTY_WORLD_MESSAGE,
@@ -349,10 +654,16 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     handleCopyCode,
     handleToggleReady,
     handleChangeNickname,
+    handleCloseNicknameModal,
+    handleNicknameDraftChange,
+    handleSaveNickname,
+    handleAvatarChangeRequest,
+    handleAvatarFileChange,
     handleSelectCharacter,
     handleSelectWorld,
-    handleLeaveLobby,
-    handleDisbandLobby,
+    handleRequestLobbyExit,
+    handleCloseLobbyExitModal,
+    handleConfirmLobbyExit,
     handleLobbyTimeout,
     handleStartGame
   };
