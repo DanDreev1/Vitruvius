@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import BackHomeButton from "@/components/ui/BackHomeButton";
 import { supabase } from "@/lib/supabaseClient"; // поправь путь под свой проект
 import GameViewport from "@/components/game/GameViewport";
 import TabletHost from "./TabletHost";
+import { disbandLobby, leaveLobby } from "@/features/lobby/api";
 import { getGameSessionByCode } from "@/features/game/getGameSessionByCode";
 import type {
   GameParticipant,
@@ -33,6 +35,7 @@ export default function GameClient({ code }: GameClientProps) {
 
   const [gameData, setGameData] = useState<LoadedGameData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLeavingGame, setIsLeavingGame] = useState(false);
   const [tabletState, setTabletState] = useState<OpenTabletState>(null);
 
   useEffect(() => {
@@ -157,6 +160,27 @@ export default function GameClient({ code }: GameClientProps) {
     setTabletState(null);
   };
 
+  const handleLeaveGame = useCallback(async () => {
+    if (!gameData || !currentParticipant || isLeavingGame) {
+      return;
+    }
+
+    setIsLeavingGame(true);
+
+    try {
+      if (currentParticipant.role === "master") {
+        await disbandLobby(gameData.session.id);
+      } else {
+        await leaveLobby(currentParticipant.id);
+      }
+
+      router.push("/");
+    } catch (error) {
+      console.error(error);
+      setIsLeavingGame(false);
+    }
+  }, [currentParticipant, gameData, isLeavingGame, router]);
+
   if (loading) {
     return <div className="p-6 text-white">Loading game...</div>;
   }
@@ -167,6 +191,14 @@ export default function GameClient({ code }: GameClientProps) {
 
   return (
     <>
+      <div className="fixed left-4 top-4 z-[80] lg:left-8 lg:top-8">
+        <BackHomeButton
+          label="Leave game"
+          onClick={handleLeaveGame}
+          disabled={isLeavingGame}
+        />
+      </div>
+
       <GameViewport
         master={master}
         players={players}
