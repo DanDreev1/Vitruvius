@@ -1,4 +1,6 @@
 import { getSeatVisualConfig } from "@/lib/game/getSeatVisualConfig";
+import ParticipantAvatar from "./ParticipantAvatar";
+import OfflinePill from "./OfflinePill";
 import {
   DensityPreset,
   GameParticipant,
@@ -36,12 +38,6 @@ export default function MasterSeat({
     >
       <div className="relative">
         <div
-          className="rounded-full border-4 border-[#D6B25E] bg-[#D9D9D9] shadow-[0_0_20px_rgba(214,178,94,0.18)]"
-          style={{
-            width: avatarSize,
-            height: avatarSize,
-            opacity: participant.connectionStatus === "offline" ? 0.45 : 1,
-          }}
           onMouseEnter={() =>
             onHoverChange?.({
               participant,
@@ -51,7 +47,16 @@ export default function MasterSeat({
             })
           }
           onMouseLeave={() => onHoverChange?.(null)}
-        />
+        >
+          <ParticipantAvatar
+            avatarUrl={participant.avatarUrl}
+            displayName={participant.displayName}
+            size={avatarSize}
+            isMaster
+            isOffline={participant.connectionStatus === "offline"}
+            className="shadow-[0_0_20px_rgba(214,178,94,0.18)]"
+          />
+        </div>
 
         <div
           className="absolute"
@@ -84,6 +89,10 @@ export default function MasterSeat({
             transform: `translate(-50%, -50%) rotate(${visual.tabletRotation}deg)`,
           }}
         />
+
+        {participant.connectionStatus === "offline" ? (
+          <OfflinePill fontSize={Math.max(10, density.badgeFontSize - 3)} />
+        ) : null}
       </div>
     </div>
   );

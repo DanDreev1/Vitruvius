@@ -1,4 +1,6 @@
-import Image from 'next/image';
+'use client';
+
+import { useMemo, useState } from 'react';
 
 type PlayerHoverCardProps = {
   left: number;
@@ -14,6 +16,8 @@ type PlayerHoverCardProps = {
   roleFontSize: number;
 };
 
+const PLACEHOLDER_SRC = '/avatar-placeholder.png';
+
 export default function PlayerHoverCard({
   left,
   top,
@@ -27,6 +31,16 @@ export default function PlayerHoverCard({
   nameFontSize,
   roleFontSize,
 }: PlayerHoverCardProps) {
+  const [hasImageError, setHasImageError] = useState(false);
+
+  const src = useMemo(() => {
+    if (!avatarUrl || hasImageError) {
+      return PLACEHOLDER_SRC;
+    }
+
+    return avatarUrl;
+  }, [avatarUrl, hasImageError]);
+
   return (
     <div
       className="pointer-events-none absolute z-[60] -translate-x-1/2 -translate-y-1/2 rounded-[24px] border border-white/10 bg-[#182135] shadow-[0_16px_40px_rgba(0,0,0,0.45)]"
@@ -52,14 +66,13 @@ export default function PlayerHoverCard({
             minHeight: `${avatarSize}px`,
           }}
         >
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={name}
-              fill
-              className="object-cover"
-            />
-          ) : null}
+          <img
+            src={src}
+            alt={name}
+            className="h-full w-full object-cover"
+            onError={() => setHasImageError(true)}
+            draggable={false}
+          />
         </div>
 
         <div className="min-w-0 flex-1">

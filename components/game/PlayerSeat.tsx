@@ -1,5 +1,7 @@
 import { getSeatVisualConfig } from "@/lib/game/getSeatVisualConfig";
 import { DensityPreset, HoverCardData, SeatedPlayer } from "@/lib/game/types";
+import ParticipantAvatar from "./ParticipantAvatar";
+import OfflinePill from "./OfflinePill";
 import Image from "next/image";
 
 type PlayerSeatProps = {
@@ -29,12 +31,6 @@ export default function PlayerSeat({
     >
       <div className="relative">
         <div
-          className="rounded-full border-2 border-white/15 bg-[#D9D9D9]"
-          style={{
-            width: density.avatarSize,
-            height: density.avatarSize,
-            opacity: participant.connectionStatus === "offline" ? 0.45 : 1,
-          }}
           onMouseEnter={() =>
             onHoverChange?.({
               participant,
@@ -44,7 +40,14 @@ export default function PlayerSeat({
             })
           }
           onMouseLeave={() => onHoverChange?.(null)}
-        />
+        >
+          <ParticipantAvatar
+            avatarUrl={participant.avatarUrl}
+            displayName={participant.displayName}
+            size={density.avatarSize}
+            isOffline={participant.connectionStatus === "offline"}
+          />
+        </div>
 
         <div
           className="absolute"
@@ -77,6 +80,10 @@ export default function PlayerSeat({
             transform: `translate(-50%, -50%) rotate(${visual.tabletRotation}deg)`,
           }}
         />
+
+        {participant.connectionStatus === "offline" ? (
+          <OfflinePill fontSize={Math.max(10, density.badgeFontSize - 3)} />
+        ) : null}
       </div>
     </div>
   );

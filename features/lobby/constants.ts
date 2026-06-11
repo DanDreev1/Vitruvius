@@ -10,8 +10,8 @@ export const LOBBY_TIMEOUT_MESSAGE = 'The lobby expired';
 export const LOBBY_TIMEOUT_MS = 15 /*number of minutes*/ * 60 * 1000;
 export const LOBBY_MIN_PARTICIPANTS = 2;
 
-export const LOBBY_AVATAR_STORAGE_BUCKET = 'lobby-avatars';
-export const LOBBY_TEMP_AVATAR_STORAGE_OBJECT_NAME = 'temporary-lobby-avatar';
+export const LOBBY_AVATAR_STORAGE_BUCKET = 'temporary-avatars';
+export const LOBBY_TEMP_AVATAR_STORAGE_OBJECT_NAME = 'temporary-avatar';
 export const LOBBY_AVATAR_UPDATE_COOLDOWN_MS = 3 * 60 * 1000;
 export const LOBBY_AVATAR_COOLDOWN_NOTICE_MS = 4 * 1000;
 export const LOBBY_AVATAR_MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;

@@ -55,6 +55,33 @@ function mapParticipantRow(row: {
   };
 }
 
+function areParticipantsVisuallyEqual(
+  currentParticipants: GameParticipant[],
+  nextParticipants: GameParticipant[]
+) {
+  if (currentParticipants.length !== nextParticipants.length) {
+    return false;
+  }
+
+  return currentParticipants.every((currentParticipant, index) => {
+    const nextParticipant = nextParticipants[index];
+
+    if (!nextParticipant) {
+      return false;
+    }
+
+    return (
+      currentParticipant.id === nextParticipant.id &&
+      currentParticipant.userId === nextParticipant.userId &&
+      currentParticipant.role === nextParticipant.role &&
+      currentParticipant.displayName === nextParticipant.displayName &&
+      currentParticipant.avatarUrl === nextParticipant.avatarUrl &&
+      currentParticipant.joinedAt === nextParticipant.joinedAt &&
+      currentParticipant.connectionStatus === nextParticipant.connectionStatus
+    );
+  });
+}
+
 export function useGamePresence({
   sessionId,
   currentUserId,
@@ -62,6 +89,12 @@ export function useGamePresence({
 }: UseGamePresenceProps) {
   const heartbeatInFlightRef = useRef(false);
   const syncInFlightRef = useRef(false);
+  const lastSyncedParticipantsRef = useRef<GameParticipant[]>([]);
+  const onParticipantsSyncRef = useRef(onParticipantsSync);
+
+  useEffect(() => {
+    onParticipantsSyncRef.current = onParticipantsSync;
+  }, [onParticipantsSync]);
 
   useEffect(() => {
     if (!sessionId || !currentUserId) {
@@ -69,6 +102,7 @@ export function useGamePresence({
     }
 
     let isActive = true;
+    lastSyncedParticipantsRef.current = [];
 
     const sendHeartbeat = async () => {
       if (heartbeatInFlightRef.current) {
@@ -122,7 +156,19 @@ export function useGamePresence({
           return;
         }
 
-        onParticipantsSync(data.map(mapParticipantRow));
+        const mappedParticipants = data.map(mapParticipantRow);
+
+        if (
+          areParticipantsVisuallyEqual(
+            lastSyncedParticipantsRef.current,
+            mappedParticipants
+          )
+        ) {
+          return;
+        }
+
+        lastSyncedParticipantsRef.current = mappedParticipants;
+        onParticipantsSyncRef.current(mappedParticipants);
       } finally {
         syncInFlightRef.current = false;
       }
@@ -175,5 +221,5 @@ export function useGamePresence({
 
       void markOffline();
     };
-  }, [sessionId, currentUserId, onParticipantsSync]);
+  }, [sessionId, currentUserId]);
 }

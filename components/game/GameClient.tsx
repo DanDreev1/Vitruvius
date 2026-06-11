@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useGamePresence } from '@/features/game/useGamePresence';
+import { useGamePresence } from "@/features/game/useGamePresence";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -16,7 +16,7 @@ import type {
   GameParticipant,
   OpenTabletState,
   TabletViewMode,
-} from '@/lib/game/types';
+} from "@/lib/game/types";
 
 type GameClientProps = {
   code: string;
@@ -54,7 +54,7 @@ export default function GameClient({ code }: GameClientProps) {
         } = await supabase.auth.getSession();
 
         if (sessionError || !authSession?.user) {
-          router.replace('/login');
+          router.replace("/login");
           return;
         }
 
@@ -62,17 +62,17 @@ export default function GameClient({ code }: GameClientProps) {
 
         const { session, participants } = await getGameSessionByCode(code);
 
-        if (session.phase !== 'active') {
+        if (session.phase !== "active") {
           router.replace(`/lobby/${code}`);
           return;
         }
 
         const currentParticipant = participants.find(
-          (participant) => participant.userId === currentUserId
+          (participant) => participant.userId === currentUserId,
         );
 
         if (!currentParticipant) {
-          router.replace('/');
+          router.replace("/");
           return;
         }
 
@@ -87,7 +87,7 @@ export default function GameClient({ code }: GameClientProps) {
         });
       } catch (error) {
         console.error(error);
-        router.replace('/');
+        router.replace("/");
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -107,7 +107,7 @@ export default function GameClient({ code }: GameClientProps) {
 
     return (
       gameData.participants.find(
-        (participant) => participant.userId === gameData.currentUserId
+        (participant) => participant.userId === gameData.currentUserId,
       ) ?? null
     );
   }, [gameData]);
@@ -116,8 +116,9 @@ export default function GameClient({ code }: GameClientProps) {
     if (!gameData) return null;
 
     return (
-      gameData.participants.find((participant) => participant.role === 'master') ??
-      null
+      gameData.participants.find(
+        (participant) => participant.role === "master",
+      ) ?? null
     );
   }, [gameData]);
 
@@ -125,9 +126,36 @@ export default function GameClient({ code }: GameClientProps) {
     if (!gameData) return [];
 
     return gameData.participants.filter(
-      (participant) => participant.role === 'player'
+      (participant) => participant.role === "player",
     );
   }, [gameData]);
+
+  function areParticipantsVisuallyEqual(
+    currentParticipants: GameParticipant[],
+    nextParticipants: GameParticipant[],
+  ) {
+    if (currentParticipants.length !== nextParticipants.length) {
+      return false;
+    }
+
+    return currentParticipants.every((currentParticipant, index) => {
+      const nextParticipant = nextParticipants[index];
+
+      if (!nextParticipant) {
+        return false;
+      }
+
+      return (
+        currentParticipant.id === nextParticipant.id &&
+        currentParticipant.userId === nextParticipant.userId &&
+        currentParticipant.role === nextParticipant.role &&
+        currentParticipant.displayName === nextParticipant.displayName &&
+        currentParticipant.avatarUrl === nextParticipant.avatarUrl &&
+        currentParticipant.joinedAt === nextParticipant.joinedAt &&
+        currentParticipant.connectionStatus === nextParticipant.connectionStatus
+      );
+    });
+  }
 
   useGamePresence({
     sessionId: gameData?.session.id ?? null,
@@ -152,7 +180,7 @@ export default function GameClient({ code }: GameClientProps) {
     }
 
     const targetParticipant = gameData.participants.find(
-      (participant) => participant.userId === targetUserId
+      (participant) => participant.userId === targetUserId,
     );
 
     if (!targetParticipant) {
@@ -162,11 +190,11 @@ export default function GameClient({ code }: GameClientProps) {
     let mode: TabletViewMode;
 
     if (targetParticipant.userId === currentParticipant.userId) {
-      mode = 'self';
-    } else if (currentParticipant.role === 'master') {
-      mode = 'master';
+      mode = "self";
+    } else if (currentParticipant.role === "master") {
+      mode = "master";
     } else {
-      mode = 'readonly-other';
+      mode = "readonly-other";
     }
 
     setTabletState({
