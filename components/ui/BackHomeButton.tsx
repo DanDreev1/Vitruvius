@@ -2,12 +2,14 @@ type BackHomeButtonProps = {
   onClick: () => void;
   disabled?: boolean;
   className?: string;
+  label?: string;
 };
 
 export default function BackHomeButton({
   onClick,
   disabled = false,
   className = '',
+  label = 'Back Home',
 }: BackHomeButtonProps) {
   return (
     <button
@@ -29,7 +31,7 @@ export default function BackHomeButton({
         <path d="M15 18l-6-6 6-6" />
       </svg>
 
-      <span className="text-white">Back Home</span>
+      <span className="text-white">{label}</span>
     </button>
   );
 }
