@@ -21,6 +21,7 @@ export type GameParticipant = {
   avatarUrl?: string | null;
   joinedAt: string;
   connectionStatus: 'online' | 'offline';
+  lastSeenAt?: string | null;
 };
 
 export type AnchoredSeatPosition = {

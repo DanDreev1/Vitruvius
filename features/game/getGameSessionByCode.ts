@@ -23,10 +23,12 @@ export async function getGameSessionByCode(code: string): Promise<{
   }
 
   const { data: participantsRaw, error: participantsError } = await supabase
-  .from('session_participants')
-  .select('id, session_id, user_id, role, joined_at, display_name')
-  .eq('session_id', session.id)
-  .order('joined_at', { ascending: true });
+    .from('session_participants')
+    .select(
+      'id, session_id, user_id, role, display_name, avatar_url, joined_at, connection_status, last_seen_at'
+    )
+    .eq('session_id', session.id)
+    .order('joined_at', { ascending: true });
 
   if (participantsError) {
     console.error('session_participants error:', participantsError);
@@ -42,11 +44,13 @@ export async function getGameSessionByCode(code: string): Promise<{
     userId: participant.user_id,
     role: participant.role,
     displayName:
-        participant.display_name ??
-        (participant.role === 'master' ? 'Master' : 'Player'),
-    avatarUrl: null,
+      participant.display_name ??
+      (participant.role === 'master' ? 'Master' : 'Player'),
+    avatarUrl: participant.avatar_url ?? null,
     joinedAt: participant.joined_at,
-    connectionStatus: 'online',
+    connectionStatus:
+      participant.connection_status === 'offline' ? 'offline' : 'online',
+    lastSeenAt: participant.last_seen_at ?? null,
   }));
 
   return {
