@@ -200,6 +200,7 @@ export default function GameClient({ code }: GameClientProps) {
     setTabletState({
       targetUserId: targetParticipant.userId,
       mode,
+      targetRole: targetParticipant.role,
     });
   };
 
@@ -254,10 +255,10 @@ export default function GameClient({ code }: GameClientProps) {
 
       <TabletHost
         isOpen={tabletState !== null}
-        sessionId={gameData.session.id}
         viewerUserId={gameData.currentUserId}
         targetUserId={tabletState?.targetUserId ?? null}
         mode={tabletState?.mode ?? null}
+        targetRole={tabletState?.targetRole ?? null}
         onClose={handleCloseTablet}
       />
     </>

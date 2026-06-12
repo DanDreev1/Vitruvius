@@ -11,6 +11,7 @@ export type TabletViewMode = 'self' | 'readonly-other' | 'master';
 export type OpenTabletState = {
   targetUserId: string;
   mode: TabletViewMode;
+  targetRole: "player" | "master";
 } | null;
 
 export type GameParticipant = {
