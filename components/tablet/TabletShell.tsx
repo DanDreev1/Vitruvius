@@ -113,6 +113,7 @@ function MasterTabletShellLayout({
   targetRole,
   mode,
 }: SharedShellLayoutProps) {
+  const isEditable = canEditTablet(targetRole, mode);
   return (
     <div className="relative h-full w-full overflow-hidden rounded-[34px] border border-white/10 bg-[#1B2230] shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
       <div className="absolute inset-[16px] rounded-[28px] border border-white/8 bg-[#0F1724]" />
@@ -127,7 +128,7 @@ function MasterTabletShellLayout({
       </div>
 
       <div className="absolute left-[136px] right-[24px] top-[24px] bottom-[24px] rounded-[28px] border border-white/8 bg-[#151D2B] p-[22px]">
-        <TabletPageRenderer activeTab={activeTab} targetRole={targetRole} mode={mode} />
+        <TabletPageRenderer activeTab={activeTab} targetRole={targetRole} mode={mode} isEditable={isEditable} />
       </div>
     </div>
   );
