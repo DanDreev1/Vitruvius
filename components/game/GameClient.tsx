@@ -187,6 +187,13 @@ export default function GameClient({ code }: GameClientProps) {
       return;
     }
 
+    if (
+      targetParticipant.role === "master" &&
+      currentParticipant.role !== "master"
+    ) {
+      return;
+    }
+
     let mode: TabletViewMode;
 
     if (targetParticipant.userId === currentParticipant.userId) {

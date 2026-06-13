@@ -1,3 +1,4 @@
+import type { TabletViewMode } from '@/lib/game/types';
 import type { TabletRole, TabletTab } from './types';
 
 export const PLAYER_TABLET_TABS: Array<{
@@ -27,6 +28,47 @@ export const MASTER_TABLET_TABS: Array<{
   { key: 'settings', label: 'Settings', short: '⚙' },
 ];
 
-export function getDefaultTabletTab(role: TabletRole): TabletTab {
-  return role === 'master' ? 'scene' : 'user';
+export function getVisibleTabletTabs(
+  targetRole: TabletRole,
+  mode: TabletViewMode
+) {
+  if (targetRole === 'master') {
+    return MASTER_TABLET_TABS;
+  }
+
+  if (mode === 'self') {
+    return PLAYER_TABLET_TABS;
+  }
+
+  return PLAYER_TABLET_TABS.filter(
+    (tab) => tab.key !== 'notes' && tab.key !== 'settings'
+  );
+}
+
+export function isTabletTabAllowed(
+  tab: TabletTab,
+  targetRole: TabletRole,
+  mode: TabletViewMode
+) {
+  return getVisibleTabletTabs(targetRole, mode).some(
+    (visibleTab) => visibleTab.key === tab
+  );
+}
+
+export function getDefaultTabletTab(
+  targetRole: TabletRole,
+  mode: TabletViewMode
+): TabletTab {
+  return getVisibleTabletTabs(targetRole, mode)[0].key;
+}
+
+export function canEditTablet(
+  targetRole: TabletRole,
+  mode: TabletViewMode
+) {
+  if (targetRole === 'master') {
+    return mode === 'self';
+  }
+
+  return mode === 'self' || mode === 'master';
 }

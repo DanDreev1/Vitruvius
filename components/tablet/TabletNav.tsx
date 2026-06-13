@@ -1,23 +1,23 @@
 'use client';
 
-import {
-  MASTER_TABLET_TABS,
-  PLAYER_TABLET_TABS,
-} from '@/features/tablet/navigation';
+import { getVisibleTabletTabs } from '@/features/tablet/navigation';
 import type { TabletRole, TabletTab } from '@/features/tablet/types';
+import type { TabletViewMode } from '@/lib/game/types';
 
 type TabletNavProps = {
   activeTab: TabletTab;
   onTabChange: (tab: TabletTab) => void;
   targetRole: TabletRole;
+  mode: TabletViewMode;
 };
 
 export default function TabletNav({
   activeTab,
   onTabChange,
   targetRole,
+  mode,
 }: TabletNavProps) {
-  const tabs = targetRole === 'master' ? MASTER_TABLET_TABS : PLAYER_TABLET_TABS;
+  const tabs = getVisibleTabletTabs(targetRole, mode);
 
   return (
     <div className="flex h-full flex-col items-center justify-between py-[18px]">

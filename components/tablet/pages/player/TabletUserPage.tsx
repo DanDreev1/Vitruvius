@@ -5,7 +5,11 @@ import {
   SectionTitle,
 } from '../shared/TabletPagePrimitives';
 
-export default function TabletUserPage() {
+type TabletUserPageProps = {
+  isEditable: boolean;
+};
+
+export default function TabletUserPage({ isEditable }: TabletUserPageProps) {
   return (
     <div className="h-full">
       <SectionTitle title="User" subtitle="Base tablet layout preview" />

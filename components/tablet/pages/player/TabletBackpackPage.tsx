@@ -5,14 +5,18 @@ import {
   SectionTitle,
 } from '../shared/TabletPagePrimitives';
 
-export default function TabletBackpackPage() {
+type TabletUserPageProps = {
+  isEditable: boolean;
+};
+
+export default function TabletBackpackPage({ isEditable }: TabletUserPageProps) {
   return (
     <div className="h-full">
       <SectionTitle title="Backpack" subtitle="Grid + side panel preview" />
 
       <div className="grid h-[calc(100%-72px)] grid-cols-[1fr_320px] gap-[18px]">
         <div className="flex h-full flex-col gap-[18px]">
-          <Panel className="h-[74px]" />
+          <Panel className="h-18.5" />
           <Panel className="flex-1">
             <div className="grid grid-cols-4 gap-[14px]">
               {Array.from({ length: 12 }).map((_, index) => (

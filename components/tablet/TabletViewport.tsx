@@ -11,7 +11,10 @@ import {
 } from "@/lib/tablet/config";
 import type { TabletViewMode } from "@/lib/game/types";
 import type { TabletRole, TabletTab } from "@/features/tablet/types";
-import { getDefaultTabletTab } from "@/features/tablet/navigation";
+import {
+  getDefaultTabletTab,
+  isTabletTabAllowed,
+} from "@/features/tablet/navigation";
 
 import TabletShell from "./TabletShell";
 
@@ -38,12 +41,18 @@ export default function TabletViewport({
 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [activeTab, setActiveTab] = useState<TabletTab>(() =>
-    getDefaultTabletTab(targetRole),
+    getDefaultTabletTab(targetRole, mode),
   );
 
   useEffect(() => {
-    setActiveTab(getDefaultTabletTab(targetRole));
-  }, [targetRole]);
+    setActiveTab(getDefaultTabletTab(targetRole, mode));
+  }, [targetRole, mode]);
+
+  useEffect(() => {
+    if (!isTabletTabAllowed(activeTab, targetRole, mode)) {
+      setActiveTab(getDefaultTabletTab(targetRole, mode));
+    }
+  }, [activeTab, targetRole, mode]);
 
   useEffect(() => {
     const element = containerRef.current;

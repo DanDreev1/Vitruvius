@@ -5,7 +5,11 @@ import {
   SectionTitle,
 } from '../shared/TabletPagePrimitives';
 
-export default function TabletRelationshipPage() {
+type TabletUserPageProps = {
+  isEditable: boolean;
+};
+
+export default function TabletRelationshipPage({ isEditable }: TabletUserPageProps) {
   return (
     <div className="h-full">
       <SectionTitle title="Relationship" subtitle="Large character card preview" />

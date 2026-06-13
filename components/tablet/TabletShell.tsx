@@ -1,10 +1,11 @@
-'use client';
+"use client";
 
-import type { TabletViewMode } from '@/lib/game/types';
-import type { TabletRole, TabletTab } from '@/features/tablet/types';
+import type { TabletViewMode } from "@/lib/game/types";
+import type { TabletRole, TabletTab } from "@/features/tablet/types";
+import { canEditTablet } from '@/features/tablet/navigation';
 
-import TabletNav from './TabletNav';
-import TabletPageRenderer from './TabletPageRenderer';
+import TabletNav from "./TabletNav";
+import TabletPageRenderer from "./TabletPageRenderer";
 
 type TabletShellProps = {
   activeTab: TabletTab;
@@ -18,14 +19,14 @@ type TabletShellProps = {
 
 function formatModeLabel(mode: TabletViewMode) {
   switch (mode) {
-    case 'self':
-      return 'Self';
-    case 'master':
-      return 'Master View';
-    case 'readonly-other':
-      return 'Read Only';
+    case "self":
+      return "Self";
+    case "master":
+      return "Master View";
+    case "readonly-other":
+      return "Read Only";
     default:
-      return 'Tablet';
+      return "Tablet";
   }
 }
 
@@ -40,6 +41,7 @@ function PlayerTabletShellLayout({
   targetRole,
   onClose,
 }: SharedShellLayoutProps) {
+  const isEditable = canEditTablet(targetRole, mode);
   return (
     <div className="relative h-full w-full overflow-hidden rounded-[34px] border border-white/10 bg-[#1B2230] shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
       <div className="absolute inset-[16px] rounded-[28px] border border-white/8 bg-[#0F1724]" />
@@ -49,6 +51,7 @@ function PlayerTabletShellLayout({
           activeTab={activeTab}
           onTabChange={onTabChange}
           targetRole={targetRole}
+          mode={mode}
         />
       </div>
 
@@ -59,7 +62,8 @@ function PlayerTabletShellLayout({
               Player Tablet
             </p>
             <p className="font-montserrat text-[15px] text-white/65">
-              Viewer: {viewerUserId.slice(0, 8)}... · Target: {targetUserId.slice(0, 8)}...
+              Viewer: {viewerUserId.slice(0, 8)}... · Target:{" "}
+              {targetUserId.slice(0, 8)}...
             </p>
           </div>
 
@@ -83,7 +87,7 @@ function PlayerTabletShellLayout({
 
       <div className="absolute right-[24px] top-[24px] bottom-[24px] w-[72px] rounded-[26px] border border-white/8 bg-[#111827]">
         <div className="flex h-full flex-col items-center justify-between py-[24px]">
-          {['HP', 'IP', 'SP', 'ST'].map((label) => (
+          {["HP", "IP", "SP", "ST"].map((label) => (
             <div
               key={label}
               className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-white/10 bg-[#1E293B]"
@@ -97,7 +101,7 @@ function PlayerTabletShellLayout({
       </div>
 
       <div className="absolute left-[136px] right-[112px] top-[116px] bottom-[24px] rounded-[28px] border border-white/8 bg-[#151D2B] p-[22px]">
-        <TabletPageRenderer activeTab={activeTab} targetRole={targetRole} />
+        <TabletPageRenderer activeTab={activeTab} targetRole={targetRole} mode={mode} isEditable={isEditable} />
       </div>
     </div>
   );
@@ -107,6 +111,7 @@ function MasterTabletShellLayout({
   activeTab,
   onTabChange,
   targetRole,
+  mode,
 }: SharedShellLayoutProps) {
   return (
     <div className="relative h-full w-full overflow-hidden rounded-[34px] border border-white/10 bg-[#1B2230] shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
@@ -117,18 +122,19 @@ function MasterTabletShellLayout({
           activeTab={activeTab}
           onTabChange={onTabChange}
           targetRole={targetRole}
+          mode={mode}
         />
       </div>
 
       <div className="absolute left-[136px] right-[24px] top-[24px] bottom-[24px] rounded-[28px] border border-white/8 bg-[#151D2B] p-[22px]">
-        <TabletPageRenderer activeTab={activeTab} targetRole={targetRole} />
+        <TabletPageRenderer activeTab={activeTab} targetRole={targetRole} mode={mode} />
       </div>
     </div>
   );
 }
 
 export default function TabletShell(props: TabletShellProps) {
-  if (props.targetRole === 'master') {
+  if (props.targetRole === "master") {
     return <MasterTabletShellLayout {...props} />;
   }
 
