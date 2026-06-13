@@ -40,19 +40,16 @@ export default function TabletViewport({
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
-  const [activeTab, setActiveTab] = useState<TabletTab>(() =>
+  const defaultTab = useMemo(
+    () => getDefaultTabletTab(targetRole, mode),
+    [targetRole, mode]
+  );
+  const [selectedTab, setSelectedTab] = useState<TabletTab>(() =>
     getDefaultTabletTab(targetRole, mode),
   );
-
-  useEffect(() => {
-    setActiveTab(getDefaultTabletTab(targetRole, mode));
-  }, [targetRole, mode]);
-
-  useEffect(() => {
-    if (!isTabletTabAllowed(activeTab, targetRole, mode)) {
-      setActiveTab(getDefaultTabletTab(targetRole, mode));
-    }
-  }, [activeTab, targetRole, mode]);
+  const activeTab = isTabletTabAllowed(selectedTab, targetRole, mode)
+    ? selectedTab
+    : defaultTab;
 
   useEffect(() => {
     const element = containerRef.current;
@@ -117,7 +114,7 @@ export default function TabletViewport({
       >
         <TabletShell
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={setSelectedTab}
           viewerUserId={viewerUserId}
           targetUserId={targetUserId}
           mode={mode}
