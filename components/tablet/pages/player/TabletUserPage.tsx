@@ -1,36 +1,37 @@
 'use client';
 
-import {
-  Panel,
-  SectionTitle,
-} from '../shared/TabletPagePrimitives';
+import Image from 'next/image';
 
 type TabletUserPageProps = {
   isEditable: boolean;
 };
 
+const descriptionText =
+  "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
+
 export default function TabletUserPage({ isEditable }: TabletUserPageProps) {
   return (
-    <div className="h-full">
-      <SectionTitle title="User" subtitle="Base tablet layout preview" />
-
-      <div className="grid h-[calc(100%-72px)] grid-cols-[320px_1fr] gap-[18px]">
-        <Panel className="flex flex-col items-center justify-center">
-          <div className="h-[180px] w-[180px] rounded-full border border-white/10 bg-[#D9D9D9]" />
-          <div className="mt-[18px] h-[22px] w-[180px] rounded-full bg-white/10" />
-          <div className="mt-[10px] h-[16px] w-[130px] rounded-full bg-white/5" />
-        </Panel>
-
-        <Panel>
-          <div className="space-y-[12px]">
-            <div className="h-[20px] w-[240px] rounded-full bg-white/10" />
-            <div className="h-[16px] w-full rounded-full bg-white/5" />
-            <div className="h-[16px] w-[95%] rounded-full bg-white/5" />
-            <div className="h-[16px] w-[88%] rounded-full bg-white/5" />
-            <div className="h-[16px] w-[80%] rounded-full bg-white/5" />
-          </div>
-        </Panel>
+    <div className="grid h-full grid-cols-[350px_minmax(0,1fr)] gap-[46px]">
+      <div className="flex items-start justify-center pt-[4px]">
+        <button
+          type="button"
+          disabled={!isEditable}
+          className="relative flex h-[500px] w-[350px] items-center justify-center overflow-hidden rounded-[26px] bg-[#D9D9D9] disabled:cursor-default"
+          title={isEditable ? "Upload character image" : "Character image"}
+        >
+          <Image src="/UploadImage.png" alt="" width={72} height={72} />
+        </button>
       </div>
+
+      <section className="max-w-[720px] pt-[4px] text-white">
+        <h2 className="font-montserrat-alt text-[32px] font-extrabold leading-none">
+          Description
+        </h2>
+
+        <p className="mt-[28px] font-montserrat text-[22px] font-semibold leading-[1.2] text-white">
+          {descriptionText}
+        </p>
+      </section>
     </div>
   );
 }

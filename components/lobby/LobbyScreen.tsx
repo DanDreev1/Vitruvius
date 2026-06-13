@@ -25,6 +25,8 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
         startGameMinPlayersFeedbackMessage,
         startGameNicknameFeedbackMessage,
         startGameReadyFeedbackMessage,
+        startGameSubmitError,
+        isStartingGame,
         isNicknameModalOpen,
         nicknameDraft,
         nicknameError,
@@ -61,7 +63,8 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
         readyFeedbackMessage,
         startGameMinPlayersFeedbackMessage,
         startGameNicknameFeedbackMessage,
-        startGameReadyFeedbackMessage
+        startGameReadyFeedbackMessage,
+        startGameSubmitError
     ].filter((message): message is string => Boolean(message));
 
     return (
@@ -409,9 +412,9 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                         type="button"
                                         onClick={handleStartGame}
                                         className="btn-primary"
-                                        disabled={isLoading || !currentParticipant}
+                                        disabled={isLoading || !currentParticipant || isStartingGame}
                                     >
-                                        Start Game
+                                        {isStartingGame ? 'Starting...' : 'Start Game'}
                                     </button>
                                 )}
                             </div>

@@ -32,6 +32,7 @@ import {
   START_GAME_MIN_PLAYERS_REQUIRED_MESSAGE,
   READY_NICKNAME_REQUIRED_MESSAGE,
   START_GAME_NICKNAME_REQUIRED_MESSAGE,
+  START_GAME_PREPARE_CHARACTERS_ERROR_MESSAGE,
   START_GAME_VALIDATION_MESSAGE
 } from './constants';
 import { useLobbyRealtime } from './useLobbyRealtime';
@@ -70,6 +71,14 @@ function hasConfiguredNickname(participant: SessionParticipant | null) {
   return Boolean(participant?.display_name?.trim());
 }
 
+function formatStartGameSubmitError(error: unknown) {
+  const details = error instanceof Error ? error.message : String(error);
+
+  return details
+    ? `${START_GAME_PREPARE_CHARACTERS_ERROR_MESSAGE} ${details}`
+    : START_GAME_PREPARE_CHARACTERS_ERROR_MESSAGE;
+}
+
 export function useLobbyScreen({ code }: LobbyScreenProps) {
   const router = useRouter();
 
@@ -89,13 +98,14 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
   const [avatarCooldownEndsAt, setAvatarCooldownEndsAt] = useState<number | null>(null);
   const [avatarCooldownNow, setAvatarCooldownNow] = useState(() => Date.now());
   const [showAvatarCooldownNotice, setShowAvatarCooldownNotice] = useState(false);
-  const [canBypassAvatarCooldownOnce, setCanBypassAvatarCooldownOnce] = useState(false);
   const [isLobbyExitModalOpen, setIsLobbyExitModalOpen] = useState(false);
   const [isLobbyExitSubmitting, setIsLobbyExitSubmitting] = useState(false);
   const [hasAttemptedReadyWithoutNickname, setHasAttemptedReadyWithoutNickname] = useState(false);
   const [hasAttemptedStartWithoutEnoughPlayers, setHasAttemptedStartWithoutEnoughPlayers] = useState(false);
   const [hasAttemptedStartWithoutNicknames, setHasAttemptedStartWithoutNicknames] = useState(false);
   const [hasAttemptedStartWithoutAllReady, setHasAttemptedStartWithoutAllReady] = useState(false);
+  const [startGameSubmitError, setStartGameSubmitError] = useState<string | null>(null);
+  const [isStartingGame, setIsStartingGame] = useState(false);
   const lobbyExitHandledRef = useRef(false);
 
   const { activeSlide, setActiveSlide, onTouchStart, onTouchEnd } = useLobbySwipe();
@@ -425,8 +435,7 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     const now = Date.now();
     const isCooldownBlocked =
       avatarCooldownEndsAt &&
-      avatarCooldownEndsAt > now &&
-      !canBypassAvatarCooldownOnce;
+      avatarCooldownEndsAt > now;
 
     if (isCooldownBlocked) {
       setAvatarCooldownNow(now);
@@ -440,7 +449,6 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     return true;
   }, [
     avatarCooldownEndsAt,
-    canBypassAvatarCooldownOnce,
     currentParticipant,
     isAvatarUploading
   ]);
@@ -452,8 +460,7 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
       const now = Date.now();
       const isCooldownBlocked =
         avatarCooldownEndsAt &&
-        avatarCooldownEndsAt > now &&
-        !canBypassAvatarCooldownOnce;
+        avatarCooldownEndsAt > now;
 
       if (isCooldownBlocked) {
         setAvatarCooldownNow(now);
@@ -491,7 +498,6 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
           )
         );
         setAvatarCooldownEndsAt(Date.now() + LOBBY_AVATAR_UPDATE_COOLDOWN_MS);
-        setCanBypassAvatarCooldownOnce(false);
         setShowAvatarCooldownNotice(false);
       } catch (error) {
         console.error(error);
@@ -502,7 +508,6 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     },
     [
       avatarCooldownEndsAt,
-      canBypassAvatarCooldownOnce,
       currentParticipant,
       currentUserId,
       isAvatarUploading
@@ -520,17 +525,11 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
             participant.id === currentParticipant.id
               ? {
                 ...participant,
-                selected_character_id: character.id,
-                display_name: character.name,
-                avatar_url: character.avatar_url
+                selected_character_id: character.id
               }
               : participant
           )
         );
-        setAvatarUploadError(null);
-        setShowAvatarCooldownNotice(false);
-        setCanBypassAvatarCooldownOnce(true);
-        setHasAttemptedReadyWithoutNickname(false);
       } catch (error) {
         console.error(error);
       }
@@ -586,7 +585,10 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
   }, [currentParticipant, isLobbyExitSubmitting, isMaster, router, session]);
 
   const handleStartGame = useCallback(async () => {
-    if (!session || !currentParticipant || !isMaster) return;
+    if (!session || !currentParticipant || !isMaster || isStartingGame) return;
+
+    setStartGameSubmitError(null);
+
     if (!hasEnoughParticipants) {
       setHasAttemptedStartWithoutEnoughPlayers(true);
       return;
@@ -603,11 +605,14 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     }
 
     try {
+      setIsStartingGame(true);
       lobbyExitHandledRef.current = true;
       await startLobbyGame(session.id);
       router.push(`/game/${session.code}`);
     } catch (error) {
       lobbyExitHandledRef.current = false;
+      setIsStartingGame(false);
+      setStartGameSubmitError(formatStartGameSubmitError(error));
       console.error(error);
     }
   }, [
@@ -615,6 +620,7 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     currentParticipant,
     hasEnoughParticipants,
     isMaster,
+    isStartingGame,
     participants,
     router,
     session
@@ -636,6 +642,8 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     startGameMinPlayersFeedbackMessage,
     startGameNicknameFeedbackMessage,
     startGameReadyFeedbackMessage,
+    startGameSubmitError,
+    isStartingGame,
     isNicknameModalOpen,
     nicknameDraft,
     nicknameError,

@@ -41,6 +41,16 @@ export type CharacterAttributeTemplate = {
   metadata: Record<string, unknown>;
 };
 
+export type CharacterParameterTemplate = {
+  parameter_key: string;
+  label: string;
+  icon_key: string;
+  current_value: number;
+  max_value: number | null;
+  sort_order: number;
+  metadata: Record<string, unknown>;
+};
+
 export type CharacterDomainSkillTemplate = {
   skill_key: string;
   name: string;
@@ -92,14 +102,6 @@ export type CharacterExperienceTemplate = {
   metadata: Record<string, unknown>;
 };
 
-export type CharacterNpcTemplate = {
-  name: string;
-  description: string | null;
-  avatar_url: string | null;
-  disposition: string;
-  metadata: Record<string, unknown>;
-};
-
 export type InGameCharacterPlaceholder = {
   session_id: string;
   participant_id: string;
@@ -111,6 +113,11 @@ export type InGameCharacterPlaceholder = {
   is_placeholder: boolean;
   save_status: InGameCharacterSaveStatus;
 };
+
+type InGameCharacterPlaceholderParticipant = Pick<
+  SessionParticipant,
+  'id' | 'session_id' | 'user_id'
+>;
 
 export const DEFAULT_CHARACTER_ATTRIBUTES: CharacterAttributeTemplate[] = [
   {
@@ -130,7 +137,7 @@ export const DEFAULT_CHARACTER_ATTRIBUTES: CharacterAttributeTemplate[] = [
     metadata: {},
   },
   {
-    attribute_key: 'awareness',
+    attribute_key: 'agility',
     label: 'Agility',
     icon_key: 'running',
     value: 1,
@@ -163,11 +170,40 @@ export const DEFAULT_CHARACTER_ATTRIBUTES: CharacterAttributeTemplate[] = [
   },
 ];
 
+export const DEFAULT_CHARACTER_PARAMETERS: CharacterParameterTemplate[] = [
+  {
+    parameter_key: 'health',
+    label: 'Health',
+    icon_key: 'heart',
+    current_value: CHARACTER_MIN_ATTRIBUTE_VALUE * CHARACTER_HEALTH_MULTIPLIER,
+    max_value: CHARACTER_MIN_ATTRIBUTE_VALUE * CHARACTER_HEALTH_MULTIPLIER,
+    sort_order: 0,
+    metadata: {},
+  },
+  {
+    parameter_key: 'inspiration',
+    label: 'Inspiration',
+    icon_key: 'star',
+    current_value: 6,
+    max_value: null,
+    sort_order: 1,
+    metadata: {},
+  },
+  {
+    parameter_key: 'stress',
+    label: 'Stress',
+    icon_key: 'stress',
+    current_value: 0,
+    max_value: null,
+    sort_order: 2,
+    metadata: {},
+  },
+];
+
 export const DEFAULT_CHARACTER_DOMAINS: CharacterDomainTemplate[] = [];
 export const DEFAULT_CHARACTER_INVENTORY_ITEMS: CharacterInventoryItemTemplate[] = [];
 export const DEFAULT_CHARACTER_NOTES: CharacterNoteTemplate[] = [];
 export const DEFAULT_CHARACTER_EXPERIENCES: CharacterExperienceTemplate[] = [];
-export const DEFAULT_CHARACTER_NPCS: CharacterNpcTemplate[] = [];
 
 function cloneRows<T extends { metadata: Record<string, unknown> }>(rows: T[]): T[] {
   return rows.map((row) => ({
@@ -187,11 +223,11 @@ function cloneDomains(domains: CharacterDomainTemplate[]): CharacterDomainTempla
 export function createDefaultCharacterCollections() {
   return {
     attributes: cloneRows(DEFAULT_CHARACTER_ATTRIBUTES),
+    parameters: cloneRows(DEFAULT_CHARACTER_PARAMETERS),
     domains: cloneDomains(DEFAULT_CHARACTER_DOMAINS),
     inventory_items: cloneRows(DEFAULT_CHARACTER_INVENTORY_ITEMS),
     notes: cloneRows(DEFAULT_CHARACTER_NOTES),
     experiences: cloneRows(DEFAULT_CHARACTER_EXPERIENCES),
-    npcs: cloneRows(DEFAULT_CHARACTER_NPCS),
   };
 }
 
@@ -205,23 +241,17 @@ export function calculateCharacterHealth(
   return (healthAttribute?.value ?? CHARACTER_MIN_ATTRIBUTE_VALUE) * CHARACTER_HEALTH_MULTIPLIER;
 }
 
-export function getPlaceholderCharacterName(displayName: string | null | undefined) {
-  const trimmedDisplayName = displayName?.trim();
-
-  return trimmedDisplayName || CHARACTER_PLACEHOLDER_NAME;
-}
-
 export function createInGameCharacterPlaceholder(
-  participant: SessionParticipant
+  participant: InGameCharacterPlaceholderParticipant
 ): InGameCharacterPlaceholder {
   return {
     session_id: participant.session_id,
     participant_id: participant.id,
     user_id: participant.user_id,
     source_character_id: null,
-    name: getPlaceholderCharacterName(participant.display_name),
+    name: CHARACTER_PLACEHOLDER_NAME,
     description: CHARACTER_PLACEHOLDER_DESCRIPTION,
-    avatar_url: participant.avatar_url,
+    avatar_url: null,
     is_placeholder: true,
     save_status: IN_GAME_CHARACTER_SAVE_STATUS.temporary,
   };

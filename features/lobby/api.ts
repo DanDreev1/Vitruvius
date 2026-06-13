@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
+import { prepareInGameCharactersForSession } from '@/features/characters/api';
 import {
     LOBBY_AVATAR_STORAGE_BUCKET,
     LOBBY_TEMP_AVATAR_STORAGE_OBJECT_NAME
@@ -196,9 +197,7 @@ export async function selectParticipantCharacter(
     const { error } = await supabase
         .from('session_participants')
         .update({
-            selected_character_id: character.id,
-            display_name: character.name,
-            avatar_url: character.avatar_url
+            selected_character_id: character.id
         })
         .eq('id', participantId);
 
@@ -243,6 +242,18 @@ export async function disbandLobby(sessionId: string) {
 }
 
 export async function startLobbyGame(sessionId: string) {
+    const characterPreparation = await prepareInGameCharactersForSession(sessionId);
+
+    if (characterPreparation.playerCount < 1) {
+        throw new Error('At least one player character is required to start the game.');
+    }
+
+    if (characterPreparation.createdCount !== characterPreparation.playerCount) {
+        throw new Error(
+            `Prepared ${characterPreparation.createdCount} in-game characters for ${characterPreparation.playerCount} players.`
+        );
+    }
+
     const { error } = await supabase
         .from('live_sessions')
         .update({

@@ -33,3 +33,6 @@ export const START_GAME_MIN_PLAYERS_REQUIRED_MESSAGE =
 
 export const START_GAME_VALIDATION_MESSAGE =
     'All players must be ready before the game can start.';
+
+export const START_GAME_PREPARE_CHARACTERS_ERROR_MESSAGE =
+    'Could not prepare player characters. Run the latest Supabase character SQL and try again.';

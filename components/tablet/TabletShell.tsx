@@ -1,8 +1,10 @@
 "use client";
 
-import type { TabletViewMode } from "@/lib/game/types";
+import Image from "next/image";
+
+import { canEditTablet } from "@/features/tablet/navigation";
 import type { TabletRole, TabletTab } from "@/features/tablet/types";
-import { canEditTablet } from '@/features/tablet/navigation';
+import type { TabletViewMode } from "@/lib/game/types";
 
 import TabletNav from "./TabletNav";
 import TabletPageRenderer from "./TabletPageRenderer";
@@ -17,91 +19,94 @@ type TabletShellProps = {
   onClose: () => void;
 };
 
-function formatModeLabel(mode: TabletViewMode) {
-  switch (mode) {
-    case "self":
-      return "Self";
-    case "master":
-      return "Master View";
-    case "readonly-other":
-      return "Read Only";
-    default:
-      return "Tablet";
-  }
-}
-
 type SharedShellLayoutProps = TabletShellProps;
+
+const playerAttributes = [
+  { label: "Constitution", iconSrc: "/attributes-imgs/Cons.png", value: 1 },
+  { label: "Awareness", iconSrc: "/attributes-imgs/Awareness.png", value: 1 },
+  { label: "Agility", iconSrc: "/attributes-imgs/Agility.png", value: 1 },
+  { label: "Thinking", iconSrc: "/attributes-imgs/Thinking.png", value: 1 },
+  { label: "Charisma", iconSrc: "/attributes-imgs/Charisma.png", value: 1 },
+  { label: "Will", iconSrc: "/attributes-imgs/Will.png", value: 1 },
+];
+
+const playerParameters = [
+  { label: "Health", iconSrc: "/parameters/Health.png", value: 5 },
+  { label: "Inspiration", iconSrc: "/parameters/Inspirations.png", value: 6 },
+  { label: "Stress", iconSrc: "/parameters/Stress.png", value: 0 },
+];
+
+const editablePlayerTabs: TabletTab[] = ["user", "skills"];
 
 function PlayerTabletShellLayout({
   activeTab,
   onTabChange,
-  viewerUserId,
-  targetUserId,
   mode,
   targetRole,
   onClose,
 }: SharedShellLayoutProps) {
   const isEditable = canEditTablet(targetRole, mode);
-  return (
-    <div className="relative h-full w-full overflow-hidden rounded-[34px] border border-white/10 bg-[#1B2230] shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
-      <div className="absolute inset-[16px] rounded-[28px] border border-white/8 bg-[#0F1724]" />
+  const showEditButton = isEditable && editablePlayerTabs.includes(activeTab);
 
-      <div className="absolute left-[24px] top-[24px] bottom-[24px] w-[92px] rounded-[26px] border border-white/8 bg-[#111827]">
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-[34px] border border-white bg-[#172033] shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
+      <div className="absolute bottom-0 left-0 top-0 w-[112px] border-r border-white/45">
         <TabletNav
           activeTab={activeTab}
           onTabChange={onTabChange}
           targetRole={targetRole}
           mode={mode}
+          onClose={onClose}
         />
       </div>
 
-      <div className="absolute left-[136px] right-[112px] top-[24px] h-[76px] rounded-[26px] border border-white/8 bg-[#111827] px-[28px]">
-        <div className="flex h-full items-center justify-between">
-          <div>
-            <p className="font-montserrat-alt text-[28px] font-extrabold text-[#D6B25E]">
-              Player Tablet
-            </p>
-            <p className="font-montserrat text-[15px] text-white/65">
-              Viewer: {viewerUserId.slice(0, 8)}... · Target:{" "}
-              {targetUserId.slice(0, 8)}...
-            </p>
-          </div>
+      <div className="absolute left-[148px] right-[118px] top-[30px] flex h-[58px] items-center">
+        <h1 className="w-[300px] font-montserrat-alt text-[42px] font-extrabold leading-none text-white">
+          Name
+        </h1>
 
-          <div className="flex items-center gap-[14px]">
-            <div className="rounded-full border border-white/10 bg-[#1E293B] px-[18px] py-[10px]">
-              <span className="font-montserrat text-[15px] font-semibold text-white">
-                {formatModeLabel(mode)}
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-full border border-white/10 bg-white px-[18px] py-[10px] font-montserrat text-[15px] font-bold text-black"
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="absolute right-[24px] top-[24px] bottom-[24px] w-[72px] rounded-[26px] border border-white/8 bg-[#111827]">
-        <div className="flex h-full flex-col items-center justify-between py-[24px]">
-          {["HP", "IP", "SP", "ST"].map((label) => (
-            <div
-              key={label}
-              className="flex h-[52px] w-[52px] items-center justify-center rounded-full border border-white/10 bg-[#1E293B]"
-            >
-              <span className="font-montserrat text-[13px] font-bold text-white/80">
-                {label}
+        <div className="flex flex-1 items-center justify-between">
+          {playerAttributes.map((attribute) => (
+            <div key={attribute.label} className="flex items-center gap-[13px]">
+              <Image src={attribute.iconSrc} alt="" width={43} height={43} />
+              <span className="font-montserrat-alt text-[28px] font-extrabold leading-none text-white">
+                {attribute.value}
               </span>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="absolute left-[136px] right-[112px] top-[116px] bottom-[24px] rounded-[28px] border border-white/8 bg-[#151D2B] p-[22px]">
-        <TabletPageRenderer activeTab={activeTab} targetRole={targetRole} mode={mode} isEditable={isEditable} />
+      {showEditButton ? (
+        <button
+          type="button"
+          className="absolute right-[34px] top-[34px] flex h-[42px] w-[42px] items-center justify-center rounded-full transition-opacity duration-200 hover:opacity-75"
+          title="Edit character"
+        >
+          <Image src="/Edit-icon.png" alt="" width={32} height={32} />
+        </button>
+      ) : null}
+
+      <div className="absolute right-[22px] top-[145px] flex w-[90px] flex-col gap-[58px]">
+        {playerParameters.map((parameter) => (
+          <div key={parameter.label} className="flex flex-col items-center">
+            <Image src={parameter.iconSrc} alt="" width={55} height={55} />
+            <div className="mt-[20px] flex w-full items-center justify-center gap-[15px] font-montserrat-alt text-[27px] font-extrabold leading-none text-white">
+              <span>-</span>
+              <span>{parameter.value}</span>
+              <span>+</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="absolute bottom-[44px] left-[152px] right-[130px] top-[108px]">
+        <TabletPageRenderer
+          activeTab={activeTab}
+          targetRole={targetRole}
+          mode={mode}
+          isEditable={isEditable}
+        />
       </div>
     </div>
   );
@@ -112,8 +117,10 @@ function MasterTabletShellLayout({
   onTabChange,
   targetRole,
   mode,
+  onClose,
 }: SharedShellLayoutProps) {
   const isEditable = canEditTablet(targetRole, mode);
+
   return (
     <div className="relative h-full w-full overflow-hidden rounded-[34px] border border-white/10 bg-[#1B2230] shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
       <div className="absolute inset-[16px] rounded-[28px] border border-white/8 bg-[#0F1724]" />
@@ -124,11 +131,17 @@ function MasterTabletShellLayout({
           onTabChange={onTabChange}
           targetRole={targetRole}
           mode={mode}
+          onClose={onClose}
         />
       </div>
 
       <div className="absolute left-[136px] right-[24px] top-[24px] bottom-[24px] rounded-[28px] border border-white/8 bg-[#151D2B] p-[22px]">
-        <TabletPageRenderer activeTab={activeTab} targetRole={targetRole} mode={mode} isEditable={isEditable} />
+        <TabletPageRenderer
+          activeTab={activeTab}
+          targetRole={targetRole}
+          mode={mode}
+          isEditable={isEditable}
+        />
       </div>
     </div>
   );

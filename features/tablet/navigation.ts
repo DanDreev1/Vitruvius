@@ -1,31 +1,35 @@
 import type { TabletViewMode } from '@/lib/game/types';
 import type { TabletRole, TabletTab } from './types';
 
-export const PLAYER_TABLET_TABS: Array<{
+export type TabletTabConfig = {
   key: TabletTab;
   label: string;
   short: string;
-}> = [
-  { key: 'user', label: 'User', short: 'U' },
-  { key: 'skills', label: 'Skills', short: 'S' },
-  { key: 'backpack', label: 'Backpack', short: 'B' },
-  { key: 'library', label: 'Library', short: 'L' },
-  { key: 'relationship', label: 'Relations', short: 'R' },
-  { key: 'notes', label: 'Notes', short: 'N' },
-  { key: 'settings', label: 'Settings', short: '⚙' },
+  iconSrc?: string;
+};
+
+export const PLAYER_TABLET_TABS: TabletTabConfig[] = [
+  { key: 'user', label: 'User', short: 'U', iconSrc: '/navigation-imgs/player/User.png' },
+  { key: 'skills', label: 'Skills', short: 'S', iconSrc: '/navigation-imgs/player/Skills.png' },
+  { key: 'backpack', label: 'Backpack', short: 'B', iconSrc: '/navigation-imgs/player/Backpack.png' },
+  { key: 'library', label: 'Library', short: 'L', iconSrc: '/navigation-imgs/player/Diary.png' },
+  {
+    key: 'relationship',
+    label: 'Relations',
+    short: 'R',
+    iconSrc: '/navigation-imgs/player/Relationships.png',
+  },
+  { key: 'notes', label: 'Notes', short: 'N', iconSrc: '/navigation-imgs/player/Notes.png' },
+  { key: 'settings', label: 'Settings', short: 'G', iconSrc: '/navigation-imgs/player/Gear.png' },
 ];
 
-export const MASTER_TABLET_TABS: Array<{
-  key: TabletTab;
-  label: string;
-  short: string;
-}> = [
+export const MASTER_TABLET_TABS: TabletTabConfig[] = [
   { key: 'scene', label: 'Scene', short: 'S' },
   { key: 'party', label: 'Party', short: 'P' },
   { key: 'relationship', label: 'Relations', short: 'R' },
   { key: 'assets', label: 'Assets', short: 'A' },
   { key: 'notes', label: 'Notes', short: 'N' },
-  { key: 'settings', label: 'Settings', short: '⚙' },
+  { key: 'settings', label: 'Settings', short: 'G' },
 ];
 
 export function getVisibleTabletTabs(
