@@ -33,3 +33,19 @@ export type SceneImageRecord = {
   created_at: string;
   updated_at: string;
 };
+
+export type SceneAudienceTarget = {
+  participantId: string;
+  inGameCharacterId: string;
+  displayName: string;
+  avatarUrl: string | null;
+  role: 'player';
+};
+
+export type SceneAudienceState = {
+  participants: SceneAudienceTarget[];
+  selectedCharacterIds: string[];
+  disabled: boolean;
+  onToggleAll: () => void;
+  onToggleParticipant: (inGameCharacterId: string) => void;
+};

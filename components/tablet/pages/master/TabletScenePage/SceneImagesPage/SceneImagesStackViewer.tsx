@@ -25,17 +25,17 @@ const STACK_LAYOUT: Record<
   }
 > = {
   [-2]: {
-    x: -240,
-    scale: 0.8,
-    opacity: 0.38,
-    rotate: -5,
+    x: -170,
+    scale: 0.72,
+    opacity: 0.22,
+    rotate: -4,
     zIndex: 1,
   },
   [-1]: {
-    x: -125,
-    scale: 0.9,
-    opacity: 0.72,
-    rotate: -3,
+    x: -92,
+    scale: 0.86,
+    opacity: 0.55,
+    rotate: -2.5,
     zIndex: 2,
   },
   [0]: {
@@ -46,17 +46,17 @@ const STACK_LAYOUT: Record<
     zIndex: 5,
   },
   [1]: {
-    x: 125,
-    scale: 0.9,
-    opacity: 0.72,
-    rotate: 3,
+    x: 92,
+    scale: 0.86,
+    opacity: 0.55,
+    rotate: 2.5,
     zIndex: 2,
   },
   [2]: {
-    x: 240,
-    scale: 0.8,
-    opacity: 0.38,
-    rotate: 5,
+    x: 170,
+    scale: 0.72,
+    opacity: 0.22,
+    rotate: 4,
     zIndex: 1,
   },
 };
@@ -121,10 +121,10 @@ export default function SceneImagesStackViewer({
 
   return (
     <div
-      className="relative h-full w-full overflow-hidden rounded-[24px] bg-[#0B1327]"
+      className="relative h-full w-full overflow-hidden rounded-[24px] bg-[#0B1327] px-[28px] py-[18px]"
       onWheel={handleWheel}
     >
-      <div className="absolute inset-0">
+      <div className="absolute inset-[18px_28px_82px_28px]">
         {visibleCards.map(({ item, index, offset }) => {
           const layout = STACK_LAYOUT[offset];
           const isActive = offset === 0;
@@ -164,7 +164,7 @@ export default function SceneImagesStackViewer({
               }}
               style={{ zIndex: layout.zIndex }}
               className={[
-                "absolute left-1/2 top-[46%] flex h-[470px] w-[310px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[34px] border-[2px] border-black bg-[#D9D9D9] shadow-[0_18px_50px_rgba(0,0,0,0.28)]",
+                "absolute left-1/2 top-[46%] flex h-[210px] w-[210px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[30px] border-[2px] border-black bg-[#D9D9D9] shadow-[0_18px_50px_rgba(0,0,0,0.28)]",
                 isActive ? "cursor-default" : "cursor-pointer",
               ].join(" ")}
             >

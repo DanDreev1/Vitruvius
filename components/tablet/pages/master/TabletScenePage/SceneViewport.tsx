@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 import { SCENE_TAB_ANIMATION_MS } from "@/features/tablet/master/scene/constants";
 import type {
+  SceneAudienceState,
   SceneDirection,
   SceneTab,
 } from "@/features/tablet/master/scene/types";
@@ -14,7 +15,9 @@ import SceneMusicPage from "./SceneMusicPage";
 type SceneViewportProps = {
   activeTab: SceneTab;
   direction: SceneDirection;
+  sessionId: string;
   inGameWorldId: string | null;
+  onAudienceStateChange: (state: SceneAudienceState | null) => void;
 };
 
 const transition = {
@@ -25,7 +28,9 @@ const transition = {
 export default function SceneViewport({
   activeTab,
   direction,
+  sessionId,
   inGameWorldId,
+  onAudienceStateChange,
 }: SceneViewportProps) {
   return (
     <div className="relative h-full w-full overflow-hidden">
@@ -49,7 +54,11 @@ export default function SceneViewport({
           className="absolute inset-0"
         >
           {activeTab === "images" ? (
-            <SceneImagesPage inGameWorldId={inGameWorldId} />
+            <SceneImagesPage
+              sessionId={sessionId}
+              inGameWorldId={inGameWorldId}
+              onAudienceStateChange={onAudienceStateChange}
+            />
           ) : (
             <SceneMusicPage />
           )}

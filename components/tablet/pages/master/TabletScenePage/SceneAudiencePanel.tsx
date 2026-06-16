@@ -1,35 +1,78 @@
 'use client';
 
-import type { SceneAudienceParticipant } from '@/features/tablet/master/scene/types';
+import type { SceneAudienceTarget } from '@/features/tablet/master/scene/types';
 
 type SceneAudiencePanelProps = {
-  participants: SceneAudienceParticipant[];
-  activeAudienceId?: string;
-  onAudienceSelect?: (participantId: string) => void;
+  participants: SceneAudienceTarget[];
+  selectedCharacterIds: string[];
+  disabled?: boolean;
+  onToggleAll: () => void;
+  onToggleParticipant: (inGameCharacterId: string) => void;
 };
-
-function getRoleLabel(role: SceneAudienceParticipant['role']) {
-  return role === 'master' ? 'Master' : 'Player';
-}
 
 export default function SceneAudiencePanel({
   participants,
-  activeAudienceId,
-  onAudienceSelect,
+  selectedCharacterIds,
+  disabled = false,
+  onToggleAll,
+  onToggleParticipant,
 }: SceneAudiencePanelProps) {
+  const isAllSelected =
+    participants.length > 0 &&
+    participants.every((participant) =>
+      selectedCharacterIds.includes(participant.inGameCharacterId)
+    );
+
   return (
     <div className="flex h-full flex-col gap-[18px]">
+      <button
+        type="button"
+        onClick={onToggleAll}
+        disabled={disabled}
+        className={[
+          'flex min-h-[72px] w-full items-center gap-[18px] rounded-[22px] border border-white px-[18px] py-[12px] text-left transition-all duration-200',
+          disabled
+            ? 'cursor-not-allowed bg-transparent opacity-45'
+            : isAllSelected
+              ? 'bg-white/10'
+              : 'bg-transparent hover:bg-white/5',
+        ].join(' ')}
+      >
+        <div className="relative shrink-0">
+          <div className="h-[48px] w-[48px] rounded-full bg-white/40" />
+          {isAllSelected ? (
+            <div className="absolute -bottom-[2px] -right-[2px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white text-[11px] font-bold text-black">
+              ✓
+            </div>
+          ) : null}
+        </div>
+
+        <div className="min-w-0">
+          <p className="truncate font-montserrat-alt text-[18px] font-extrabold text-white">
+            All
+          </p>
+          <p className="font-montserrat text-[14px] text-white/85">
+            Role: Player
+          </p>
+        </div>
+      </button>
+
       {participants.map((participant) => {
-        const isActive = activeAudienceId === participant.id;
+        const isSelected = selectedCharacterIds.includes(participant.inGameCharacterId);
 
         return (
           <button
-            key={participant.id}
+            key={participant.inGameCharacterId}
             type="button"
-            onClick={() => onAudienceSelect?.(participant.id)}
+            onClick={() => onToggleParticipant(participant.inGameCharacterId)}
+            disabled={disabled}
             className={[
               'flex min-h-[72px] w-full items-center gap-[18px] rounded-[22px] border border-white px-[18px] py-[12px] text-left transition-all duration-200',
-              isActive ? 'bg-white/10' : 'bg-transparent hover:bg-white/5',
+              disabled
+                ? 'cursor-not-allowed bg-transparent opacity-45'
+                : isSelected
+                  ? 'bg-white/10'
+                  : 'bg-transparent hover:bg-white/5',
             ].join(' ')}
           >
             <div className="relative shrink-0">
@@ -43,9 +86,9 @@ export default function SceneAudiencePanel({
                 ) : null}
               </div>
 
-              {!participant.isAll ? (
-                <div className="absolute -bottom-[2px] -right-[2px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-[#D9D9D9] text-[10px] text-black">
-                  ✎
+              {isSelected ? (
+                <div className="absolute -bottom-[2px] -right-[2px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white text-[11px] font-bold text-black">
+                  ✓
                 </div>
               ) : null}
             </div>
@@ -55,7 +98,7 @@ export default function SceneAudiencePanel({
                 {participant.displayName}
               </p>
               <p className="font-montserrat text-[14px] text-white/85">
-                Role: {getRoleLabel(participant.role)}
+                Role: Player
               </p>
             </div>
           </button>

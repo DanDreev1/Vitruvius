@@ -288,6 +288,7 @@ export default function GameClient({ code }: GameClientProps) {
         mode={tabletState?.mode ?? null}
         targetRole={tabletState?.targetRole ?? null}
         onClose={handleCloseTablet}
+        sessionId={gameData.session.id}
         inGameWorldId={inGameWorldId}
         participants={mappedTabletParticipants}
       />

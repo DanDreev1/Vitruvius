@@ -5,6 +5,119 @@ import {
 } from './constants';
 import type { SceneImageRecord } from './types';
 
+import type { SceneAudienceTarget } from './types';
+
+export async function getSceneImageAudience(
+  sessionId: string
+): Promise<SceneAudienceTarget[]> {
+  const { data: participants, error: participantsError } = await supabase
+    .from('session_participants')
+    .select('id, display_name, avatar_url, role, joined_at')
+    .eq('session_id', sessionId)
+    .eq('role', 'player')
+    .order('joined_at', { ascending: true });
+
+  if (participantsError) {
+    throw new Error(`Failed to load scene audience: ${participantsError.message}`);
+  }
+
+  const participantIds = (participants ?? []).map((participant) => participant.id as string);
+
+  if (!participantIds.length) {
+    return [];
+  }
+
+  const { data: inGameCharacters, error: charactersError } = await supabase
+    .from('in_game_characters')
+    .select('id, participant_id')
+    .eq('session_id', sessionId)
+    .in('participant_id', participantIds);
+
+  if (charactersError) {
+    throw new Error(`Failed to load in-game characters for scene audience: ${charactersError.message}`);
+  }
+
+  const characterIdByParticipantId = new Map(
+    (inGameCharacters ?? []).map((character) => [
+      character.participant_id as string,
+      character.id as string,
+    ])
+  );
+
+  return (participants ?? []).flatMap((participant) => {
+    const inGameCharacterId = characterIdByParticipantId.get(participant.id as string);
+
+    if (!inGameCharacterId) {
+      return [];
+    }
+
+    return [
+      {
+        participantId: participant.id as string,
+        inGameCharacterId,
+        displayName: (participant.display_name as string | null) ?? 'Nickname',
+        avatarUrl: (participant.avatar_url as string | null) ?? null,
+        role: 'player' as const,
+      },
+    ];
+  });
+}
+
+export async function getSceneImageTargets(
+  inGameSceneImageId: string
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('in_game_worlds_scene_image_targets')
+    .select('in_game_character_id')
+    .eq('in_game_scene_image_id', inGameSceneImageId)
+    .not('in_game_character_id', 'is', null);
+
+  if (error) {
+    throw new Error(`Failed to load scene image targets: ${error.message}`);
+  }
+
+  return (data ?? [])
+    .map((row) => row.in_game_character_id as string | null)
+    .filter((value): value is string => Boolean(value));
+}
+
+export async function addSceneImageTarget(
+  inGameSceneImageId: string,
+  inGameCharacterId: string
+) {
+  const { error } = await supabase
+    .from('in_game_worlds_scene_image_targets')
+    .upsert(
+        {
+            in_game_scene_image_id: inGameSceneImageId,
+            in_game_character_id: inGameCharacterId,
+        },
+        {
+            onConflict: 'in_game_scene_image_id,in_game_character_id',
+            ignoreDuplicates: true,
+        }
+    );
+
+  if (error) {
+    throw new Error(`Failed to add scene image target: ${error.message}`);
+  }
+}
+
+export async function removeSceneImageTarget(
+  inGameSceneImageId: string,
+  inGameCharacterId: string
+) {
+  const { error } = await supabase
+    .from('in_game_worlds_scene_image_targets')
+    .delete()
+    .eq('in_game_scene_image_id', inGameSceneImageId)
+    .eq('in_game_character_id', inGameCharacterId);
+
+  if (error) {
+    throw new Error(`Failed to remove scene image target: ${error.message}`);
+  }
+}
+
 function sanitizeFileName(fileName: string) {
   return fileName.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.\-_]/g, '').toLowerCase();
 }

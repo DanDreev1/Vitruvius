@@ -4,9 +4,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 import { SCENE_PLACEHOLDER_ICON_PATHS } from "@/features/tablet/master/scene/constants";
 import type {
+  SceneAudienceState,
   SceneImageItem,
   SceneImagesViewMode,
 } from "@/features/tablet/master/scene/types";
+import { useSceneImageTargets } from "@/features/tablet/master/scene/useSceneImageTargets";
 import { useSceneImages } from "@/features/tablet/master/scene/useSceneImages";
 
 import SceneImageLightbox from "./SceneImageLightbox";
@@ -23,11 +25,15 @@ const addCard: SceneImageItem = {
 };
 
 type SceneImagesPageProps = {
+  sessionId: string;
   inGameWorldId: string | null;
+  onAudienceStateChange: (state: SceneAudienceState | null) => void;
 };
 
 export default function SceneImagesPage({
+  sessionId,
   inGameWorldId,
+  onAudienceStateChange,
 }: SceneImagesPageProps) {
   const [viewMode, setViewMode] = useState<SceneImagesViewMode>("stack");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -58,6 +64,40 @@ export default function SceneImagesPage({
 
   const activeItem = items[activeIndex] ?? items[0];
   const isAddCardActive = activeItem?.isAddCard === true;
+
+  const activeImageId = !isAddCardActive ? activeItem.id : null;
+
+  const {
+    audience,
+    selectedCharacterIds,
+    error: targetsError,
+    toggleParticipant,
+    toggleAll,
+  } = useSceneImageTargets(sessionId, activeImageId, isAddCardActive);
+
+  useEffect(() => {
+    onAudienceStateChange({
+      participants: audience,
+      selectedCharacterIds,
+      disabled: isAddCardActive || !activeImageId,
+      onToggleAll: toggleAll,
+      onToggleParticipant: toggleParticipant,
+    });
+
+    return () => {
+      onAudienceStateChange(null);
+    };
+  }, [
+    onAudienceStateChange,
+    audience,
+    selectedCharacterIds,
+    isAddCardActive,
+    activeImageId,
+    toggleAll,
+    toggleParticipant,
+  ]);
+
+  const combinedError = error ?? targetsError;
 
   const openLightbox = () => {
     if (isAddCardActive) return;

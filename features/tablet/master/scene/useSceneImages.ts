@@ -92,27 +92,20 @@ export function useSceneImages(inGameWorldId: string | null) {
   }, []);
 
   const toggleImageActive = useCallback(async (imageId: string, nextIsActive: boolean) => {
-    setError(null);
+  setError(null);
 
-    try {
-      const updatedRecord = await updateInGameWorldSceneImageActive(imageId, nextIsActive);
-
-      setRecords((currentRecords) =>
-        currentRecords.map((record) =>
-          record.id === imageId ? updatedRecord : record
-        )
-      );
-
-      return updatedRecord;
-    } catch (toggleError) {
-      const message =
-        toggleError instanceof Error
-          ? toggleError.message
-          : 'Failed to update scene image visibility.';
-      setError(message);
-      throw toggleError;
-    }
-  }, []);
+  try {
+    await updateInGameWorldSceneImageActive(imageId, nextIsActive);
+    await loadImages();
+  } catch (toggleError) {
+    const message =
+      toggleError instanceof Error
+        ? toggleError.message
+        : 'Failed to update scene image visibility.';
+    setError(message);
+    throw toggleError;
+  }
+}, [loadImages]);
 
   const images = useMemo(
     () => records.map(mapRecordToItem),

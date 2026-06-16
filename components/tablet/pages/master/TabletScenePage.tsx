@@ -9,8 +9,10 @@ import type { SceneAudienceParticipant } from "@/features/tablet/master/scene/ty
 import SceneAudiencePanel from "./TabletScenePage/SceneAudiencePanel";
 import SceneTabSwitcher from "./TabletScenePage/SceneTabSwitcher";
 import SceneViewport from "./TabletScenePage/SceneViewport";
+import type { SceneAudienceState } from "@/features/tablet/master/scene/types";
 
 type TabletScenePageProps = {
+  sessionId: string;
   inGameWorldId: string | null;
   participants?: Array<{
     id: string;
@@ -21,10 +23,13 @@ type TabletScenePageProps = {
 };
 
 export default function TabletScenePage({
+  sessionId,
   inGameWorldId,
   participants = [],
 }: TabletScenePageProps) {
   const { activeTab, changeTab } = useSceneTabs();
+  const [sceneAudienceState, setSceneAudienceState] =
+    useState<SceneAudienceState | null>(null);
   const { direction } = useSceneAnimation(activeTab);
 
   const audienceParticipants = useMemo<SceneAudienceParticipant[]>(() => {
@@ -57,15 +62,21 @@ export default function TabletScenePage({
         <SceneViewport
           activeTab={activeTab}
           direction={direction}
+          sessionId={sessionId}
           inGameWorldId={inGameWorldId}
+          onAudienceStateChange={setSceneAudienceState}
         />
       </div>
 
       <div className="absolute right-0 top-[64px] bottom-[128px] w-[326px]">
         <SceneAudiencePanel
-          participants={audienceParticipants}
-          activeAudienceId={activeAudienceId}
-          onAudienceSelect={setActiveAudienceId}
+          participants={sceneAudienceState?.participants ?? []}
+          selectedCharacterIds={sceneAudienceState?.selectedCharacterIds ?? []}
+          disabled={sceneAudienceState?.disabled ?? true}
+          onToggleAll={sceneAudienceState?.onToggleAll ?? (() => {})}
+          onToggleParticipant={
+            sceneAudienceState?.onToggleParticipant ?? (() => {})
+          }
         />
       </div>
 

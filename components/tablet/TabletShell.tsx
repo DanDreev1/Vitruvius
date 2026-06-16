@@ -17,6 +17,7 @@ type TabletShellProps = {
   mode: TabletViewMode;
   targetRole: TabletRole;
   onClose: () => void;
+  sessionId: string;
   inGameWorldId: string | null;
   participants: Array<{
     id: string;
@@ -51,6 +52,7 @@ function PlayerTabletShellLayout({
   mode,
   targetRole,
   onClose,
+  sessionId,
   inGameWorldId,
   participants,
 }: SharedShellLayoutProps) {
@@ -115,6 +117,7 @@ function PlayerTabletShellLayout({
           targetRole={targetRole}
           mode={mode}
           isEditable={isEditable}
+          sessionId={sessionId}
           inGameWorldId={inGameWorldId}
           participants={participants}
         />
@@ -129,6 +132,7 @@ function MasterTabletShellLayout({
   targetRole,
   mode,
   onClose,
+  sessionId,
   inGameWorldId,
   participants,
 }: SharedShellLayoutProps) {
@@ -154,6 +158,7 @@ function MasterTabletShellLayout({
           targetRole={targetRole}
           mode={mode}
           isEditable={isEditable}
+          sessionId={sessionId}
           inGameWorldId={inGameWorldId}
           participants={participants}
         />

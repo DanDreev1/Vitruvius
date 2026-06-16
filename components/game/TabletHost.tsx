@@ -11,6 +11,7 @@ type TabletHostProps = {
   mode: TabletViewMode | null;
   targetRole: TabletRole | null;
   onClose: () => void;
+  sessionId: string;
   inGameWorldId: string | null;
   participants: Array<{
     id: string;
@@ -27,6 +28,7 @@ export default function TabletHost({
   mode,
   targetRole,
   onClose,
+  sessionId,
   inGameWorldId,
   participants,
 }: TabletHostProps) {
@@ -42,6 +44,7 @@ export default function TabletHost({
         mode={mode}
         targetRole={targetRole}
         onClose={onClose}
+        sessionId={sessionId}
         inGameWorldId={inGameWorldId}
         participants={participants}
       />

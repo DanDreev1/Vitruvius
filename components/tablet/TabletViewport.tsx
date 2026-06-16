@@ -24,6 +24,7 @@ type TabletViewportProps = {
   mode: TabletViewMode;
   targetRole: TabletRole;
   onClose: () => void;
+  sessionId: string;
   inGameWorldId: string | null;
   participants: Array<{
     id: string;
@@ -43,6 +44,7 @@ export default function TabletViewport({
   mode,
   targetRole,
   onClose,
+  sessionId,
   inGameWorldId,
   participants,
 }: TabletViewportProps) {
@@ -129,6 +131,7 @@ export default function TabletViewport({
           mode={mode}
           targetRole={targetRole}
           onClose={onClose}
+          sessionId={sessionId}
           inGameWorldId={inGameWorldId}
           participants={participants}
         />

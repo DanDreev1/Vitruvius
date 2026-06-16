@@ -24,6 +24,7 @@ type TabletPageRendererProps = {
   targetRole: TabletRole;
   mode: TabletViewMode;
   isEditable: boolean;
+  sessionId: string;
   inGameWorldId: string | null;
   participants?: Array<{
     id: string;
@@ -38,6 +39,7 @@ export default function TabletPageRenderer({
   targetRole,
   mode,
   isEditable,
+  sessionId,
   inGameWorldId,
   participants = [],
 }: TabletPageRendererProps) {
@@ -50,6 +52,7 @@ export default function TabletPageRenderer({
       case "scene":
         return (
           <TabletScenePage
+            sessionId={sessionId}
             inGameWorldId={inGameWorldId}
             participants={participants}
           />
@@ -67,6 +70,7 @@ export default function TabletPageRenderer({
       default:
         return (
           <TabletScenePage
+            sessionId={sessionId}
             inGameWorldId={inGameWorldId}
             participants={participants}
           />
