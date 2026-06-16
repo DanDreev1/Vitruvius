@@ -781,7 +781,7 @@ function PlayerTabletShellLayout({
                       disabled={
                         attribute.value >= PLAYER_TABLET_ATTRIBUTE_MAX_VALUE
                       }
-                      className="flex h-[18px] w-[22px] items-center justify-center rounded-[6px] bg-white text-[15px] font-black leading-none text-[#172033] disabled:opacity-35"
+                      className="flex h-[18px] w-[22px] items-center justify-center rounded-[6px] border border-white/55 bg-transparent text-[15px] font-black leading-none text-white disabled:opacity-35"
                       aria-label={`Increase ${attribute.label}`}
                     >
                       +
@@ -792,7 +792,7 @@ function PlayerTabletShellLayout({
                       disabled={
                         attribute.value <= PLAYER_TABLET_ATTRIBUTE_MIN_VALUE
                       }
-                      className="flex h-[18px] w-[22px] items-center justify-center rounded-[6px] bg-white text-[15px] font-black leading-none text-[#172033] disabled:opacity-35"
+                      className="flex h-[18px] w-[22px] items-center justify-center rounded-[6px] border border-white/55 bg-transparent text-[15px] font-black leading-none text-white disabled:opacity-35"
                       aria-label={`Decrease ${attribute.label}`}
                     >
                       -
@@ -851,7 +851,7 @@ function PlayerTabletShellLayout({
             <div key={parameter.id} className="flex flex-col items-center">
               <Image src={iconSrc} alt="" width={55} height={55} />
               {isEditMode ? (
-                <div className="mt-[20px] flex w-full items-center justify-center gap-[12px] font-montserrat-alt text-[27px] font-extrabold leading-none text-white">
+                <div className="mt-[20px] flex w-full items-center justify-center gap-[4px] font-montserrat-alt text-[27px] font-extrabold leading-none text-white">
                   <button
                     type="button"
                     onClick={() => handleParameterDelta(parameter.id, -1)}
@@ -859,17 +859,19 @@ function PlayerTabletShellLayout({
                       parameter.currentValue <=
                       PLAYER_TABLET_PARAMETER_MIN_VALUE
                     }
-                    className="leading-none disabled:opacity-35"
+                    className="flex h-[40px] w-[28px] items-center justify-center leading-none disabled:opacity-35"
                     aria-label={`Decrease ${parameter.label}`}
                   >
                     -
                   </button>
-                  <span>{parameter.currentValue}</span>
+                  <span className="min-w-[24px] text-center">
+                    {parameter.currentValue}
+                  </span>
                   <button
                     type="button"
                     onClick={() => handleParameterDelta(parameter.id, 1)}
                     disabled={isIncreaseDisabled}
-                    className="leading-none disabled:opacity-35"
+                    className="flex h-[40px] w-[28px] items-center justify-center leading-none disabled:opacity-35"
                     aria-label={`Increase ${parameter.label}`}
                   >
                     +
