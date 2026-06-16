@@ -11,6 +11,7 @@ import type {
     SessionParticipant,
     World
 } from './types';
+import { prepareInGameWorldForSession } from '@/features/worlds/api';
 
 export async function getLiveSessionByCode(code: string) {
     const { data, error } = await supabase
@@ -109,10 +110,10 @@ export async function ensureParticipant(
     if (insertError) throw new Error(insertError.message);
 }
 
-export async function getOwnedWorlds(userId: string) {
+export async function getOwnedWorlds(userId: string): Promise<World[]> {
     const { data, error } = await supabase
         .from('worlds')
-        .select('id, owner_user_id, title, description, cover_url')
+        .select('id, owner_user_id, name, avatar_url')
         .eq('owner_user_id', userId)
         .order('created_at', { ascending: false });
 
@@ -253,6 +254,8 @@ export async function startLobbyGame(sessionId: string) {
             `Prepared ${characterPreparation.createdCount} in-game characters for ${characterPreparation.playerCount} players.`
         );
     }
+
+    await prepareInGameWorldForSession(sessionId);
 
     const { error } = await supabase
         .from('live_sessions')

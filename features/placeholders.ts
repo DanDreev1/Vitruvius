@@ -19,14 +19,15 @@ export function createCharacterPlaceholder(participant: SessionParticipant) {
   };
 }
 
-export function createWorldPlaceholder(masterParticipant: SessionParticipant | null) {
+export function createInGameWorldPlaceholder(
+  liveSessionId: string | null = null
+) {
   return {
     id: null,
-    owner_user_id: masterParticipant?.user_id ?? null,
-    title: 'Untitled world',
-    description:
-      'Default world placeholder for the first version of the game. NPCs, items and images can be configured later.',
-    cover_url: null,
+    live_session_id: liveSessionId,
+    source_world_id: null,
+    name: 'Untitled world',
+    avatar_url: null,
     is_placeholder: true
   };
 }

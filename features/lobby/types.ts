@@ -28,11 +28,10 @@ export type Character = {
 };
 
 export type World = {
-    id: string;
-    owner_user_id: string;
-    title: string;
-    description: string | null;
-    cover_url: string | null;
+  id: string;
+  owner_user_id: string;
+  name: string;
+  avatar_url: string | null;
 };
 
 export type LobbyScreenProps = {

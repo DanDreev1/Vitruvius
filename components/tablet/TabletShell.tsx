@@ -17,6 +17,13 @@ type TabletShellProps = {
   mode: TabletViewMode;
   targetRole: TabletRole;
   onClose: () => void;
+  inGameWorldId: string | null;
+  participants: Array<{
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    role: "master" | "player";
+  }>;
 };
 
 type SharedShellLayoutProps = TabletShellProps;
@@ -44,6 +51,8 @@ function PlayerTabletShellLayout({
   mode,
   targetRole,
   onClose,
+  inGameWorldId,
+  participants,
 }: SharedShellLayoutProps) {
   const isEditable = canEditTablet(targetRole, mode);
   const showEditButton = isEditable && editablePlayerTabs.includes(activeTab);
@@ -106,6 +115,8 @@ function PlayerTabletShellLayout({
           targetRole={targetRole}
           mode={mode}
           isEditable={isEditable}
+          inGameWorldId={inGameWorldId}
+          participants={participants}
         />
       </div>
     </div>
@@ -118,6 +129,8 @@ function MasterTabletShellLayout({
   targetRole,
   mode,
   onClose,
+  inGameWorldId,
+  participants,
 }: SharedShellLayoutProps) {
   const isEditable = canEditTablet(targetRole, mode);
 
@@ -141,6 +154,8 @@ function MasterTabletShellLayout({
           targetRole={targetRole}
           mode={mode}
           isEditable={isEditable}
+          inGameWorldId={inGameWorldId}
+          participants={participants}
         />
       </div>
     </div>

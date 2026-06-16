@@ -11,6 +11,7 @@ import GameViewport from "@/components/game/GameViewport";
 import TabletHost from "./TabletHost";
 import { disbandLobby, leaveLobby } from "@/features/lobby/api";
 import { getGameSessionByCode } from "@/features/game/getGameSessionByCode";
+import { getInGameWorldBySessionId } from "@/features/worlds/api";
 
 import type {
   GameParticipant,
@@ -40,6 +41,7 @@ export default function GameClient({ code }: GameClientProps) {
   const [loading, setLoading] = useState(true);
   const [isLeavingGame, setIsLeavingGame] = useState(false);
   const [tabletState, setTabletState] = useState<OpenTabletState>(null);
+  const [inGameWorldId, setInGameWorldId] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -59,6 +61,7 @@ export default function GameClient({ code }: GameClientProps) {
         }
 
         const currentUserId = authSession.user.id;
+        console.log("auth uid from session:", currentUserId);
 
         const { session, participants } = await getGameSessionByCode(code);
 
@@ -76,6 +79,11 @@ export default function GameClient({ code }: GameClientProps) {
           return;
         }
 
+        const inGameWorld = await getInGameWorldBySessionId(session.id);
+
+        console.log("live session id:", session.id);
+        console.log("loaded in-game world:", inGameWorld);
+
         if (!isMounted) {
           return;
         }
@@ -85,6 +93,8 @@ export default function GameClient({ code }: GameClientProps) {
           participants,
           currentUserId,
         });
+
+        setInGameWorldId(inGameWorld?.id ?? null);
       } catch (error) {
         console.error(error);
         router.replace("/");
@@ -236,6 +246,17 @@ export default function GameClient({ code }: GameClientProps) {
     }
   }, [currentParticipant, gameData, isLeavingGame, router]);
 
+  const mappedTabletParticipants = useMemo(() => {
+    if (!gameData) return [];
+
+    return gameData.participants.map((participant) => ({
+      id: participant.id,
+      display_name: participant.displayName ?? null,
+      avatar_url: participant.avatarUrl ?? null,
+      role: participant.role,
+    }));
+  }, [gameData]);
+
   if (loading) {
     return <div className="p-6 text-white">Loading game...</div>;
   }
@@ -267,6 +288,8 @@ export default function GameClient({ code }: GameClientProps) {
         mode={tabletState?.mode ?? null}
         targetRole={tabletState?.targetRole ?? null}
         onClose={handleCloseTablet}
+        inGameWorldId={inGameWorldId}
+        participants={mappedTabletParticipants}
       />
     </>
   );

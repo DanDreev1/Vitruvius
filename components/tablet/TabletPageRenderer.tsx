@@ -1,31 +1,36 @@
-'use client';
+"use client";
 
-import { isTabletTabAllowed } from '@/features/tablet/navigation';
-import type { TabletRole, TabletTab } from '@/features/tablet/types';
-import type { TabletViewMode } from '@/lib/game/types';
+import { isTabletTabAllowed } from "@/features/tablet/navigation";
+import type { TabletRole, TabletTab } from "@/features/tablet/types";
+import type { TabletViewMode } from "@/lib/game/types";
 
-import TabletUserPage from './pages/player/TabletUserPage';
-import TabletSkillsPage from './pages/player/TabletSkillsPage';
-import TabletBackpackPage from './pages/player/TabletBackpackPage';
-import TabletLibraryPage from './pages/player/TabletLibraryPage';
-import TabletRelationshipPlayerPage from './pages/player/TabletRelationshipPage';
-import TabletSettingsPlayerPage from './pages/player/TabletSettingsPage';
+import TabletUserPage from "./pages/player/TabletUserPage";
+import TabletSkillsPage from "./pages/player/TabletSkillsPage";
+import TabletBackpackPage from "./pages/player/TabletBackpackPage";
+import TabletLibraryPage from "./pages/player/TabletLibraryPage";
+import TabletRelationshipPlayerPage from "./pages/player/TabletRelationshipPage";
+import TabletSettingsPlayerPage from "./pages/player/TabletSettingsPage";
 
-import TabletScenePage from './pages/master/TabletScenePage';
-import TabletPartyPage from './pages/master/TabletPartyPage';
-import TabletAssetsPage from './pages/master/TabletAssetsPage';
-import TabletRelationshipMasterPage from './pages/master/TabletRelationshipPage';
-import TabletSettingsMasterPage from './pages/master/TabletSettingsPage';
+import TabletScenePage from "./pages/master/TabletScenePage";
+import TabletPartyPage from "./pages/master/TabletPartyPage";
+import TabletAssetsPage from "./pages/master/TabletAssetsPage";
+import TabletRelationshipMasterPage from "./pages/master/TabletRelationshipPage";
+import TabletSettingsMasterPage from "./pages/master/TabletSettingsPage";
 
-
-import TabletNotesPage from './pages/shared/TabletNotesPage';
-
+import TabletNotesPage from "./pages/shared/TabletNotesPage";
 
 type TabletPageRendererProps = {
   activeTab: TabletTab;
   targetRole: TabletRole;
   mode: TabletViewMode;
   isEditable: boolean;
+  inGameWorldId: string | null;
+  participants?: Array<{
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    role: "master" | "player";
+  }>;
 };
 
 export default function TabletPageRenderer({
@@ -33,44 +38,56 @@ export default function TabletPageRenderer({
   targetRole,
   mode,
   isEditable,
+  inGameWorldId,
+  participants = [],
 }: TabletPageRendererProps) {
   if (!isTabletTabAllowed(activeTab, targetRole, mode)) {
     return null;
   }
 
-  if (targetRole === 'master') {
+  if (targetRole === "master") {
     switch (activeTab) {
-      case 'scene':
-        return <TabletScenePage />;
-      case 'party':
+      case "scene":
+        return (
+          <TabletScenePage
+            inGameWorldId={inGameWorldId}
+            participants={participants}
+          />
+        );
+      case "party":
         return <TabletPartyPage />;
-      case 'relationship':
+      case "relationship":
         return <TabletRelationshipMasterPage />;
-      case 'assets':
+      case "assets":
         return <TabletAssetsPage />;
-      case 'notes':
+      case "notes":
         return <TabletNotesPage />;
-      case 'settings':
+      case "settings":
         return <TabletSettingsMasterPage />;
       default:
-        return <TabletScenePage />;
+        return (
+          <TabletScenePage
+            inGameWorldId={inGameWorldId}
+            participants={participants}
+          />
+        );
     }
   }
 
   switch (activeTab) {
-    case 'user':
+    case "user":
       return <TabletUserPage isEditable={isEditable} />;
-    case 'skills':
+    case "skills":
       return <TabletSkillsPage isEditable={isEditable} />;
-    case 'backpack':
+    case "backpack":
       return <TabletBackpackPage isEditable={isEditable} />;
-    case 'library':
+    case "library":
       return <TabletLibraryPage isEditable={isEditable} />;
-    case 'relationship':
+    case "relationship":
       return <TabletRelationshipPlayerPage isEditable={isEditable} />;
-    case 'notes':
+    case "notes":
       return <TabletNotesPage />;
-    case 'settings':
+    case "settings":
       return <TabletSettingsPlayerPage />;
     default:
       return <TabletUserPage isEditable={isEditable} />;

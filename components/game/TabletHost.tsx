@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import TabletViewport from '@/components/tablet/TabletViewport';
-import type { TabletViewMode } from '@/lib/game/types';
-import type { TabletRole } from '@/features/tablet/types';
+import TabletViewport from "@/components/tablet/TabletViewport";
+import type { TabletViewMode } from "@/lib/game/types";
+import type { TabletRole } from "@/features/tablet/types";
 
 type TabletHostProps = {
   isOpen: boolean;
@@ -11,6 +11,13 @@ type TabletHostProps = {
   mode: TabletViewMode | null;
   targetRole: TabletRole | null;
   onClose: () => void;
+  inGameWorldId: string | null;
+  participants: Array<{
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    role: "master" | "player";
+  }>;
 };
 
 export default function TabletHost({
@@ -20,6 +27,8 @@ export default function TabletHost({
   mode,
   targetRole,
   onClose,
+  inGameWorldId,
+  participants,
 }: TabletHostProps) {
   if (!isOpen || !targetUserId || !mode || !targetRole) {
     return null;
@@ -33,6 +42,8 @@ export default function TabletHost({
         mode={mode}
         targetRole={targetRole}
         onClose={onClose}
+        inGameWorldId={inGameWorldId}
+        participants={participants}
       />
     </div>
   );

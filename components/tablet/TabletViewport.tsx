@@ -24,6 +24,13 @@ type TabletViewportProps = {
   mode: TabletViewMode;
   targetRole: TabletRole;
   onClose: () => void;
+  inGameWorldId: string | null;
+  participants: Array<{
+    id: string;
+    display_name: string | null;
+    avatar_url: string | null;
+    role: "master" | "player";
+  }>;
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -36,13 +43,15 @@ export default function TabletViewport({
   mode,
   targetRole,
   onClose,
+  inGameWorldId,
+  participants,
 }: TabletViewportProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const defaultTab = useMemo(
     () => getDefaultTabletTab(targetRole, mode),
-    [targetRole, mode]
+    [targetRole, mode],
   );
   const [selectedTab, setSelectedTab] = useState<TabletTab>(() =>
     getDefaultTabletTab(targetRole, mode),
@@ -120,6 +129,8 @@ export default function TabletViewport({
           mode={mode}
           targetRole={targetRole}
           onClose={onClose}
+          inGameWorldId={inGameWorldId}
+          participants={participants}
         />
       </div>
     </div>
