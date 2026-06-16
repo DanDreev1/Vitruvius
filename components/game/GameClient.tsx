@@ -251,6 +251,7 @@ export default function GameClient({ code }: GameClientProps) {
 
     return gameData.participants.map((participant) => ({
       id: participant.id,
+      user_id: participant.userId,
       display_name: participant.displayName ?? null,
       avatar_url: participant.avatarUrl ?? null,
       role: participant.role,

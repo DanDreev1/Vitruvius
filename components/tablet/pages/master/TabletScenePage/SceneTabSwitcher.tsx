@@ -45,7 +45,7 @@ export default function SceneTabSwitcher({
                   }}
                 >
                   <img
-                    src="/tablet/master/scene/tabs/tab-active-frame.svg"
+                    src="/tablet/master/scene/tabs/tab-active-frame-right.svg"
                     alt=""
                     className="h-[60px] w-[60px] object-contain"
                   />

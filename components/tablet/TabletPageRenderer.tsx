@@ -1,7 +1,15 @@
 "use client";
 
 import { isTabletTabAllowed } from "@/features/tablet/navigation";
-import type { TabletRole, TabletTab } from "@/features/tablet/types";
+import type {
+  TabletParticipant,
+  TabletRole,
+  TabletTab,
+} from "@/features/tablet/types";
+import type {
+  TabletPlayerCharacter,
+  TabletPlayerCharacterDraft,
+} from "@/features/tablet/player/types";
 import type { TabletViewMode } from "@/lib/game/types";
 
 import TabletUserPage from "./pages/player/TabletUserPage";
@@ -26,12 +34,17 @@ type TabletPageRendererProps = {
   isEditable: boolean;
   sessionId: string;
   inGameWorldId: string | null;
-  participants?: Array<{
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    role: "master" | "player";
-  }>;
+  participants?: TabletParticipant[];
+  playerCharacter?: TabletPlayerCharacter | null;
+  isPlayerCharacterLoading?: boolean;
+  playerCharacterError?: string | null;
+  isEditMode?: boolean;
+  characterDraft?: TabletPlayerCharacterDraft;
+  portraitStatusMessage?: string | null;
+  isPortraitSelectionDisabled?: boolean;
+  onDescriptionChange?: (description: string) => void;
+  onPortraitChangeRequest?: () => boolean;
+  onPortraitFileSelect?: (file: File | null) => void;
 };
 
 export default function TabletPageRenderer({
@@ -42,6 +55,16 @@ export default function TabletPageRenderer({
   sessionId,
   inGameWorldId,
   participants = [],
+  playerCharacter = null,
+  isPlayerCharacterLoading = false,
+  playerCharacterError = null,
+  isEditMode = false,
+  characterDraft,
+  portraitStatusMessage = null,
+  isPortraitSelectionDisabled = false,
+  onDescriptionChange,
+  onPortraitChangeRequest,
+  onPortraitFileSelect,
 }: TabletPageRendererProps) {
   if (!isTabletTabAllowed(activeTab, targetRole, mode)) {
     return null;
@@ -80,7 +103,21 @@ export default function TabletPageRenderer({
 
   switch (activeTab) {
     case "user":
-      return <TabletUserPage isEditable={isEditable} />;
+      return (
+        <TabletUserPage
+          isEditable={isEditable}
+          character={playerCharacter}
+          isLoading={isPlayerCharacterLoading}
+          error={playerCharacterError}
+          isEditMode={isEditMode}
+          draft={characterDraft}
+          portraitStatusMessage={portraitStatusMessage}
+          isPortraitSelectionDisabled={isPortraitSelectionDisabled}
+          onDescriptionChange={onDescriptionChange}
+          onPortraitChangeRequest={onPortraitChangeRequest}
+          onPortraitFileSelect={onPortraitFileSelect}
+        />
+      );
     case "skills":
       return <TabletSkillsPage isEditable={isEditable} />;
     case "backpack":
@@ -94,6 +131,20 @@ export default function TabletPageRenderer({
     case "settings":
       return <TabletSettingsPlayerPage />;
     default:
-      return <TabletUserPage isEditable={isEditable} />;
+      return (
+        <TabletUserPage
+          isEditable={isEditable}
+          character={playerCharacter}
+          isLoading={isPlayerCharacterLoading}
+          error={playerCharacterError}
+          isEditMode={isEditMode}
+          draft={characterDraft}
+          portraitStatusMessage={portraitStatusMessage}
+          isPortraitSelectionDisabled={isPortraitSelectionDisabled}
+          onDescriptionChange={onDescriptionChange}
+          onPortraitChangeRequest={onPortraitChangeRequest}
+          onPortraitFileSelect={onPortraitFileSelect}
+        />
+      );
   }
 }

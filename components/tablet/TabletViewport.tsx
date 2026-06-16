@@ -10,11 +10,16 @@ import {
   TABLET_MIN_SCALE,
 } from "@/lib/tablet/config";
 import type { TabletViewMode } from "@/lib/game/types";
-import type { TabletRole, TabletTab } from "@/features/tablet/types";
+import type {
+  TabletParticipant,
+  TabletRole,
+  TabletTab,
+} from "@/features/tablet/types";
 import {
   getDefaultTabletTab,
   isTabletTabAllowed,
 } from "@/features/tablet/navigation";
+import { usePlayerTabletCharacter } from "@/features/tablet/player/usePlayerTabletCharacter";
 
 import TabletShell from "./TabletShell";
 
@@ -26,12 +31,7 @@ type TabletViewportProps = {
   onClose: () => void;
   sessionId: string;
   inGameWorldId: string | null;
-  participants: Array<{
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    role: "master" | "player";
-  }>;
+  participants: TabletParticipant[];
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -61,6 +61,18 @@ export default function TabletViewport({
   const activeTab = isTabletTabAllowed(selectedTab, targetRole, mode)
     ? selectedTab
     : defaultTab;
+  const targetParticipant = useMemo(
+    () =>
+      participants.find((participant) => participant.user_id === targetUserId) ??
+      null,
+    [participants, targetUserId],
+  );
+  const tabletCharacterState = usePlayerTabletCharacter({
+    sessionId,
+    participantId:
+      targetRole === "player" ? targetParticipant?.id ?? null : null,
+    enabled: targetRole === "player",
+  });
 
   useEffect(() => {
     const element = containerRef.current;
@@ -134,6 +146,10 @@ export default function TabletViewport({
           sessionId={sessionId}
           inGameWorldId={inGameWorldId}
           participants={participants}
+          playerCharacter={tabletCharacterState.character}
+          isPlayerCharacterLoading={tabletCharacterState.isLoading}
+          playerCharacterError={tabletCharacterState.error}
+          onPlayerCharacterSaved={tabletCharacterState.setCharacter}
         />
       </div>
     </div>

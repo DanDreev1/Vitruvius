@@ -1,5 +1,6 @@
 'use client';
 
+import { motion } from 'framer-motion';
 import Image from 'next/image';
 
 import { getVisibleTabletTabs } from '@/features/tablet/navigation';
@@ -12,6 +13,7 @@ type TabletNavProps = {
   targetRole: TabletRole;
   mode: TabletViewMode;
   onClose: () => void;
+  activeFrameSide?: 'left' | 'right';
 };
 
 export default function TabletNav({
@@ -20,8 +22,13 @@ export default function TabletNav({
   targetRole,
   mode,
   onClose,
+  activeFrameSide = 'left',
 }: TabletNavProps) {
   const tabs = getVisibleTabletTabs(targetRole, mode);
+  const activeFrameSrc =
+    activeFrameSide === 'right'
+      ? '/tablet/master/scene/tabs/tab-active-frame-right.svg'
+      : '/tablet/master/scene/tabs/tab-active-frame-left.svg';
 
   return (
     <div className="flex h-full flex-col items-center py-[28px]">
@@ -43,26 +50,49 @@ export default function TabletNav({
               key={tab.key}
               type="button"
               onClick={() => onTabChange(tab.key)}
-              className="group relative flex h-[48px] w-[58px] items-center justify-center"
+              className="group relative flex h-[54px] w-[64px] items-center justify-center"
               title={tab.label}
             >
-              <span
-                className={[
-                  'pointer-events-none absolute inset-[3px] border-2 border-white transition-opacity duration-200',
-                  isActive ? 'opacity-100' : 'opacity-0 group-hover:opacity-45',
-                  tab.key === 'skills' ||
-                  tab.key === 'relationship' ||
-                  tab.key === 'notes' ||
-                  tab.key === 'settings'
-                    ? '-rotate-8'
-                    : 'rotate-6',
-                ].join(' ')}
-              />
+              {isActive ? (
+                <motion.span
+                  layoutId={`tablet-active-frame-${targetRole}-${activeFrameSide}`}
+                  className="pointer-events-none absolute h-[58px] w-[58px]"
+                  transition={{
+                    type: 'spring',
+                    stiffness: 420,
+                    damping: 30,
+                  }}
+                >
+                  <Image
+                    src={activeFrameSrc}
+                    alt=""
+                    fill
+                    sizes="58px"
+                    className="object-contain"
+                  />
+                </motion.span>
+              ) : (
+                <span className="pointer-events-none absolute h-[58px] w-[58px] opacity-0 transition-opacity duration-200 group-hover:opacity-45">
+                  <Image
+                    src={activeFrameSrc}
+                    alt=""
+                    fill
+                    sizes="58px"
+                    className="object-contain"
+                  />
+                </span>
+              )}
 
               {tab.iconSrc ? (
-                <Image src={tab.iconSrc} alt="" width={34} height={34} />
+                <Image
+                  src={tab.iconSrc}
+                  alt=""
+                  width={34}
+                  height={34}
+                  className="relative z-10"
+                />
               ) : (
-                <span className="font-montserrat-alt text-[24px] font-extrabold text-white">
+                <span className="relative z-10 font-montserrat-alt text-[24px] font-extrabold text-white">
                   {tab.short}
                 </span>
               )}

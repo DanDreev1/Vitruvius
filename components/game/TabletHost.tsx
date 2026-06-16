@@ -2,7 +2,7 @@
 
 import TabletViewport from "@/components/tablet/TabletViewport";
 import type { TabletViewMode } from "@/lib/game/types";
-import type { TabletRole } from "@/features/tablet/types";
+import type { TabletParticipant, TabletRole } from "@/features/tablet/types";
 
 type TabletHostProps = {
   isOpen: boolean;
@@ -13,12 +13,7 @@ type TabletHostProps = {
   onClose: () => void;
   sessionId: string;
   inGameWorldId: string | null;
-  participants: Array<{
-    id: string;
-    display_name: string | null;
-    avatar_url: string | null;
-    role: "master" | "player";
-  }>;
+  participants: TabletParticipant[];
 };
 
 export default function TabletHost({
