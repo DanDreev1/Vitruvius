@@ -296,6 +296,22 @@ async function uploadSceneImageFile(
   };
 }
 
+async function getSessionPlayerInGameCharacterIds(sessionId: string) {
+  const { data, error } = await supabase
+    .from('in_game_characters')
+    .select('id')
+    .eq('session_id', sessionId)
+    .not('participant_id', 'is', null);
+
+  if (error) {
+    throw new Error(`Failed to load player character targets: ${error.message}`);
+  }
+
+  return (data ?? [])
+    .map((character) => character.id as string | null)
+    .filter((value): value is string => Boolean(value));
+}
+
 export async function createInGameWorldSceneImage(
   inGameWorldId: string,
   file: File,
@@ -306,7 +322,7 @@ export async function createInGameWorldSceneImage(
     getNextSceneImageSortOrder(inGameWorldId),
   ]);
 
-  const { error } = await supabase
+  const { data: image, error } = await supabase
     .from('in_game_worlds_scene_images')
     .insert({
       in_game_world_id: inGameWorldId,
@@ -315,11 +331,30 @@ export async function createInGameWorldSceneImage(
       storage_path: storagePath,
       mime_type: mimeType,
       sort_order: sortOrder,
-      is_active: false,
-    });
+      is_active: true,
+    })
+    .select('id')
+    .single();
 
   if (error) {
     throw new Error(`Failed to create scene image: ${error.message}`);
+  }
+
+  const characterIds = await getSessionPlayerInGameCharacterIds(sessionId);
+
+  if (characterIds.length) {
+    const { error: targetsError } = await supabase
+      .from('in_game_worlds_scene_image_targets')
+      .insert(
+        characterIds.map((inGameCharacterId) => ({
+          in_game_scene_image_id: image.id,
+          in_game_character_id: inGameCharacterId,
+        }))
+      );
+
+    if (targetsError) {
+      throw new Error(`Failed to create scene image targets: ${targetsError.message}`);
+    }
   }
 
   await broadcastSceneImagesChanged(sessionId);
