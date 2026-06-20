@@ -8,10 +8,12 @@ import { useRouter } from "next/navigation";
 import BackHomeButton from "@/components/ui/BackHomeButton";
 import { supabase } from "@/lib/supabaseClient";
 import GameViewport from "@/components/game/GameViewport";
+import PlayerSceneImagesHost from "@/components/game/PlayerSceneImagesHost";
 import TabletHost from "./TabletHost";
 import { disbandLobby, leaveLobby } from "@/features/lobby/api";
 import { getGameSessionByCode } from "@/features/game/getGameSessionByCode";
 import { getInGameWorldBySessionId } from "@/features/worlds/api";
+import { usePlayerSceneImages } from "@/features/tablet/player/usePlayerSceneImages";
 
 import type {
   GameParticipant,
@@ -42,6 +44,7 @@ export default function GameClient({ code }: GameClientProps) {
   const [isLeavingGame, setIsLeavingGame] = useState(false);
   const [tabletState, setTabletState] = useState<OpenTabletState>(null);
   const [inGameWorldId, setInGameWorldId] = useState<string | null>(null);
+  const [isSceneImagesOpen, setIsSceneImagesOpen] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -61,7 +64,6 @@ export default function GameClient({ code }: GameClientProps) {
         }
 
         const currentUserId = authSession.user.id;
-        console.log("auth uid from session:", currentUserId);
 
         const { session, participants } = await getGameSessionByCode(code);
 
@@ -80,9 +82,6 @@ export default function GameClient({ code }: GameClientProps) {
         }
 
         const inGameWorld = await getInGameWorldBySessionId(session.id);
-
-        console.log("live session id:", session.id);
-        console.log("loaded in-game world:", inGameWorld);
 
         if (!isMounted) {
           return;
@@ -131,6 +130,14 @@ export default function GameClient({ code }: GameClientProps) {
       ) ?? null
     );
   }, [gameData]);
+
+  const playerSceneImagesState = usePlayerSceneImages({
+    sessionId: gameData?.session.id ?? null,
+    inGameWorldId,
+    participantId:
+      currentParticipant?.role === "player" ? currentParticipant.id : null,
+    enabled: currentParticipant?.role === "player",
+  });
 
   const players = useMemo(() => {
     if (!gameData) return [];
@@ -225,6 +232,18 @@ export default function GameClient({ code }: GameClientProps) {
     setTabletState(null);
   };
 
+  const handleTableImageClick = () => {
+    if (!playerSceneImagesState.images.length) {
+      return;
+    }
+
+    setIsSceneImagesOpen(true);
+  };
+
+  const handleCloseSceneImages = () => {
+    setIsSceneImagesOpen(false);
+  };
+
   const handleLeaveGame = useCallback(async () => {
     if (!gameData || !currentParticipant || isLeavingGame) {
       return;
@@ -279,7 +298,13 @@ export default function GameClient({ code }: GameClientProps) {
       <GameViewport
         master={master}
         players={players}
+        tableImages={
+          currentParticipant.role === "player"
+            ? playerSceneImagesState.images
+            : []
+        }
         onTabletClick={handleTabletClick}
+        onTableImageClick={handleTableImageClick}
       />
 
       <TabletHost
@@ -293,6 +318,16 @@ export default function GameClient({ code }: GameClientProps) {
         inGameWorldId={inGameWorldId}
         participants={mappedTabletParticipants}
       />
+
+      {currentParticipant.role === "player" ? (
+        <PlayerSceneImagesHost
+          isOpen={isSceneImagesOpen}
+          images={playerSceneImagesState.images}
+          isLoading={playerSceneImagesState.isLoading}
+          error={playerSceneImagesState.error}
+          onClose={handleCloseSceneImages}
+        />
+      ) : null}
     </>
   );
 }

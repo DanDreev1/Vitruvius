@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useRef } from "react";
-import { motion } from "framer-motion";
+import { useCallback, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
 
-import { SCENE_PLACEHOLDER_ICON_PATHS } from "@/features/tablet/master/scene/constants";
-import type { SceneImageItem } from "@/features/tablet/master/scene/types";
+import { SCENE_PLACEHOLDER_ICON_PATHS } from '@/features/tablet/master/scene/constants';
+import type { SceneImageItem } from '@/features/tablet/master/scene/types';
 
 type SceneImagesStackViewerProps = {
   items: SceneImageItem[];
@@ -12,6 +12,7 @@ type SceneImagesStackViewerProps = {
   onChangeIndex: (nextIndex: number) => void;
   onAddImage: () => void;
   onOpenLightbox: () => void;
+  showVisibilityStatus?: boolean;
 };
 
 const STACK_LAYOUT: Record<
@@ -25,16 +26,16 @@ const STACK_LAYOUT: Record<
   }
 > = {
   [-2]: {
-    x: -170,
-    scale: 0.72,
-    opacity: 0.22,
+    x: -145,
+    scale: 0.7,
+    opacity: 0.18,
     rotate: -4,
     zIndex: 1,
   },
   [-1]: {
-    x: -92,
-    scale: 0.86,
-    opacity: 0.55,
+    x: -78,
+    scale: 0.84,
+    opacity: 0.5,
     rotate: -2.5,
     zIndex: 2,
   },
@@ -46,16 +47,16 @@ const STACK_LAYOUT: Record<
     zIndex: 5,
   },
   [1]: {
-    x: 92,
-    scale: 0.86,
-    opacity: 0.55,
+    x: 78,
+    scale: 0.84,
+    opacity: 0.5,
     rotate: 2.5,
     zIndex: 2,
   },
   [2]: {
-    x: 170,
-    scale: 0.72,
-    opacity: 0.22,
+    x: 145,
+    scale: 0.7,
+    opacity: 0.18,
     rotate: 4,
     zIndex: 1,
   },
@@ -71,34 +72,47 @@ export default function SceneImagesStackViewer({
   onChangeIndex,
   onAddImage,
   onOpenLightbox,
+  showVisibilityStatus = true,
 }: SceneImagesStackViewerProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const wheelLockRef = useRef(false);
 
-  const handlePrev = () => {
+  const handlePrev = useCallback(() => {
     onChangeIndex(clampIndex(activeIndex - 1, items.length - 1));
-  };
+  }, [activeIndex, items.length, onChangeIndex]);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     onChangeIndex(clampIndex(activeIndex + 1, items.length - 1));
-  };
+  }, [activeIndex, items.length, onChangeIndex]);
 
-  const handleWheel: React.WheelEventHandler<HTMLDivElement> = (event) => {
-    event.preventDefault();
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element) return;
 
-    if (wheelLockRef.current) return;
+    const handleWheel = (event: WheelEvent) => {
+      event.preventDefault();
 
-    wheelLockRef.current = true;
+      if (wheelLockRef.current) return;
 
-    if (event.deltaY > 0) {
-      handleNext();
-    } else if (event.deltaY < 0) {
-      handlePrev();
-    }
+      wheelLockRef.current = true;
 
-    window.setTimeout(() => {
-      wheelLockRef.current = false;
-    }, 220);
-  };
+      if (event.deltaY > 0) {
+        handleNext();
+      } else if (event.deltaY < 0) {
+        handlePrev();
+      }
+
+      window.setTimeout(() => {
+        wheelLockRef.current = false;
+      }, 220);
+    };
+
+    element.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      element.removeEventListener('wheel', handleWheel);
+    };
+  }, [handleNext, handlePrev]);
 
   const visibleCards = [-2, -1, 0, 1, 2]
     .map((offset) => {
@@ -121,10 +135,10 @@ export default function SceneImagesStackViewer({
 
   return (
     <div
+      ref={containerRef}
       className="relative h-full w-full overflow-hidden rounded-[24px] bg-[#0B1327] px-[28px] py-[18px]"
-      onWheel={handleWheel}
     >
-      <div className="absolute inset-[18px_28px_82px_28px]">
+      <div className="absolute inset-[16px_22px_96px_22px]">
         {visibleCards.map(({ item, index, offset }) => {
           const layout = STACK_LAYOUT[offset];
           const isActive = offset === 0;
@@ -158,29 +172,26 @@ export default function SceneImagesStackViewer({
                 rotate: layout.rotate,
               }}
               transition={{
-                type: "spring",
+                type: 'spring',
                 stiffness: 260,
                 damping: 24,
               }}
               style={{ zIndex: layout.zIndex }}
-              className={[
-                "absolute left-1/2 top-[46%] flex h-[210px] w-[210px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[30px] border-[2px] border-black bg-[#D9D9D9] shadow-[0_18px_50px_rgba(0,0,0,0.28)]",
-                isActive ? "cursor-default" : "cursor-pointer",
-              ].join(" ")}
+              className="absolute left-1/2 top-[44%] flex h-[210px] w-[210px] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-[26px] border-[2px] border-black bg-[#D9D9D9] shadow-[0_18px_50px_rgba(0,0,0,0.28)]"
             >
               {item.isAddCard ? (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-[14px] px-[24px]">
                   <img
                     src={SCENE_PLACEHOLDER_ICON_PATHS.upload}
                     alt="Upload"
-                    className="h-[82px] w-[82px] object-contain"
+                    className="h-[58px] w-[58px] object-contain"
                   />
-                  <p className="text-center font-montserrat-alt text-[24px] font-extrabold text-black/80">
+                  <p className="text-center font-montserrat-alt text-[18px] font-extrabold text-black/80">
                     Add image
                   </p>
                 </div>
               ) : (
-                <div className="relative flex h-full w-full items-center justify-center">
+                <div className="relative flex h-full w-full items-center justify-center bg-[#D9D9D9]">
                   {item.imageUrl ? (
                     <img
                       src={item.imageUrl}
@@ -191,20 +202,18 @@ export default function SceneImagesStackViewer({
                     <img
                       src={SCENE_PLACEHOLDER_ICON_PATHS.upload}
                       alt={item.title}
-                      className="h-[82px] w-[82px] object-contain"
+                      className="h-[58px] w-[58px] object-contain"
                     />
                   )}
 
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/45 to-transparent px-[18px] pb-[20px] pt-[40px] text-left">
-                    <p className="truncate font-montserrat-alt text-[22px] font-extrabold text-white">
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/55 to-transparent px-[14px] pb-[12px] pt-[28px] text-left">
+                    <p className="truncate font-montserrat-alt text-[16px] font-extrabold text-white">
                       {item.title}
                     </p>
 
-                    {isActive ? (
-                      <p className="mt-[6px] font-montserrat text-[13px] text-white/85">
-                        {item.isActive
-                          ? "Visible to selected targets"
-                          : "Hidden from players"}
+                    {isActive && showVisibilityStatus ? (
+                      <p className="mt-[4px] font-montserrat text-[11px] text-white/85">
+                        {item.isActive ? 'Visible to selected targets' : 'Hidden from players'}
                       </p>
                     ) : null}
                   </div>

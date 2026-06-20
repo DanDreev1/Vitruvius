@@ -16,6 +16,7 @@ type SceneImageLightboxProps = {
   onClose: () => void;
   onPrev: () => void;
   onNext: () => void;
+  showVisibilityStatus?: boolean;
 };
 
 export default function SceneImageLightbox({
@@ -28,6 +29,7 @@ export default function SceneImageLightbox({
   onClose,
   onPrev,
   onNext,
+  showVisibilityStatus = true,
 }: SceneImageLightboxProps) {
   useEffect(() => {
     if (!isOpen) return;
@@ -77,9 +79,11 @@ export default function SceneImageLightbox({
                   <p className="truncate font-montserrat-alt text-[26px] font-extrabold text-white">
                     {item.title}
                   </p>
-                  <p className="mt-[6px] font-montserrat text-[14px] text-white/80">
-                    {item.isActive ? 'Visible to selected targets' : 'Hidden from players'}
-                  </p>
+                  {showVisibilityStatus ? (
+                    <p className="mt-[6px] font-montserrat text-[14px] text-white/80">
+                      {item.isActive ? 'Visible to selected targets' : 'Hidden from players'}
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
 

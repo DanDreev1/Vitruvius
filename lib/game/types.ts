@@ -61,6 +61,9 @@ export type DensityPreset = {
   tabletForwardOffset: number;
   tabletSideOffset: number;
   badgeDistance: number;
+
+  tableImageMaxWidth: number;
+  tableImageMaxHeight: number;
 };
 
 export type SeatedPlayer = {

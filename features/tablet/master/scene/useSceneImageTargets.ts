@@ -51,11 +51,23 @@ export function useSceneImageTargets(
   }, [inGameSceneImageId, disabled]);
 
   useEffect(() => {
-    void loadAudience();
+    const timeoutId = window.setTimeout(() => {
+      void loadAudience();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [loadAudience]);
 
   useEffect(() => {
-    void loadTargets();
+    const timeoutId = window.setTimeout(() => {
+      void loadTargets();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [loadTargets]);
 
   const allSelected = useMemo(() => {
@@ -75,13 +87,21 @@ export function useSceneImageTargets(
 
       try {
         if (isSelected) {
-          await removeSceneImageTarget(inGameSceneImageId, inGameCharacterId);
+          await removeSceneImageTarget(
+            inGameSceneImageId,
+            inGameCharacterId,
+            sessionId
+          );
 
           setSelectedCharacterIds((current) =>
             current.filter((id) => id !== inGameCharacterId)
           );
         } else {
-          await addSceneImageTarget(inGameSceneImageId, inGameCharacterId);
+          await addSceneImageTarget(
+            inGameSceneImageId,
+            inGameCharacterId,
+            sessionId
+          );
 
           setSelectedCharacterIds((current) => [...current, inGameCharacterId]);
         }
@@ -93,7 +113,7 @@ export function useSceneImageTargets(
         setError(message);
       }
     },
-    [inGameSceneImageId, disabled, selectedCharacterIds]
+    [inGameSceneImageId, disabled, selectedCharacterIds, sessionId]
   );
 
   const toggleAll = useCallback(async () => {
@@ -109,7 +129,9 @@ export function useSceneImageTargets(
         );
 
         await Promise.all(
-          idsToRemove.map((id) => removeSceneImageTarget(inGameSceneImageId, id))
+            idsToRemove.map((id) =>
+              removeSceneImageTarget(inGameSceneImageId, id, sessionId)
+            )
         );
 
         setSelectedCharacterIds((current) =>
@@ -121,7 +143,9 @@ export function useSceneImageTargets(
         );
 
         await Promise.all(
-          idsToAdd.map((id) => addSceneImageTarget(inGameSceneImageId, id))
+            idsToAdd.map((id) =>
+              addSceneImageTarget(inGameSceneImageId, id, sessionId)
+            )
         );
 
         setSelectedCharacterIds((current) => [...new Set([...current, ...idsToAdd])]);
@@ -133,7 +157,14 @@ export function useSceneImageTargets(
           : 'Failed to update scene image targets.';
       setError(message);
     }
-  }, [inGameSceneImageId, disabled, audience, selectedCharacterIds, allSelected]);
+  }, [
+    inGameSceneImageId,
+    disabled,
+    audience,
+    selectedCharacterIds,
+    allSelected,
+    sessionId,
+  ]);
 
   return {
     audience,

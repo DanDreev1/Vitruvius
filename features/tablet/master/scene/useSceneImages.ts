@@ -20,7 +20,10 @@ function mapRecordToItem(record: SceneImageRecord): SceneImageItem {
   };
 }
 
-export function useSceneImages(inGameWorldId: string | null) {
+export function useSceneImages(
+  inGameWorldId: string | null,
+  sessionId: string
+) {
   const [records, setRecords] = useState<SceneImageRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -48,7 +51,13 @@ export function useSceneImages(inGameWorldId: string | null) {
   }, [inGameWorldId]);
 
   useEffect(() => {
-    void loadImages();
+    const timeoutId = window.setTimeout(() => {
+      void loadImages();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [loadImages]);
 
   const uploadImage = useCallback(
@@ -61,7 +70,7 @@ export function useSceneImages(inGameWorldId: string | null) {
       setError(null);
 
       try {
-        await createInGameWorldSceneImage(inGameWorldId, file);
+        await createInGameWorldSceneImage(inGameWorldId, file, sessionId);
         await loadImages();
       } catch (uploadError) {
         const message =
@@ -72,40 +81,38 @@ export function useSceneImages(inGameWorldId: string | null) {
         setIsUploading(false);
       }
     },
-    [inGameWorldId]
+    [inGameWorldId, loadImages, sessionId]
   );
 
   const deleteImage = useCallback(async (imageId: string) => {
     setError(null);
 
     try {
-      await deleteInGameWorldSceneImage(imageId);
-      setRecords((currentRecords) =>
-        currentRecords.filter((record) => record.id !== imageId)
-      );
+      await deleteInGameWorldSceneImage(imageId, sessionId);
+      await loadImages();
     } catch (deleteError) {
       const message =
         deleteError instanceof Error ? deleteError.message : 'Failed to delete scene image.';
       setError(message);
       throw deleteError;
     }
-  }, []);
+  }, [loadImages, sessionId]);
 
   const toggleImageActive = useCallback(async (imageId: string, nextIsActive: boolean) => {
-  setError(null);
+    setError(null);
 
-  try {
-    await updateInGameWorldSceneImageActive(imageId, nextIsActive);
-    await loadImages();
-  } catch (toggleError) {
-    const message =
-      toggleError instanceof Error
-        ? toggleError.message
-        : 'Failed to update scene image visibility.';
-    setError(message);
-    throw toggleError;
-  }
-}, [loadImages]);
+    try {
+      await updateInGameWorldSceneImageActive(imageId, nextIsActive, sessionId);
+      await loadImages();
+    } catch (toggleError) {
+      const message =
+        toggleError instanceof Error
+          ? toggleError.message
+          : 'Failed to update scene image visibility.';
+      setError(message);
+      throw toggleError;
+    }
+  }, [loadImages, sessionId]);
 
   const images = useMemo(
     () => records.map(mapRecordToItem),

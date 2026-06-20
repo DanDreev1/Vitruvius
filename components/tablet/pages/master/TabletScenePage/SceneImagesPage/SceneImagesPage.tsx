@@ -49,20 +49,15 @@ export default function SceneImagesPage({
     uploadImage,
     deleteImage,
     toggleImageActive,
-  } = useSceneImages(inGameWorldId);
+  } = useSceneImages(inGameWorldId, sessionId);
 
   const items = useMemo(() => {
     const sortedImages = [...images].sort((a, b) => a.sortOrder - b.sortOrder);
     return [addCard, ...sortedImages];
   }, [images]);
 
-  useEffect(() => {
-    setActiveIndex((currentIndex) =>
-      Math.min(currentIndex, Math.max(0, items.length - 1)),
-    );
-  }, [items.length]);
-
-  const activeItem = items[activeIndex] ?? items[0];
+  const resolvedActiveIndex = Math.min(activeIndex, Math.max(0, items.length - 1));
+  const activeItem = items[resolvedActiveIndex] ?? items[0];
   const isAddCardActive = activeItem?.isAddCard === true;
 
   const activeImageId = !isAddCardActive ? activeItem.id : null;
@@ -97,7 +92,7 @@ export default function SceneImagesPage({
     toggleParticipant,
   ]);
 
-  const combinedError = error ?? targetsError;
+  const displayError = error ?? targetsError;
 
   const openLightbox = () => {
     if (isAddCardActive) return;
@@ -109,16 +104,14 @@ export default function SceneImagesPage({
   };
 
   const handlePrevInLightbox = () => {
-    setActiveIndex((current) => Math.max(0, current - 1));
+    setActiveIndex(Math.max(0, resolvedActiveIndex - 1));
   };
 
   const handleNextInLightbox = () => {
-    setActiveIndex((current) => Math.min(items.length - 1, current + 1));
+    setActiveIndex(Math.min(items.length - 1, resolvedActiveIndex + 1));
   };
 
   const handleAddImage = () => {
-    console.log("inGameWorldId from UI:", inGameWorldId);
-
     if (!inGameWorldId) {
       console.error("Missing inGameWorldId");
       return;
@@ -199,13 +192,13 @@ export default function SceneImagesPage({
           </div>
 
           <div className="rounded-full bg-white/10 px-[14px] py-[8px] font-montserrat text-[14px] text-white">
-            {activeIndex + 1} / {items.length}
+            {resolvedActiveIndex + 1} / {items.length}
           </div>
         </div>
 
-        {error ? (
+        {displayError ? (
           <div className="mb-[12px] rounded-[16px] border border-red-400/30 bg-red-500/10 px-[14px] py-[10px] font-montserrat text-[14px] text-red-200">
-            {error}
+            {displayError}
           </div>
         ) : null}
 
@@ -218,7 +211,7 @@ export default function SceneImagesPage({
         ) : viewMode === "stack" ? (
           <SceneImagesStackViewer
             items={items}
-            activeIndex={activeIndex}
+            activeIndex={resolvedActiveIndex}
             onChangeIndex={setActiveIndex}
             onAddImage={handleAddImage}
             onOpenLightbox={openLightbox}
@@ -306,7 +299,7 @@ export default function SceneImagesPage({
                 </button>
 
                 <div className="min-w-[52px] text-center font-montserrat text-[13px] font-semibold text-white">
-                  {activeIndex + 1}/{items.length}
+                  {resolvedActiveIndex + 1}/{items.length}
                 </div>
 
                 <button
@@ -329,10 +322,10 @@ export default function SceneImagesPage({
       <SceneImageLightbox
         isOpen={isLightboxOpen}
         item={isAddCardActive ? null : activeItem}
-        currentIndex={activeIndex}
+        currentIndex={resolvedActiveIndex}
         totalCount={items.length}
-        canGoPrev={activeIndex > 0}
-        canGoNext={activeIndex < items.length - 1}
+        canGoPrev={resolvedActiveIndex > 0}
+        canGoNext={resolvedActiveIndex < items.length - 1}
         onClose={closeLightbox}
         onPrev={handlePrevInLightbox}
         onNext={handleNextInLightbox}

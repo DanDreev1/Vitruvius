@@ -9,6 +9,7 @@ import { mapPlayersToSeats } from "@/lib/game/mapPlayersToSeats";
 import { MIN_GAME_VIEWPORT_WIDTH } from "@/lib/game/sceneConfig";
 import { sceneLayouts } from "@/lib/game/sceneLayouts";
 import type { GameParticipant, HoverCardData } from "@/lib/game/types";
+import type { SceneImageItem } from "@/features/tablet/master/scene/types";
 
 import GameScene from "./GameScene";
 import PlayerHoverCard from "./PlayerHoverCard";
@@ -17,14 +18,22 @@ import RotateScreenPlaceholder from "./RotateScreenPlaceholder";
 type GameViewportProps = {
   master: GameParticipant;
   players: GameParticipant[];
+  tableImages?: SceneImageItem[];
   onTabletClick?: (targetUserId: string) => void;
+  onTableImageClick?: () => void;
 };
 
 function clampValue(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-export default function GameViewport({ master, players, onTabletClick }: GameViewportProps) {
+export default function GameViewport({
+  master,
+  players,
+  tableImages = [],
+  onTabletClick,
+  onTableImageClick,
+}: GameViewportProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -245,8 +254,10 @@ export default function GameViewport({ master, players, onTabletClick }: GameVie
               master={master}
               masterSeat={resolvedScene.masterSeat}
               seatedPlayers={resolvedScene.seatedPlayers}
+              tableImage={tableImages[0] ?? null}
               onHoverChange={setHoveredCard}
               onTabletClick={onTabletClick}
+              onTableImageClick={onTableImageClick}
             />
           </div>
 

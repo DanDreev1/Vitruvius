@@ -10,6 +10,8 @@ import type {
 
 import MasterSeat from "./MasterSeat";
 import PlayerSeat from "./PlayerSeat";
+import TableSceneImageButton from "./TableSceneImageButton";
+import type { SceneImageItem } from "@/features/tablet/master/scene/types";
 
 type GameSceneProps = {
   table: TableDefinition;
@@ -17,8 +19,10 @@ type GameSceneProps = {
   master: GameParticipant;
   masterSeat: ResolvedSeatPosition;
   seatedPlayers: SeatedPlayer[];
+  tableImage: SceneImageItem | null;
   onHoverChange?: (data: HoverCardData | null) => void;
   onTabletClick?: (targetUserId: string) => void;
+  onTableImageClick?: () => void;
 };
 
 export default function GameScene({
@@ -27,8 +31,10 @@ export default function GameScene({
   master,
   masterSeat,
   seatedPlayers,
+  tableImage,
   onHoverChange,
   onTabletClick,
+  onTableImageClick,
 }: GameSceneProps) {
   return (
     <div
@@ -47,6 +53,14 @@ export default function GameScene({
           boxShadow: "0 30px 80px rgba(0, 0, 0, 0.35)",
         }}
       />
+
+      {tableImage && onTableImageClick ? (
+        <TableSceneImageButton
+          image={tableImage}
+          density={density}
+          onClick={onTableImageClick}
+        />
+      ) : null}
 
       <MasterSeat
         participant={master}
