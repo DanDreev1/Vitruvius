@@ -17,6 +17,32 @@ export type TabletPlayerParameter = {
   sortOrder: number;
 };
 
+export type TabletPlayerDomainSkill = {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  iconKey: string | null;
+  isPrimary: boolean;
+  level: number;
+  sortOrder: number;
+  metadata: Record<string, unknown>;
+  isDraft?: boolean;
+};
+
+export type TabletPlayerDomain = {
+  id: string;
+  key: string;
+  name: string;
+  description: string | null;
+  iconKey: string | null;
+  level: number;
+  sortOrder: number;
+  skills: TabletPlayerDomainSkill[];
+  metadata: Record<string, unknown>;
+  isDraft?: boolean;
+};
+
 export type TabletPlayerCharacter = {
   id: string;
   name: string;
@@ -24,6 +50,7 @@ export type TabletPlayerCharacter = {
   avatarUrl: string | null;
   attributes: TabletPlayerAttribute[];
   parameters: TabletPlayerParameter[];
+  domains: TabletPlayerDomain[];
 };
 
 export type TabletPlayerCharacterDraft = {
@@ -34,6 +61,7 @@ export type TabletPlayerCharacterDraft = {
   portraitPreviewUrl: string | null;
   attributes: TabletPlayerAttribute[];
   parameters: TabletPlayerParameter[];
+  domains: TabletPlayerDomain[];
 };
 
 export type TabletPlayerCharacterSavePatch = {
@@ -51,4 +79,5 @@ export type TabletPlayerCharacterSavePatch = {
     id: string;
     currentValue: number;
   }>;
+  domains?: TabletPlayerDomain[];
 };

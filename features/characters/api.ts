@@ -4,7 +4,10 @@ import {
   createInGameCharacterPlaceholder,
   DEFAULT_CHARACTER_PARAMETERS,
 } from '@/features/characters/defaults';
-import type { CharacterAttributeKey } from '@/features/characters/defaults';
+import type {
+  CharacterAttributeKey,
+  CharacterDomainTemplate,
+} from '@/features/characters/defaults';
 import type { SessionParticipant } from '@/features/lobby/types';
 import { supabase } from '@/lib/supabaseClient';
 
@@ -108,6 +111,60 @@ async function insertRows(table: string, rows: Array<Record<string, unknown>>) {
   if (error) {
     throw new Error(`Failed to insert ${table}: ${error.message}`);
   }
+}
+
+async function insertInGameDomainTemplates(
+  inGameCharacterId: string,
+  domains: CharacterDomainTemplate[]
+) {
+  if (!domains.length) return;
+
+  const { data, error } = await supabase
+    .from('in_game_character_domains')
+    .insert(
+      domains.map((domain) => ({
+        in_game_character_id: inGameCharacterId,
+        domain_key: domain.domain_key,
+        name: domain.name,
+        description: domain.description,
+        icon_key: domain.icon_key,
+        level: domain.level,
+        sort_order: domain.sort_order,
+        metadata: domain.metadata,
+      }))
+    )
+    .select('id, domain_key');
+
+  if (error) {
+    throw new Error(`Failed to insert in-game domains: ${error.message}`);
+  }
+
+  const domainIdByKey = new Map(
+    (data ?? []).map((domain) => [
+      domain.domain_key as string,
+      domain.id as string,
+    ])
+  );
+  const skillRows = domains.flatMap((domain) => {
+    const inGameDomainId = domainIdByKey.get(domain.domain_key);
+
+    if (!inGameDomainId) {
+      return [];
+    }
+
+    return domain.skills.map((skill) => ({
+      in_game_domain_id: inGameDomainId,
+      skill_key: skill.skill_key,
+      name: skill.name,
+      description: skill.description,
+      is_primary: skill.is_primary,
+      level: skill.level,
+      sort_order: skill.sort_order,
+      metadata: skill.metadata,
+    }));
+  });
+
+  await insertRows('in_game_character_domain_skills', skillRows);
 }
 
 async function removeInGameCharacter(inGameCharacterId: string) {
@@ -279,6 +336,8 @@ async function createPlaceholderInGameCharacter(participant: PlayerParticipant) 
         in_game_character_id: inGameCharacterId,
       }))
     );
+
+    await insertInGameDomainTemplates(inGameCharacterId, defaults.domains);
   } catch (error) {
     if (inGameCharacterId) {
       await removeInGameCharacter(inGameCharacterId);
@@ -522,7 +581,14 @@ async function createSelectedInGameCharacter(
       }))
     );
 
-    await copySavedDomains(inGameCharacterId, collections.domains);
+    if (collections.domains.length) {
+      await copySavedDomains(inGameCharacterId, collections.domains);
+    } else {
+      await insertInGameDomainTemplates(
+        inGameCharacterId,
+        fallbackDefaults.domains
+      );
+    }
 
     await insertRows(
       'in_game_character_inventory_items',

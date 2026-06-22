@@ -8,9 +8,13 @@ import {
   PLAYER_TABLET_ATTRIBUTE_MAX_VALUE,
   PLAYER_TABLET_ATTRIBUTE_MIN_VALUE,
   PLAYER_TABLET_CHARACTER_NAME_MAX_LENGTH,
+  PLAYER_TABLET_CUSTOM_ICON_MAX_FILE_SIZE_BYTES,
+  PLAYER_TABLET_DOMAIN_MAX_LEVEL,
+  PLAYER_TABLET_DOMAIN_MIN_LEVEL,
   PLAYER_TABLET_HEALTH_ATTRIBUTE_KEY,
   PLAYER_TABLET_HEALTH_MULTIPLIER,
   PLAYER_TABLET_INSPIRATION_MAX_VALUE,
+  PLAYER_TABLET_MAX_DOMAINS,
   PLAYER_TABLET_PARAMETER_MIN_VALUE,
   PLAYER_TABLET_PORTRAIT_ALLOWED_MIME_TYPES,
   PLAYER_TABLET_PORTRAIT_COOLDOWN_NOTICE_MS,
@@ -20,6 +24,7 @@ import {
 } from "@/features/tablet/player/constants";
 import {
   saveTabletPlayerCharacterPatch,
+  uploadTabletPlayerCustomIcon,
   uploadTabletPlayerPortrait,
 } from "@/features/tablet/player/api";
 import type {
@@ -31,6 +36,8 @@ import type {
   TabletPlayerAttribute,
   TabletPlayerCharacter,
   TabletPlayerCharacterDraft,
+  TabletPlayerDomain,
+  TabletPlayerDomainSkill,
   TabletPlayerParameter,
   TabletPlayerCharacterSavePatch,
 } from "@/features/tablet/player/types";
@@ -98,12 +105,112 @@ const defaultPlayerParameters = [
 
 const editablePlayerTabs: TabletTab[] = ["user", "skills"];
 
+const defaultDomainIcons = [
+  "skills",
+  "book",
+  "flask",
+  "backpack",
+  "thinking",
+] as const;
+
+function createDraftId(prefix: string) {
+  return `draft-${prefix}-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+}
+
 function cloneAttribute(attribute: TabletPlayerAttribute): TabletPlayerAttribute {
   return { ...attribute };
 }
 
 function cloneParameter(parameter: TabletPlayerParameter): TabletPlayerParameter {
   return { ...parameter };
+}
+
+function cloneDomainSkill(
+  skill: TabletPlayerDomainSkill
+): TabletPlayerDomainSkill {
+  return {
+    ...skill,
+    metadata: { ...skill.metadata },
+  };
+}
+
+function cloneDomain(domain: TabletPlayerDomain): TabletPlayerDomain {
+  return {
+    ...domain,
+    metadata: { ...domain.metadata },
+    skills: domain.skills.map(cloneDomainSkill),
+  };
+}
+
+function createDefaultDomain(sortOrder = 0): TabletPlayerDomain {
+  const domainId = createDraftId("domain");
+  const domainKey = `domain-${sortOrder + 1}`;
+
+  return {
+    id: domainId,
+    key: domainKey,
+    name: "Name of the Domain",
+    description: null,
+    iconKey: defaultDomainIcons[sortOrder % defaultDomainIcons.length],
+    level: PLAYER_TABLET_DOMAIN_MIN_LEVEL,
+    sortOrder,
+    metadata: {},
+    isDraft: true,
+    skills: [
+      {
+        id: createDraftId("skill-primary"),
+        key: `${domainKey}-primary`,
+        name: "Skill name",
+        description: "Skill description.",
+        iconKey: "book",
+        isPrimary: true,
+        level: PLAYER_TABLET_DOMAIN_MIN_LEVEL,
+        sortOrder: 0,
+        metadata: { icon_key: "book" },
+        isDraft: true,
+      },
+      {
+        id: createDraftId("skill"),
+        key: `${domainKey}-skill-1`,
+        name: "Skill name",
+        description: "Skill description.",
+        iconKey: "book",
+        isPrimary: false,
+        level: PLAYER_TABLET_DOMAIN_MIN_LEVEL,
+        sortOrder: 1,
+        metadata: { icon_key: "book" },
+        isDraft: true,
+      },
+    ],
+  };
+}
+
+function createDefaultSkill(
+  domain: TabletPlayerDomain,
+  sortOrder: number
+): TabletPlayerDomainSkill {
+  return {
+    id: createDraftId("skill"),
+    key: `${domain.key}-skill-${sortOrder}`,
+    name: "Skill name",
+    description: "Skill description.",
+    iconKey: "book",
+    isPrimary: false,
+    level: PLAYER_TABLET_DOMAIN_MIN_LEVEL,
+    sortOrder,
+    metadata: { icon_key: "book" },
+    isDraft: true,
+  };
+}
+
+function ensurePlayerDomains(domains: TabletPlayerDomain[]) {
+  if (domains.length) {
+    return domains.slice(0, PLAYER_TABLET_MAX_DOMAINS).map(cloneDomain);
+  }
+
+  return [createDefaultDomain()];
 }
 
 function createDraftFromCharacter(
@@ -117,6 +224,7 @@ function createDraftFromCharacter(
     portraitPreviewUrl: null,
     attributes: character?.attributes.map(cloneAttribute) ?? [],
     parameters: character?.parameters.map(cloneParameter) ?? [],
+    domains: ensurePlayerDomains(character?.domains ?? []),
   };
 }
 
@@ -258,6 +366,115 @@ function isCharacterNameOverLimit(name: string) {
   return name.length > PLAYER_TABLET_CHARACTER_NAME_MAX_LENGTH;
 }
 
+function normalizeDomainSkill(
+  skill: TabletPlayerDomainSkill,
+  domainLevel: number,
+  fallbackName: string
+): TabletPlayerDomainSkill {
+  const skillLevel = skill.isPrimary ? domainLevel : skill.level;
+
+  return {
+    ...skill,
+    name: skill.name.trim() || fallbackName,
+    description: skill.description?.trim() || null,
+    iconKey: skill.iconKey ?? "book",
+    level: clampValue(
+      skillLevel,
+      PLAYER_TABLET_DOMAIN_MIN_LEVEL,
+      PLAYER_TABLET_DOMAIN_MAX_LEVEL
+    ),
+    metadata: {
+      ...(skill.metadata ?? {}),
+      icon_key: skill.iconKey ?? "book",
+    },
+  };
+}
+
+function normalizeDomain(
+  domain: TabletPlayerDomain,
+  index: number
+): TabletPlayerDomain {
+  const level = clampValue(
+    domain.level,
+    PLAYER_TABLET_DOMAIN_MIN_LEVEL,
+    PLAYER_TABLET_DOMAIN_MAX_LEVEL
+  );
+
+  return {
+    ...domain,
+    name: domain.name.trim() || `Domain ${index + 1}`,
+    description: domain.description?.trim() || null,
+    iconKey: domain.iconKey ?? defaultDomainIcons[index % defaultDomainIcons.length],
+    level,
+    sortOrder: index,
+    metadata: domain.metadata ?? {},
+    skills: domain.skills.map((skill, skillIndex) =>
+      normalizeDomainSkill(skill, level, `Skill ${skillIndex + 1}`)
+    ),
+  };
+}
+
+function normalizeDomains(domains: TabletPlayerDomain[]) {
+  return ensurePlayerDomains(domains)
+    .slice(0, PLAYER_TABLET_MAX_DOMAINS)
+    .map(normalizeDomain);
+}
+
+function haveDomainsChanged(
+  originalDomains: TabletPlayerDomain[],
+  draftDomains: TabletPlayerDomain[]
+) {
+  if (originalDomains.length !== draftDomains.length) {
+    return true;
+  }
+
+  return draftDomains.some((draftDomain) => {
+    const originalDomain = originalDomains.find(
+      (domain) => domain.id === draftDomain.id
+    );
+
+    if (!originalDomain || draftDomain.isDraft) {
+      return true;
+    }
+
+    if (
+      originalDomain.key !== draftDomain.key ||
+      originalDomain.name !== draftDomain.name ||
+      (originalDomain.description ?? null) !==
+        (draftDomain.description ?? null) ||
+      (originalDomain.iconKey ?? null) !== (draftDomain.iconKey ?? null) ||
+      originalDomain.level !== draftDomain.level ||
+      originalDomain.sortOrder !== draftDomain.sortOrder ||
+      JSON.stringify(originalDomain.metadata) !==
+        JSON.stringify(draftDomain.metadata) ||
+      originalDomain.skills.length !== draftDomain.skills.length
+    ) {
+      return true;
+    }
+
+    return draftDomain.skills.some((draftSkill) => {
+      const originalSkill = originalDomain.skills.find(
+        (skill) => skill.id === draftSkill.id
+      );
+
+      return (
+        !originalSkill ||
+        draftSkill.isDraft ||
+        originalSkill.key !== draftSkill.key ||
+        originalSkill.name !== draftSkill.name ||
+        (originalSkill.description ?? null) !==
+          (draftSkill.description ?? null) ||
+        (originalSkill.iconKey ?? null) !== (draftSkill.iconKey ?? null) ||
+        originalSkill.isPrimary !== draftSkill.isPrimary ||
+        originalSkill.level !== draftSkill.level ||
+        originalSkill.sortOrder !== draftSkill.sortOrder ||
+        JSON.stringify(originalSkill.metadata) !==
+          JSON.stringify(draftSkill.metadata)
+      );
+    });
+  });
+}
+
 function buildSavePatch(
   originalCharacter: TabletPlayerCharacter,
   draft: TabletPlayerCharacterDraft,
@@ -307,11 +524,16 @@ function buildSavePatch(
       id: parameter.id,
       currentValue: parameter.currentValue,
     }));
+  const originalDomains = originalCharacter.domains;
+  const domains = haveDomainsChanged(originalDomains, draft.domains)
+    ? draft.domains
+    : undefined;
 
   if (
     !Object.keys(characterPatch).length &&
     !attributes.length &&
-    !parameters.length
+    !parameters.length &&
+    !domains
   ) {
     return null;
   }
@@ -321,6 +543,7 @@ function buildSavePatch(
     character: Object.keys(characterPatch).length ? characterPatch : undefined,
     attributes,
     parameters,
+    domains,
   };
 }
 
@@ -605,6 +828,395 @@ function PlayerTabletShellLayout({
     });
   };
 
+  const handleDomainAdd = () => {
+    let addedDomainId: string | null = null;
+
+    setDraft((currentDraft) => {
+      if (currentDraft.domains.length >= PLAYER_TABLET_MAX_DOMAINS) {
+        return currentDraft;
+      }
+
+      const nextDomain = createDefaultDomain(currentDraft.domains.length);
+      addedDomainId = nextDomain.id;
+
+      return {
+        ...currentDraft,
+        domains: normalizeDomains([...currentDraft.domains, nextDomain]),
+      };
+    });
+
+    setSaveError(null);
+    return addedDomainId;
+  };
+
+  const handleDomainDelete = (domainId: string) => {
+    setDraft((currentDraft) => {
+      if (currentDraft.domains.length <= 1) {
+        return currentDraft;
+      }
+
+      return {
+        ...currentDraft,
+        domains: normalizeDomains(
+          currentDraft.domains.filter((domain) => domain.id !== domainId)
+        ),
+      };
+    });
+    setSaveError(null);
+  };
+
+  const handleDomainNameChange = (domainId: string, value: string) => {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      domains: currentDraft.domains.map((domain) =>
+        domain.id === domainId
+          ? {
+              ...domain,
+              name: value,
+            }
+          : domain
+      ),
+    }));
+    setSaveError(null);
+  };
+
+  const handleDomainIconChange = (domainId: string, iconKey: string) => {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      domains: currentDraft.domains.map((domain) =>
+        domain.id === domainId
+          ? {
+              ...domain,
+              iconKey,
+            }
+          : domain
+      ),
+    }));
+    setSaveError(null);
+  };
+
+  const handleDomainLevelChange = (domainId: string, level: number) => {
+    const nextLevel = clampValue(
+      level,
+      PLAYER_TABLET_DOMAIN_MIN_LEVEL,
+      PLAYER_TABLET_DOMAIN_MAX_LEVEL
+    );
+
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      domains: currentDraft.domains.map((domain) =>
+        domain.id === domainId
+          ? {
+              ...domain,
+              level: nextLevel,
+              skills: domain.skills.map((skill) =>
+                skill.isPrimary
+                  ? {
+                      ...skill,
+                      level: nextLevel,
+                    }
+                  : skill
+              ),
+            }
+          : domain
+      ),
+    }));
+    setSaveError(null);
+  };
+
+  const handleDomainSkillNameChange = (
+    domainId: string,
+    skillId: string,
+    value: string
+  ) => {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      domains: currentDraft.domains.map((domain) =>
+        domain.id === domainId
+          ? {
+              ...domain,
+              skills: domain.skills.map((skill) =>
+                skill.id === skillId
+                  ? {
+                      ...skill,
+                      name: value,
+                    }
+                  : skill
+              ),
+            }
+          : domain
+      ),
+    }));
+    setSaveError(null);
+  };
+
+  const handleDomainSkillAdd = (domainId: string) => {
+    let addedSkillId: string | null = null;
+
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      domains: currentDraft.domains.map((domain) => {
+        if (domain.id !== domainId) {
+          return domain;
+        }
+
+        const nextSkill = createDefaultSkill(domain, domain.skills.length);
+        addedSkillId = nextSkill.id;
+
+        return {
+          ...domain,
+          skills: [...domain.skills, nextSkill],
+        };
+      }),
+    }));
+    setSaveError(null);
+    return addedSkillId;
+  };
+
+  const handleDomainSkillDelete = (domainId: string, skillId: string) => {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      domains: currentDraft.domains.map((domain) => {
+        if (domain.id !== domainId) {
+          return domain;
+        }
+
+        const targetSkill = domain.skills.find((skill) => skill.id === skillId);
+
+        if (targetSkill?.isPrimary) {
+          return domain;
+        }
+
+        return {
+          ...domain,
+          skills: domain.skills
+            .filter((skill) => skill.id !== skillId)
+            .map((skill, index) => ({
+              ...skill,
+              sortOrder: index,
+            })),
+        };
+      }),
+    }));
+    setSaveError(null);
+  };
+
+  const handleDomainSkillDescriptionChange = (
+    domainId: string,
+    skillId: string,
+    value: string
+  ) => {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      domains: currentDraft.domains.map((domain) =>
+        domain.id === domainId
+          ? {
+              ...domain,
+              skills: domain.skills.map((skill) =>
+                skill.id === skillId
+                  ? {
+                      ...skill,
+                      description: value,
+                    }
+                  : skill
+              ),
+            }
+          : domain
+      ),
+    }));
+    setSaveError(null);
+  };
+
+  const handleDomainSkillIconChange = (
+    domainId: string,
+    skillId: string,
+    iconKey: string
+  ) => {
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      domains: currentDraft.domains.map((domain) =>
+        domain.id === domainId
+          ? {
+              ...domain,
+              skills: domain.skills.map((skill) =>
+                skill.id === skillId
+                  ? {
+                      ...skill,
+                      iconKey,
+                      metadata: {
+                        ...(skill.metadata ?? {}),
+                        icon_key: iconKey,
+                      },
+                    }
+                  : skill
+              ),
+            }
+          : domain
+      ),
+    }));
+    setSaveError(null);
+  };
+
+  const handleDomainSkillLevelChange = (
+    domainId: string,
+    skillId: string,
+    level: number
+  ) => {
+    const nextLevel = clampValue(
+      level,
+      PLAYER_TABLET_DOMAIN_MIN_LEVEL,
+      PLAYER_TABLET_DOMAIN_MAX_LEVEL
+    );
+
+    setDraft((currentDraft) => ({
+      ...currentDraft,
+      domains: currentDraft.domains.map((domain) => {
+        if (domain.id !== domainId) {
+          return domain;
+        }
+
+        const targetSkill = domain.skills.find((skill) => skill.id === skillId);
+
+        if (targetSkill?.isPrimary) {
+          return {
+            ...domain,
+            level: nextLevel,
+            skills: domain.skills.map((skill) =>
+              skill.isPrimary
+                ? {
+                    ...skill,
+                    level: nextLevel,
+                  }
+                : skill
+            ),
+          };
+        }
+
+        return {
+          ...domain,
+          skills: domain.skills.map((skill) =>
+            skill.id === skillId
+              ? {
+                  ...skill,
+                  level: nextLevel,
+                }
+              : skill
+          ),
+        };
+      }),
+    }));
+    setSaveError(null);
+  };
+
+  const validateCustomIconFile = (file: File) => {
+    if (!PLAYER_TABLET_PORTRAIT_ALLOWED_MIME_TYPES.includes(file.type)) {
+      return "Only JPG, PNG, WEBP, or GIF images are allowed";
+    }
+
+    if (file.size > PLAYER_TABLET_CUSTOM_ICON_MAX_FILE_SIZE_BYTES) {
+      return "Icon must be 3 MB or smaller";
+    }
+
+    return null;
+  };
+
+  const handleDomainIconFileSelect = async (
+    domainId: string,
+    file: File | null
+  ) => {
+    if (!file || !playerCharacter || isSaving) return;
+
+    const validationError = validateCustomIconFile(file);
+
+    if (validationError) {
+      setSaveError(validationError);
+      return;
+    }
+
+    try {
+      const iconUrl = await uploadTabletPlayerCustomIcon(
+        viewerUserId,
+        playerCharacter.id,
+        domainId,
+        "domain",
+        file
+      );
+
+      setDraft((currentDraft) => ({
+        ...currentDraft,
+        domains: currentDraft.domains.map((domain) =>
+          domain.id === domainId
+            ? {
+                ...domain,
+                iconKey: iconUrl,
+                metadata: {
+                  ...(domain.metadata ?? {}),
+                  custom_icon_url: iconUrl,
+                },
+              }
+            : domain
+        ),
+      }));
+      setSaveError(null);
+    } catch (error) {
+      console.error(error);
+      setSaveError("Could not upload icon");
+    }
+  };
+
+  const handleDomainSkillIconFileSelect = async (
+    domainId: string,
+    skillId: string,
+    file: File | null
+  ) => {
+    if (!file || !playerCharacter || isSaving) return;
+
+    const validationError = validateCustomIconFile(file);
+
+    if (validationError) {
+      setSaveError(validationError);
+      return;
+    }
+
+    try {
+      const iconUrl = await uploadTabletPlayerCustomIcon(
+        viewerUserId,
+        playerCharacter.id,
+        skillId,
+        "skill",
+        file
+      );
+
+      setDraft((currentDraft) => ({
+        ...currentDraft,
+        domains: currentDraft.domains.map((domain) =>
+          domain.id === domainId
+            ? {
+                ...domain,
+                skills: domain.skills.map((skill) =>
+                  skill.id === skillId
+                    ? {
+                        ...skill,
+                        iconKey: iconUrl,
+                        metadata: {
+                          ...(skill.metadata ?? {}),
+                          icon_key: iconUrl,
+                          custom_icon_url: iconUrl,
+                        },
+                      }
+                    : skill
+                ),
+              }
+            : domain
+        ),
+      }));
+      setSaveError(null);
+    } catch (error) {
+      console.error(error);
+      setSaveError("Could not upload icon");
+    }
+  };
+
   const handlePortraitChangeRequest = () => {
     if (!isEditMode || isSaving) return false;
 
@@ -677,18 +1289,22 @@ function PlayerTabletShellLayout({
         draft.attributes,
         draft.parameters
       );
+      const normalizedDomains = normalizeDomains(draft.domains);
       const normalizedDraft = {
         ...draft,
         name: nextName,
         description: draft.description,
         avatarUrl: nextAvatarUrl,
         parameters: normalizedParameters,
+        domains: normalizedDomains,
       };
       const patch = buildSavePatch(playerCharacter, normalizedDraft, nextAvatarUrl);
+      const saveResult = patch
+        ? await saveTabletPlayerCharacterPatch(patch)
+        : {};
 
-      if (patch) {
-        await saveTabletPlayerCharacterPatch(patch);
-      }
+      const savedDomains =
+        saveResult.domains ?? normalizedDraft.domains.map(cloneDomain);
 
       const savedCharacter: TabletPlayerCharacter = {
         ...playerCharacter,
@@ -697,6 +1313,7 @@ function PlayerTabletShellLayout({
         avatarUrl: nextAvatarUrl,
         attributes: normalizedDraft.attributes.map(cloneAttribute),
         parameters: normalizedDraft.parameters.map(cloneParameter),
+        domains: savedDomains,
       };
 
       if (draft.portraitFile) {
@@ -904,6 +1521,19 @@ function PlayerTabletShellLayout({
           portraitStatusMessage={portraitStatusMessage}
           isPortraitSelectionDisabled={isSaving}
           onDescriptionChange={handleDescriptionChange}
+          onDomainAdd={handleDomainAdd}
+          onDomainDelete={handleDomainDelete}
+          onDomainNameChange={handleDomainNameChange}
+          onDomainIconChange={handleDomainIconChange}
+          onDomainIconFileSelect={handleDomainIconFileSelect}
+          onDomainLevelChange={handleDomainLevelChange}
+          onDomainSkillAdd={handleDomainSkillAdd}
+          onDomainSkillDelete={handleDomainSkillDelete}
+          onDomainSkillNameChange={handleDomainSkillNameChange}
+          onDomainSkillIconChange={handleDomainSkillIconChange}
+          onDomainSkillIconFileSelect={handleDomainSkillIconFileSelect}
+          onDomainSkillDescriptionChange={handleDomainSkillDescriptionChange}
+          onDomainSkillLevelChange={handleDomainSkillLevelChange}
           onPortraitChangeRequest={handlePortraitChangeRequest}
           onPortraitFileSelect={handlePortraitFileSelect}
         />

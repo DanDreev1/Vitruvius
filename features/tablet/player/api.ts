@@ -1,12 +1,15 @@
 import { supabase } from '@/lib/supabaseClient';
 
 import {
+  PLAYER_TABLET_CUSTOM_ICON_STORAGE_FOLDER,
   PLAYER_TABLET_PORTRAIT_STORAGE_BUCKET,
   PLAYER_TABLET_PORTRAIT_STORAGE_FOLDER,
 } from './constants';
 import type {
   TabletPlayerAttribute,
   TabletPlayerCharacter,
+  TabletPlayerDomain,
+  TabletPlayerDomainSkill,
   TabletPlayerParameter,
   TabletPlayerCharacterSavePatch,
 } from './types';
@@ -37,6 +40,29 @@ type InGameParameterRow = {
   sort_order: number;
 };
 
+type InGameDomainRow = {
+  id: string;
+  domain_key: string;
+  name: string;
+  description: string | null;
+  icon_key: string | null;
+  level: number;
+  sort_order: number;
+  metadata: Record<string, unknown> | null;
+};
+
+type InGameDomainSkillRow = {
+  id: string;
+  in_game_domain_id: string;
+  skill_key: string;
+  name: string;
+  description: string | null;
+  is_primary: boolean;
+  level: number;
+  sort_order: number;
+  metadata: Record<string, unknown> | null;
+};
+
 function mapAttribute(row: InGameAttributeRow): TabletPlayerAttribute {
   return {
     id: row.id,
@@ -60,6 +86,81 @@ function mapParameter(row: InGameParameterRow): TabletPlayerParameter {
   };
 }
 
+function mapDomainSkill(row: InGameDomainSkillRow): TabletPlayerDomainSkill {
+  const metadata = row.metadata ?? {};
+  const iconKey =
+    typeof metadata.icon_key === 'string' ? metadata.icon_key : 'book';
+
+  return {
+    id: row.id,
+    key: row.skill_key,
+    name: row.name,
+    description: row.description,
+    iconKey,
+    isPrimary: row.is_primary,
+    level: row.level,
+    sortOrder: row.sort_order,
+    metadata,
+  };
+}
+
+async function getTabletPlayerDomains(
+  characterId: string
+): Promise<TabletPlayerDomain[]> {
+  const { data: domains, error: domainsError } = await supabase
+    .from('in_game_character_domains')
+    .select('id, domain_key, name, description, icon_key, level, sort_order, metadata')
+    .eq('in_game_character_id', characterId)
+    .order('sort_order', { ascending: true });
+
+  if (domainsError) {
+    throw new Error(
+      `Failed to load tablet character domains: ${domainsError.message}`
+    );
+  }
+
+  const domainRows = (domains ?? []) as InGameDomainRow[];
+  const domainIds = domainRows.map((domain) => domain.id);
+
+  if (!domainIds.length) {
+    return [];
+  }
+
+  const { data: skills, error: skillsError } = await supabase
+    .from('in_game_character_domain_skills')
+    .select(
+      'id, in_game_domain_id, skill_key, name, description, is_primary, level, sort_order, metadata'
+    )
+    .in('in_game_domain_id', domainIds)
+    .order('sort_order', { ascending: true });
+
+  if (skillsError) {
+    throw new Error(
+      `Failed to load tablet character domain skills: ${skillsError.message}`
+    );
+  }
+
+  const skillsByDomainId = new Map<string, TabletPlayerDomainSkill[]>();
+
+  for (const skill of (skills ?? []) as InGameDomainSkillRow[]) {
+    const domainSkills = skillsByDomainId.get(skill.in_game_domain_id) ?? [];
+    domainSkills.push(mapDomainSkill(skill));
+    skillsByDomainId.set(skill.in_game_domain_id, domainSkills);
+  }
+
+  return domainRows.map((domain) => ({
+    id: domain.id,
+    key: domain.domain_key,
+    name: domain.name,
+    description: domain.description,
+    iconKey: domain.icon_key,
+    level: domain.level,
+    sortOrder: domain.sort_order,
+    metadata: domain.metadata ?? {},
+    skills: skillsByDomainId.get(domain.id) ?? [],
+  }));
+}
+
 export async function getTabletPlayerCharacter(
   sessionId: string,
   participantId: string
@@ -81,7 +182,7 @@ export async function getTabletPlayerCharacter(
 
   const characterRow = character as InGameCharacterRow;
 
-  const [attributesResult, parametersResult] = await Promise.all([
+  const [attributesResult, parametersResult, domains] = await Promise.all([
     supabase
       .from('in_game_character_attributes')
       .select('id, attribute_key, label, icon_key, value, sort_order')
@@ -92,6 +193,7 @@ export async function getTabletPlayerCharacter(
       .select('id, parameter_key, label, icon_key, current_value, max_value, sort_order')
       .eq('in_game_character_id', characterRow.id)
       .order('sort_order', { ascending: true }),
+    getTabletPlayerDomains(characterRow.id),
   ]);
 
   if (attributesResult.error) {
@@ -117,6 +219,7 @@ export async function getTabletPlayerCharacter(
     parameters: ((parametersResult.data ?? []) as InGameParameterRow[]).map(
       mapParameter
     ),
+    domains,
   };
 }
 
@@ -124,9 +227,175 @@ function hasCharacterPatch(patch: TabletPlayerCharacterSavePatch) {
   return patch.character && Object.keys(patch.character).length > 0;
 }
 
+function isDraftId(id: string) {
+  return id.startsWith('draft-');
+}
+
+async function saveTabletPlayerDomains(
+  characterId: string,
+  domains: TabletPlayerDomain[]
+) {
+  const { data: existingDomains, error: existingDomainsError } = await supabase
+    .from('in_game_character_domains')
+    .select('id')
+    .eq('in_game_character_id', characterId);
+
+  if (existingDomainsError) {
+    throw new Error(
+      `Failed to load existing domains: ${existingDomainsError.message}`
+    );
+  }
+
+  const keptDomainIds = new Set(
+    domains
+      .filter((domain) => !domain.isDraft && !isDraftId(domain.id))
+      .map((domain) => domain.id)
+  );
+  const domainIdsToDelete = (existingDomains ?? [])
+    .map((domain) => domain.id as string)
+    .filter((domainId) => !keptDomainIds.has(domainId));
+
+  if (domainIdsToDelete.length) {
+    const { error: skillsDeleteError } = await supabase
+      .from('in_game_character_domain_skills')
+      .delete()
+      .in('in_game_domain_id', domainIdsToDelete);
+
+    if (skillsDeleteError) {
+      throw new Error(
+        `Failed to delete domain skills: ${skillsDeleteError.message}`
+      );
+    }
+
+    const { error: domainsDeleteError } = await supabase
+      .from('in_game_character_domains')
+      .delete()
+      .eq('in_game_character_id', characterId)
+      .in('id', domainIdsToDelete);
+
+    if (domainsDeleteError) {
+      throw new Error(`Failed to delete domains: ${domainsDeleteError.message}`);
+    }
+  }
+
+  for (const domain of domains) {
+    const domainPayload = {
+      domain_key: domain.key,
+      name: domain.name,
+      description: domain.description,
+      icon_key: domain.iconKey,
+      level: domain.level,
+      sort_order: domain.sortOrder,
+      metadata: domain.metadata,
+    };
+    let domainId = domain.id;
+
+    if (domain.isDraft || isDraftId(domain.id)) {
+      const { data, error } = await supabase
+        .from('in_game_character_domains')
+        .insert({
+          ...domainPayload,
+          in_game_character_id: characterId,
+        })
+        .select('id')
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to create domain: ${error.message}`);
+      }
+
+      domainId = data.id as string;
+    } else {
+      const { error } = await supabase
+        .from('in_game_character_domains')
+        .update(domainPayload)
+        .eq('id', domain.id)
+        .eq('in_game_character_id', characterId);
+
+      if (error) {
+        throw new Error(`Failed to save domain: ${error.message}`);
+      }
+    }
+
+    const { data: existingSkills, error: existingSkillsError } = await supabase
+      .from('in_game_character_domain_skills')
+      .select('id')
+      .eq('in_game_domain_id', domainId);
+
+    if (existingSkillsError) {
+      throw new Error(
+        `Failed to load existing skills: ${existingSkillsError.message}`
+      );
+    }
+
+    const keptSkillIds = new Set(
+      domain.skills
+        .filter((skill) => !skill.isDraft && !isDraftId(skill.id))
+        .map((skill) => skill.id)
+    );
+    const skillIdsToDelete = (existingSkills ?? [])
+      .map((skill) => skill.id as string)
+      .filter((skillId) => !keptSkillIds.has(skillId));
+
+    if (skillIdsToDelete.length) {
+      const { error: deleteSkillsError } = await supabase
+        .from('in_game_character_domain_skills')
+        .delete()
+        .eq('in_game_domain_id', domainId)
+        .in('id', skillIdsToDelete);
+
+      if (deleteSkillsError) {
+        throw new Error(`Failed to delete skills: ${deleteSkillsError.message}`);
+      }
+    }
+
+    for (const skill of domain.skills) {
+      const skillPayload = {
+        skill_key: skill.key,
+        name: skill.name,
+        description: skill.description,
+        is_primary: skill.isPrimary,
+        level: skill.level,
+        sort_order: skill.sortOrder,
+        metadata: {
+          ...skill.metadata,
+          icon_key: skill.iconKey,
+        },
+      };
+
+      if (skill.isDraft || isDraftId(skill.id)) {
+        const { error } = await supabase
+          .from('in_game_character_domain_skills')
+          .insert({
+            ...skillPayload,
+            in_game_domain_id: domainId,
+          });
+
+        if (error) {
+          throw new Error(`Failed to create skill: ${error.message}`);
+        }
+
+        continue;
+      }
+
+      const { error } = await supabase
+        .from('in_game_character_domain_skills')
+        .update(skillPayload)
+        .eq('id', skill.id)
+        .eq('in_game_domain_id', domainId);
+
+      if (error) {
+        throw new Error(`Failed to save skill: ${error.message}`);
+      }
+    }
+  }
+
+  return getTabletPlayerDomains(characterId);
+}
+
 export async function saveTabletPlayerCharacterPatch(
   patch: TabletPlayerCharacterSavePatch
-) {
+): Promise<{ domains?: TabletPlayerDomain[] }> {
   const updateTasks: Array<PromiseLike<unknown>> = [];
 
   if (hasCharacterPatch(patch)) {
@@ -187,11 +456,17 @@ export async function saveTabletPlayerCharacterPatch(
     );
   }
 
-  if (!updateTasks.length) {
-    return;
+  if (updateTasks.length) {
+    await Promise.all(updateTasks);
   }
 
-  await Promise.all(updateTasks);
+  if (!patch.domains) {
+    return {};
+  }
+
+  return {
+    domains: await saveTabletPlayerDomains(patch.id, patch.domains),
+  };
 }
 
 export async function uploadTabletPlayerPortrait(
@@ -212,6 +487,35 @@ export async function uploadTabletPlayerPortrait(
 
   if (uploadError) {
     throw new Error(`Failed to upload portrait: ${uploadError.message}`);
+  }
+
+  const { data } = supabase.storage
+    .from(PLAYER_TABLET_PORTRAIT_STORAGE_BUCKET)
+    .getPublicUrl(objectPath);
+
+  return `${data.publicUrl}?v=${version}`;
+}
+
+export async function uploadTabletPlayerCustomIcon(
+  uploaderUserId: string,
+  characterId: string,
+  ownerId: string,
+  iconType: 'domain' | 'skill',
+  file: File
+) {
+  const version = Date.now();
+  const objectPath = `${uploaderUserId}/${PLAYER_TABLET_CUSTOM_ICON_STORAGE_FOLDER}/${characterId}/${iconType}s/${ownerId}/icon`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(PLAYER_TABLET_PORTRAIT_STORAGE_BUCKET)
+    .upload(objectPath, file, {
+      cacheControl: '60',
+      contentType: file.type,
+      upsert: true,
+    });
+
+  if (uploadError) {
+    throw new Error(`Failed to upload icon: ${uploadError.message}`);
   }
 
   const { data } = supabase.storage

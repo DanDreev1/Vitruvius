@@ -200,7 +200,37 @@ export const DEFAULT_CHARACTER_PARAMETERS: CharacterParameterTemplate[] = [
   },
 ];
 
-export const DEFAULT_CHARACTER_DOMAINS: CharacterDomainTemplate[] = [];
+export const DEFAULT_CHARACTER_DOMAINS: CharacterDomainTemplate[] = [
+  {
+    domain_key: 'adventuring',
+    name: 'Name of the Domain',
+    description: null,
+    icon_key: 'skills',
+    level: CHARACTER_MIN_DOMAIN_LEVEL,
+    sort_order: 0,
+    metadata: {},
+    skills: [
+      {
+        skill_key: 'adventuring-primary',
+        name: 'Skill name',
+        description: 'Skill description.',
+        is_primary: true,
+        level: CHARACTER_MIN_DOMAIN_LEVEL,
+        sort_order: 0,
+        metadata: { icon_key: 'book' },
+      },
+      {
+        skill_key: 'adventuring-skill-1',
+        name: 'Skill name',
+        description: 'Skill description.',
+        is_primary: false,
+        level: CHARACTER_MIN_DOMAIN_LEVEL,
+        sort_order: 1,
+        metadata: { icon_key: 'book' },
+      },
+    ],
+  },
+];
 export const DEFAULT_CHARACTER_INVENTORY_ITEMS: CharacterInventoryItemTemplate[] = [];
 export const DEFAULT_CHARACTER_NOTES: CharacterNoteTemplate[] = [];
 export const DEFAULT_CHARACTER_EXPERIENCES: CharacterExperienceTemplate[] = [];

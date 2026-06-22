@@ -13,7 +13,7 @@ import type {
 import type { TabletViewMode } from "@/lib/game/types";
 
 import TabletUserPage from "./pages/player/TabletUserPage";
-import TabletSkillsPage from "./pages/player/TabletSkillsPage";
+import TabletSkillsPage from "./pages/player/SkillsPage";
 import TabletBackpackPage from "./pages/player/TabletBackpackPage";
 import TabletLibraryPage from "./pages/player/TabletLibraryPage";
 import TabletRelationshipPlayerPage from "./pages/player/TabletRelationshipPage";
@@ -43,6 +43,39 @@ type TabletPageRendererProps = {
   portraitStatusMessage?: string | null;
   isPortraitSelectionDisabled?: boolean;
   onDescriptionChange?: (description: string) => void;
+  onDomainAdd?: () => string | null | undefined;
+  onDomainDelete?: (domainId: string) => void;
+  onDomainNameChange?: (domainId: string, name: string) => void;
+  onDomainIconChange?: (domainId: string, iconKey: string) => void;
+  onDomainIconFileSelect?: (domainId: string, file: File | null) => void;
+  onDomainLevelChange?: (domainId: string, level: number) => void;
+  onDomainSkillAdd?: (domainId: string) => string | null | undefined;
+  onDomainSkillDelete?: (domainId: string, skillId: string) => void;
+  onDomainSkillNameChange?: (
+    domainId: string,
+    skillId: string,
+    name: string
+  ) => void;
+  onDomainSkillIconChange?: (
+    domainId: string,
+    skillId: string,
+    iconKey: string
+  ) => void;
+  onDomainSkillIconFileSelect?: (
+    domainId: string,
+    skillId: string,
+    file: File | null
+  ) => void;
+  onDomainSkillDescriptionChange?: (
+    domainId: string,
+    skillId: string,
+    description: string
+  ) => void;
+  onDomainSkillLevelChange?: (
+    domainId: string,
+    skillId: string,
+    level: number
+  ) => void;
   onPortraitChangeRequest?: () => boolean;
   onPortraitFileSelect?: (file: File | null) => void;
 };
@@ -63,6 +96,19 @@ export default function TabletPageRenderer({
   portraitStatusMessage = null,
   isPortraitSelectionDisabled = false,
   onDescriptionChange,
+  onDomainAdd,
+  onDomainDelete,
+  onDomainNameChange,
+  onDomainIconChange,
+  onDomainIconFileSelect,
+  onDomainLevelChange,
+  onDomainSkillAdd,
+  onDomainSkillDelete,
+  onDomainSkillNameChange,
+  onDomainSkillIconChange,
+  onDomainSkillIconFileSelect,
+  onDomainSkillDescriptionChange,
+  onDomainSkillLevelChange,
   onPortraitChangeRequest,
   onPortraitFileSelect,
 }: TabletPageRendererProps) {
@@ -119,7 +165,29 @@ export default function TabletPageRenderer({
         />
       );
     case "skills":
-      return <TabletSkillsPage isEditable={isEditable} />;
+      return (
+        <TabletSkillsPage
+          isEditable={isEditable}
+          character={playerCharacter}
+          isLoading={isPlayerCharacterLoading}
+          error={playerCharacterError}
+          isEditMode={isEditMode}
+          draft={characterDraft}
+          onDomainAdd={onDomainAdd}
+          onDomainDelete={onDomainDelete}
+          onDomainNameChange={onDomainNameChange}
+          onDomainIconChange={onDomainIconChange}
+          onDomainIconFileSelect={onDomainIconFileSelect}
+          onDomainLevelChange={onDomainLevelChange}
+          onDomainSkillAdd={onDomainSkillAdd}
+          onDomainSkillDelete={onDomainSkillDelete}
+          onDomainSkillNameChange={onDomainSkillNameChange}
+          onDomainSkillIconChange={onDomainSkillIconChange}
+          onDomainSkillIconFileSelect={onDomainSkillIconFileSelect}
+          onDomainSkillDescriptionChange={onDomainSkillDescriptionChange}
+          onDomainSkillLevelChange={onDomainSkillLevelChange}
+        />
+      );
     case "backpack":
       return <TabletBackpackPage isEditable={isEditable} />;
     case "library":
