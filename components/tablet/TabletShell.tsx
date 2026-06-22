@@ -38,6 +38,7 @@ import type {
   TabletPlayerCharacterDraft,
   TabletPlayerDomain,
   TabletPlayerDomainSkill,
+  TabletPlayerExperience,
   TabletPlayerParameter,
   TabletPlayerCharacterSavePatch,
 } from "@/features/tablet/player/types";
@@ -1337,6 +1338,17 @@ function PlayerTabletShellLayout({
     }
   };
 
+  const handleExperiencesSaved = (
+    experiences: TabletPlayerExperience[]
+  ) => {
+    if (!playerCharacter) return;
+
+    onPlayerCharacterSaved({
+      ...playerCharacter,
+      experiences,
+    });
+  };
+
   return (
     <div className="relative h-full w-full overflow-hidden rounded-[34px] border border-white bg-[#172033] shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
       <div className="absolute bottom-0 left-0 top-0 w-[112px] border-r border-white/45">
@@ -1536,6 +1548,7 @@ function PlayerTabletShellLayout({
           onDomainSkillLevelChange={handleDomainSkillLevelChange}
           onPortraitChangeRequest={handlePortraitChangeRequest}
           onPortraitFileSelect={handlePortraitFileSelect}
+          onExperiencesSaved={handleExperiencesSaved}
         />
       </div>
     </div>

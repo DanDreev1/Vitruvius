@@ -9,6 +9,7 @@ import type {
 import type {
   TabletPlayerCharacter,
   TabletPlayerCharacterDraft,
+  TabletPlayerExperience,
 } from "@/features/tablet/player/types";
 import type { TabletViewMode } from "@/lib/game/types";
 
@@ -78,6 +79,7 @@ type TabletPageRendererProps = {
   ) => void;
   onPortraitChangeRequest?: () => boolean;
   onPortraitFileSelect?: (file: File | null) => void;
+  onExperiencesSaved?: (experiences: TabletPlayerExperience[]) => void;
 };
 
 export default function TabletPageRenderer({
@@ -111,6 +113,7 @@ export default function TabletPageRenderer({
   onDomainSkillLevelChange,
   onPortraitChangeRequest,
   onPortraitFileSelect,
+  onExperiencesSaved,
 }: TabletPageRendererProps) {
   if (!isTabletTabAllowed(activeTab, targetRole, mode)) {
     return null;
@@ -191,7 +194,15 @@ export default function TabletPageRenderer({
     case "backpack":
       return <TabletBackpackPage isEditable={isEditable} />;
     case "library":
-      return <TabletLibraryPage isEditable={isEditable} />;
+      return (
+        <TabletLibraryPage
+          isEditable={isEditable}
+          character={playerCharacter}
+          isLoading={isPlayerCharacterLoading}
+          error={playerCharacterError}
+          onExperiencesSaved={onExperiencesSaved}
+        />
+      );
     case "relationship":
       return <TabletRelationshipPlayerPage isEditable={isEditable} />;
     case "notes":

@@ -43,6 +43,19 @@ export type TabletPlayerDomain = {
   isDraft?: boolean;
 };
 
+export type TabletPlayerExperience = {
+  id: string;
+  headline: string;
+  description: string | null;
+  xp: number;
+  tag: string | null;
+  sessionLabel: string | null;
+  happenedAt: string | null;
+  sortOrder: number;
+  metadata: Record<string, unknown>;
+  isDraft?: boolean;
+};
+
 export type TabletPlayerCharacter = {
   id: string;
   name: string;
@@ -51,6 +64,7 @@ export type TabletPlayerCharacter = {
   attributes: TabletPlayerAttribute[];
   parameters: TabletPlayerParameter[];
   domains: TabletPlayerDomain[];
+  experiences: TabletPlayerExperience[];
 };
 
 export type TabletPlayerCharacterDraft = {

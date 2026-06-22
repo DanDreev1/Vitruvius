@@ -10,6 +10,7 @@ import type {
   TabletPlayerCharacter,
   TabletPlayerDomain,
   TabletPlayerDomainSkill,
+  TabletPlayerExperience,
   TabletPlayerParameter,
   TabletPlayerCharacterSavePatch,
 } from './types';
@@ -63,6 +64,18 @@ type InGameDomainSkillRow = {
   metadata: Record<string, unknown> | null;
 };
 
+type InGameExperienceRow = {
+  id: string;
+  headline: string;
+  description: string | null;
+  xp: number;
+  tag: string | null;
+  session_label: string | null;
+  happened_at: string | null;
+  sort_order: number;
+  metadata: Record<string, unknown> | null;
+};
+
 function mapAttribute(row: InGameAttributeRow): TabletPlayerAttribute {
   return {
     id: row.id,
@@ -101,6 +114,20 @@ function mapDomainSkill(row: InGameDomainSkillRow): TabletPlayerDomainSkill {
     level: row.level,
     sortOrder: row.sort_order,
     metadata,
+  };
+}
+
+function mapExperience(row: InGameExperienceRow): TabletPlayerExperience {
+  return {
+    id: row.id,
+    headline: row.headline,
+    description: row.description,
+    xp: row.xp,
+    tag: row.tag,
+    sessionLabel: row.session_label,
+    happenedAt: row.happened_at,
+    sortOrder: row.sort_order,
+    metadata: row.metadata ?? {},
   };
 }
 
@@ -161,6 +188,26 @@ async function getTabletPlayerDomains(
   }));
 }
 
+async function getTabletPlayerExperiences(
+  characterId: string
+): Promise<TabletPlayerExperience[]> {
+  const { data, error } = await supabase
+    .from('in_game_character_experiences')
+    .select(
+      'id, headline, description, xp, tag, session_label, happened_at, sort_order, metadata'
+    )
+    .eq('in_game_character_id', characterId)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    throw new Error(
+      `Failed to load tablet character experiences: ${error.message}`
+    );
+  }
+
+  return ((data ?? []) as InGameExperienceRow[]).map(mapExperience);
+}
+
 export async function getTabletPlayerCharacter(
   sessionId: string,
   participantId: string
@@ -182,19 +229,23 @@ export async function getTabletPlayerCharacter(
 
   const characterRow = character as InGameCharacterRow;
 
-  const [attributesResult, parametersResult, domains] = await Promise.all([
-    supabase
-      .from('in_game_character_attributes')
-      .select('id, attribute_key, label, icon_key, value, sort_order')
-      .eq('in_game_character_id', characterRow.id)
-      .order('sort_order', { ascending: true }),
-    supabase
-      .from('in_game_character_parameters')
-      .select('id, parameter_key, label, icon_key, current_value, max_value, sort_order')
-      .eq('in_game_character_id', characterRow.id)
-      .order('sort_order', { ascending: true }),
-    getTabletPlayerDomains(characterRow.id),
-  ]);
+  const [attributesResult, parametersResult, domains, experiences] =
+    await Promise.all([
+      supabase
+        .from('in_game_character_attributes')
+        .select('id, attribute_key, label, icon_key, value, sort_order')
+        .eq('in_game_character_id', characterRow.id)
+        .order('sort_order', { ascending: true }),
+      supabase
+        .from('in_game_character_parameters')
+        .select(
+          'id, parameter_key, label, icon_key, current_value, max_value, sort_order'
+        )
+        .eq('in_game_character_id', characterRow.id)
+        .order('sort_order', { ascending: true }),
+      getTabletPlayerDomains(characterRow.id),
+      getTabletPlayerExperiences(characterRow.id),
+    ]);
 
   if (attributesResult.error) {
     throw new Error(
@@ -220,6 +271,7 @@ export async function getTabletPlayerCharacter(
       mapParameter
     ),
     domains,
+    experiences,
   };
 }
 
@@ -391,6 +443,68 @@ async function saveTabletPlayerDomains(
   }
 
   return getTabletPlayerDomains(characterId);
+}
+
+export async function saveTabletPlayerExperiences(
+  characterId: string,
+  experiences: TabletPlayerExperience[]
+) {
+  for (const experience of experiences) {
+    const experiencePayload = {
+      headline: experience.headline,
+      description: experience.description,
+      xp: experience.xp,
+      tag: experience.tag,
+      session_label: experience.sessionLabel,
+      happened_at: experience.happenedAt,
+      sort_order: experience.sortOrder,
+      metadata: experience.metadata,
+    };
+
+    if (experience.isDraft || isDraftId(experience.id)) {
+      const { error } = await supabase
+        .from('in_game_character_experiences')
+        .insert({
+          ...experiencePayload,
+          in_game_character_id: characterId,
+        });
+
+      if (error) {
+        throw new Error(`Failed to create experience: ${error.message}`);
+      }
+
+      continue;
+    }
+
+    const { error } = await supabase
+      .from('in_game_character_experiences')
+      .update(experiencePayload)
+      .eq('id', experience.id)
+      .eq('in_game_character_id', characterId);
+
+    if (error) {
+      throw new Error(`Failed to save experience: ${error.message}`);
+    }
+  }
+
+  return getTabletPlayerExperiences(characterId);
+}
+
+export async function deleteTabletPlayerExperience(
+  characterId: string,
+  experienceId: string
+) {
+  const { error } = await supabase
+    .from('in_game_character_experiences')
+    .delete()
+    .eq('id', experienceId)
+    .eq('in_game_character_id', characterId);
+
+  if (error) {
+    throw new Error(`Failed to delete experience: ${error.message}`);
+  }
+
+  return getTabletPlayerExperiences(characterId);
 }
 
 export async function saveTabletPlayerCharacterPatch(
