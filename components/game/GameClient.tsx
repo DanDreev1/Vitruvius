@@ -9,6 +9,8 @@ import BackHomeButton from "@/components/ui/BackHomeButton";
 import { supabase } from "@/lib/supabaseClient";
 import GameViewport from "@/components/game/GameViewport";
 import PlayerSceneImagesHost from "@/components/game/PlayerSceneImagesHost";
+import PlayerSceneMusicAudio from "@/components/game/PlayerSceneMusicAudio";
+import SceneMusicMasterRuntime from "@/components/game/SceneMusicMasterRuntime";
 import TabletHost from "./TabletHost";
 import { disbandLobby, leaveLobby } from "@/features/lobby/api";
 import { getGameSessionByCode } from "@/features/game/getGameSessionByCode";
@@ -328,6 +330,19 @@ export default function GameClient({ code }: GameClientProps) {
           onClose={handleCloseSceneImages}
         />
       ) : null}
+
+      {currentParticipant.role === "player" ? (
+        <PlayerSceneMusicAudio
+          sessionId={gameData.session.id}
+          inGameWorldId={inGameWorldId}
+          participantId={currentParticipant.id}
+        />
+      ) : (
+        <SceneMusicMasterRuntime
+          sessionId={gameData.session.id}
+          inGameWorldId={inGameWorldId}
+        />
+      )}
     </>
   );
 }

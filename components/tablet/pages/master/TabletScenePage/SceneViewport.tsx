@@ -60,7 +60,11 @@ export default function SceneViewport({
               onAudienceStateChange={onAudienceStateChange}
             />
           ) : (
-            <SceneMusicPage />
+            <SceneMusicPage
+              sessionId={sessionId}
+              inGameWorldId={inGameWorldId}
+              onAudienceStateChange={onAudienceStateChange}
+            />
           )}
         </motion.div>
       </AnimatePresence>

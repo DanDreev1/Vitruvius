@@ -17,3 +17,18 @@ export const SCENE_PLACEHOLDER_ICON_PATHS = {
 
 export const SCENE_IMAGE_STORAGE_BUCKET = 'scene-images';
 export const SCENE_IMAGE_STORAGE_FOLDER = 'in-game-worlds';
+
+export const SCENE_MUSIC_STORAGE_BUCKET = 'scene-music';
+export const SCENE_MUSIC_STORAGE_FOLDER = 'in-game-worlds';
+export const SCENE_MUSIC_MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+export const SCENE_MUSIC_ALLOWED_MIME_TYPES = [
+  'audio/mpeg',
+  'audio/mp3',
+  'audio/wav',
+  'audio/wave',
+  'audio/x-wav',
+  'audio/ogg',
+  'audio/mp4',
+  'audio/x-m4a',
+];
+export const SCENE_MUSIC_FADE_MS = 900;

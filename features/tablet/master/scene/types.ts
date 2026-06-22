@@ -49,3 +49,30 @@ export type SceneAudienceState = {
   onToggleAll: () => void;
   onToggleParticipant: (inGameCharacterId: string) => void;
 };
+
+export type SceneMusicItem = {
+  id: string;
+  title: string;
+  audioUrl: string;
+  coverUrl: string | null;
+  isActive: boolean;
+  isPlaying: boolean;
+  currentTimeSeconds: number;
+  sortOrder: number;
+};
+
+export type SceneMusicRecord = {
+  id: string;
+  in_game_world_id: string;
+  title: string;
+  audio_url: string;
+  cover_url: string | null;
+  storage_path?: string | null;
+  mime_type?: string | null;
+  sort_order: number;
+  is_active: boolean;
+  is_playing: boolean;
+  current_time_seconds: number;
+  created_at: string;
+  updated_at: string;
+};

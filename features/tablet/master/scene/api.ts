@@ -2,43 +2,126 @@ import { supabase } from '@/lib/supabaseClient';
 import {
   SCENE_IMAGE_STORAGE_BUCKET,
   SCENE_IMAGE_STORAGE_FOLDER,
+  SCENE_MUSIC_STORAGE_BUCKET,
+  SCENE_MUSIC_STORAGE_FOLDER,
 } from './constants';
-import type { SceneImageRecord } from './types';
+import type { SceneImageRecord, SceneMusicRecord } from './types';
 
 import type { SceneAudienceTarget } from './types';
 
 export const SCENE_IMAGES_CHANGED_EVENT = 'scene-images-changed';
+export const SCENE_MUSIC_CHANGED_EVENT = 'scene-music-changed';
+export const SCENE_MUSIC_LOCAL_CHANGED_EVENT = 'scene-music-local-changed';
+export const SCENE_MUSIC_TIME_REQUEST_EVENT = 'scene-music-time-request';
+export const SCENE_MUSIC_TIME_RESPONSE_EVENT = 'scene-music-time-response';
 
 export function getSceneImagesRealtimeChannelName(sessionId: string) {
   return `scene-images-${sessionId}`;
 }
 
-export async function broadcastSceneImagesChanged(sessionId: string) {
-  const channel = supabase.channel(getSceneImagesRealtimeChannelName(sessionId));
+export function getSceneMusicRealtimeChannelName(sessionId: string) {
+  return `scene-music-${sessionId}`;
+}
+
+async function sendBroadcast(
+  channelName: string,
+  event: string,
+  payload: Record<string, unknown>
+) {
+  const channel = supabase.channel(channelName);
 
   try {
-    await new Promise<void>((resolve) => {
-      const timeoutId = window.setTimeout(resolve, 800);
+    const isSubscribed = await new Promise<boolean>((resolve) => {
+      const timeoutId = window.setTimeout(() => resolve(false), 3000);
 
       channel.subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           window.clearTimeout(timeoutId);
-          resolve();
+          resolve(true);
         }
       });
     });
 
+    if (!isSubscribed) {
+      console.warn(`Realtime channel ${channelName} was not ready for broadcast.`);
+      return;
+    }
+
     await channel.send({
       type: 'broadcast',
-      event: SCENE_IMAGES_CHANGED_EVENT,
-      payload: {
-        sessionId,
-        changedAt: Date.now(),
-      },
+      event,
+      payload,
     });
   } finally {
     void supabase.removeChannel(channel);
   }
+}
+
+export async function broadcastSceneImagesChanged(sessionId: string) {
+  await sendBroadcast(
+    getSceneImagesRealtimeChannelName(sessionId),
+    SCENE_IMAGES_CHANGED_EVENT,
+    {
+      sessionId,
+      changedAt: Date.now(),
+    }
+  );
+}
+
+type SceneMusicChangedPayload = {
+  trackId?: string;
+  currentTimeSeconds?: number;
+  isPlaying?: boolean;
+  isActive?: boolean;
+};
+
+export async function broadcastSceneMusicChanged(
+  sessionId: string,
+  payload: SceneMusicChangedPayload = {}
+) {
+  window.dispatchEvent(
+    new CustomEvent(SCENE_MUSIC_LOCAL_CHANGED_EVENT, {
+      detail: {
+        sessionId,
+        changedAt: Date.now(),
+        ...payload,
+      },
+    })
+  );
+
+  await sendBroadcast(
+    getSceneMusicRealtimeChannelName(sessionId),
+    SCENE_MUSIC_CHANGED_EVENT,
+    {
+      sessionId,
+      changedAt: Date.now(),
+      ...payload,
+    }
+  );
+}
+
+export async function broadcastSceneMusicTimeResponse({
+  sessionId,
+  trackId,
+  currentTimeSeconds,
+  isPlaying,
+}: {
+  sessionId: string;
+  trackId: string;
+  currentTimeSeconds: number;
+  isPlaying: boolean;
+}) {
+  await sendBroadcast(
+    getSceneMusicRealtimeChannelName(sessionId),
+    SCENE_MUSIC_TIME_RESPONSE_EVENT,
+    {
+      sessionId,
+      trackId,
+      currentTimeSeconds,
+      isPlaying,
+      respondedAt: Date.now(),
+    }
+  );
 }
 
 export async function getSceneImageAudience(
@@ -198,6 +281,332 @@ export async function getInGameWorldSceneImages(
   return (data ?? []) as SceneImageRecord[];
 }
 
+export async function getSceneMusicTargets(
+  inGameSceneMusicId: string
+): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('in_game_worlds_scene_music_targets')
+    .select('in_game_character_id')
+    .eq('in_game_scene_music_id', inGameSceneMusicId)
+    .not('in_game_character_id', 'is', null);
+
+  if (error) {
+    throw new Error(`Failed to load scene music targets: ${error.message}`);
+  }
+
+  return (data ?? [])
+    .map((row) => row.in_game_character_id as string | null)
+    .filter((value): value is string => Boolean(value));
+}
+
+export async function addSceneMusicTarget(
+  inGameSceneMusicId: string,
+  inGameCharacterId: string,
+  sessionId: string
+) {
+  const { data: existingTarget, error: existingTargetError } = await supabase
+    .from('in_game_worlds_scene_music_targets')
+    .select('id')
+    .eq('in_game_scene_music_id', inGameSceneMusicId)
+    .eq('in_game_character_id', inGameCharacterId)
+    .maybeSingle();
+
+  if (existingTargetError) {
+    throw new Error(`Failed to check scene music target: ${existingTargetError.message}`);
+  }
+
+  if (existingTarget) {
+    await broadcastSceneMusicChanged(sessionId);
+    return;
+  }
+
+  const { error } = await supabase
+    .from('in_game_worlds_scene_music_targets')
+    .insert({
+      in_game_scene_music_id: inGameSceneMusicId,
+      in_game_character_id: inGameCharacterId,
+    });
+
+  if (error) {
+    throw new Error(`Failed to add scene music target: ${error.message}`);
+  }
+
+  await broadcastSceneMusicChanged(sessionId);
+}
+
+export async function removeSceneMusicTarget(
+  inGameSceneMusicId: string,
+  inGameCharacterId: string,
+  sessionId: string
+) {
+  const { error } = await supabase
+    .from('in_game_worlds_scene_music_targets')
+    .delete()
+    .eq('in_game_scene_music_id', inGameSceneMusicId)
+    .eq('in_game_character_id', inGameCharacterId);
+
+  if (error) {
+    throw new Error(`Failed to remove scene music target: ${error.message}`);
+  }
+
+  await broadcastSceneMusicChanged(sessionId);
+}
+
+async function getNextSceneMusicSortOrder(inGameWorldId: string) {
+  const { data, error } = await supabase
+    .from('in_game_worlds_scene_music')
+    .select('sort_order')
+    .eq('in_game_world_id', inGameWorldId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to get next scene music sort order: ${error.message}`);
+  }
+
+  return (data?.sort_order ?? -1) + 1;
+}
+
+export async function getInGameWorldSceneMusic(
+  inGameWorldId: string
+): Promise<SceneMusicRecord[]> {
+  const { data, error } = await supabase
+    .from('in_game_worlds_scene_music')
+    .select('id, in_game_world_id, title, audio_url, cover_url, sort_order, is_active, is_playing, current_time_seconds, created_at, updated_at')
+    .eq('in_game_world_id', inGameWorldId)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    throw new Error(`Failed to load scene music: ${error.message}`);
+  }
+
+  return (data ?? []) as SceneMusicRecord[];
+}
+
+async function uploadSceneMusicFile(
+  inGameWorldId: string,
+  file: File
+) {
+  const safeName = sanitizeFileName(file.name);
+  const objectPath = `${SCENE_MUSIC_STORAGE_FOLDER}/${inGameWorldId}/${crypto.randomUUID()}-${safeName}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from(SCENE_MUSIC_STORAGE_BUCKET)
+    .upload(objectPath, file, {
+      cacheControl: '3600',
+      contentType: file.type || undefined,
+      upsert: false,
+    });
+
+  if (uploadError) {
+    throw new Error(`Failed to upload scene music: ${uploadError.message}`);
+  }
+
+  const { data } = supabase.storage
+    .from(SCENE_MUSIC_STORAGE_BUCKET)
+    .getPublicUrl(objectPath);
+
+  return {
+    publicUrl: data.publicUrl,
+    title: stripExtension(file.name) || 'Untitled track',
+  };
+}
+
+export async function createInGameWorldSceneMusic(
+  inGameWorldId: string,
+  file: File,
+  sessionId: string
+) {
+  const [{ publicUrl, title }, sortOrder] = await Promise.all([
+    uploadSceneMusicFile(inGameWorldId, file),
+    getNextSceneMusicSortOrder(inGameWorldId),
+  ]);
+
+  const { error } = await supabase
+    .from('in_game_worlds_scene_music')
+    .insert({
+      in_game_world_id: inGameWorldId,
+      title,
+      audio_url: publicUrl,
+      sort_order: sortOrder,
+      is_active: false,
+      is_playing: false,
+      current_time_seconds: 0,
+    });
+
+  if (error) {
+    throw new Error(`Failed to create scene music: ${error.message}`);
+  }
+
+  await broadcastSceneMusicChanged(sessionId);
+}
+
+export async function selectInGameWorldSceneMusic(
+  inGameWorldId: string,
+  musicId: string,
+  sessionId: string
+) {
+  const { error: resetError } = await supabase
+    .from('in_game_worlds_scene_music')
+    .update({ is_active: false, is_playing: false })
+    .eq('in_game_world_id', inGameWorldId);
+
+  if (resetError) {
+    throw new Error(`Failed to reset scene music selection: ${resetError.message}`);
+  }
+
+  const { error } = await supabase
+    .from('in_game_worlds_scene_music')
+    .update({
+      is_active: true,
+      is_playing: false,
+      current_time_seconds: 0,
+    })
+    .eq('id', musicId)
+    .eq('in_game_world_id', inGameWorldId);
+
+  if (error) {
+    throw new Error(`Failed to select scene music: ${error.message}`);
+  }
+
+  await broadcastSceneMusicChanged(sessionId, {
+    trackId: musicId,
+    currentTimeSeconds: 0,
+    isActive: true,
+    isPlaying: false,
+  });
+}
+
+export async function playInGameWorldSceneMusic(
+  inGameWorldId: string,
+  musicId: string,
+  currentTimeSeconds: number,
+  sessionId: string
+) {
+  const { error: resetError } = await supabase
+    .from('in_game_worlds_scene_music')
+    .update({ is_active: false, is_playing: false })
+    .eq('in_game_world_id', inGameWorldId)
+    .neq('id', musicId);
+
+  if (resetError) {
+    throw new Error(`Failed to stop previous scene music: ${resetError.message}`);
+  }
+
+  const { error } = await supabase
+    .from('in_game_worlds_scene_music')
+    .update({
+      is_active: true,
+      is_playing: true,
+      current_time_seconds: currentTimeSeconds,
+    })
+    .eq('id', musicId)
+    .eq('in_game_world_id', inGameWorldId);
+
+  if (error) {
+    throw new Error(`Failed to play scene music: ${error.message}`);
+  }
+
+  await broadcastSceneMusicChanged(sessionId, {
+    trackId: musicId,
+    currentTimeSeconds,
+    isActive: true,
+    isPlaying: true,
+  });
+}
+
+export async function pauseInGameWorldSceneMusic(
+  musicId: string,
+  currentTimeSeconds: number,
+  sessionId: string
+) {
+  const { error } = await supabase
+    .from('in_game_worlds_scene_music')
+    .update({
+      is_playing: false,
+      current_time_seconds: currentTimeSeconds,
+    })
+    .eq('id', musicId);
+
+  if (error) {
+    throw new Error(`Failed to pause scene music: ${error.message}`);
+  }
+
+  await broadcastSceneMusicChanged(sessionId, {
+    trackId: musicId,
+    currentTimeSeconds,
+    isActive: true,
+    isPlaying: false,
+  });
+}
+
+export async function updateInGameWorldSceneMusicTime(
+  musicId: string,
+  currentTimeSeconds: number
+) {
+  const { error } = await supabase
+    .from('in_game_worlds_scene_music')
+    .update({
+      current_time_seconds: currentTimeSeconds,
+    })
+    .eq('id', musicId);
+
+  if (error) {
+    throw new Error(`Failed to save scene music time: ${error.message}`);
+  }
+}
+
+function getSceneMusicStoragePathFromPublicUrl(audioUrl: string | null) {
+  if (!audioUrl) return null;
+
+  const marker = `/object/public/${SCENE_MUSIC_STORAGE_BUCKET}/`;
+  const markerIndex = audioUrl.indexOf(marker);
+  if (markerIndex === -1) return null;
+
+  return decodeURIComponent(audioUrl.slice(markerIndex + marker.length));
+}
+
+export async function deleteInGameWorldSceneMusic(
+  musicId: string,
+  sessionId: string
+) {
+  const { data: musicRow, error: loadError } = await supabase
+    .from('in_game_worlds_scene_music')
+    .select('id, audio_url')
+    .eq('id', musicId)
+    .single();
+
+  if (loadError) {
+    throw new Error(`Failed to load scene music before delete: ${loadError.message}`);
+  }
+
+  const storagePath = getSceneMusicStoragePathFromPublicUrl(
+    (musicRow?.audio_url as string | null) ?? null
+  );
+
+  if (storagePath) {
+    const { error: storageError } = await supabase.storage
+      .from(SCENE_MUSIC_STORAGE_BUCKET)
+      .remove([storagePath]);
+
+    if (storageError) {
+      throw new Error(`Failed to delete scene music file: ${storageError.message}`);
+    }
+  }
+
+  const { error } = await supabase
+    .from('in_game_worlds_scene_music')
+    .delete()
+    .eq('id', musicId);
+
+  if (error) {
+    throw new Error(`Failed to delete scene music row: ${error.message}`);
+  }
+
+  await broadcastSceneMusicChanged(sessionId);
+}
+
 export async function getAvailablePlayerSceneImages({
   sessionId,
   inGameWorldId,
@@ -264,6 +673,77 @@ export async function getAvailablePlayerSceneImages({
   }
 
   return (data ?? []) as SceneImageRecord[];
+}
+
+export async function getAvailablePlayerSceneMusic({
+  sessionId,
+  inGameWorldId,
+  participantId,
+}: {
+  sessionId: string;
+  inGameWorldId: string;
+  participantId: string;
+}): Promise<SceneMusicRecord | null> {
+  const { data: characters, error: characterError } = await supabase
+    .from('in_game_characters')
+    .select('id')
+    .eq('session_id', sessionId)
+    .eq('participant_id', participantId);
+
+  if (characterError) {
+    throw new Error(`Failed to load player character for scene music: ${characterError.message}`);
+  }
+
+  const inGameCharacterIds = [
+    ...new Set(
+      (characters ?? [])
+        .map((character) => character.id as string | null)
+        .filter((value): value is string => Boolean(value))
+    ),
+  ];
+
+  if (!inGameCharacterIds.length) {
+    return null;
+  }
+
+  const { data: targetRows, error: targetsError } = await supabase
+    .from('in_game_worlds_scene_music_targets')
+    .select('in_game_scene_music_id')
+    .in('in_game_character_id', inGameCharacterIds)
+    .not('in_game_scene_music_id', 'is', null);
+
+  if (targetsError) {
+    throw new Error(`Failed to load available scene music targets: ${targetsError.message}`);
+  }
+
+  const musicIds = [
+    ...new Set(
+      (targetRows ?? [])
+        .map((row) => row.in_game_scene_music_id as string | null)
+        .filter((value): value is string => Boolean(value))
+    ),
+  ];
+
+  if (!musicIds.length) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from('in_game_worlds_scene_music')
+    .select('id, in_game_world_id, title, audio_url, cover_url, sort_order, is_active, is_playing, current_time_seconds, created_at, updated_at')
+    .eq('in_game_world_id', inGameWorldId)
+    .eq('is_active', true)
+    .eq('is_playing', true)
+    .in('id', musicIds)
+    .order('sort_order', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Failed to load available scene music: ${error.message}`);
+  }
+
+  return (data as SceneMusicRecord | null) ?? null;
 }
 
 async function uploadSceneImageFile(
