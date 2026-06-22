@@ -4,7 +4,7 @@
 
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import {
   PLAYER_TABLET_DOMAIN_MAX_LEVEL,
@@ -453,7 +453,7 @@ function SkillCard({
       ) : null}
 
       <div className="flex items-center gap-[10px]">
-        <div className="relative shrink-0">
+        <div className="relative shrink-0" data-skills-icon-picker-root="true">
           <button
             type="button"
             disabled={!canEdit}
@@ -568,6 +568,33 @@ export default function TabletSkillsPage({
   const [domainDirection, setDomainDirection] = useState(1);
   const [skillPage, setSkillPage] = useState(0);
   const [iconPicker, setIconPicker] = useState<IconPickerState>(null);
+
+  useEffect(() => {
+    if (!iconPicker) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      if (target.closest('[data-skills-icon-picker-root="true"]')) {
+        return;
+      }
+
+      setIconPicker(null);
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+    };
+  }, [iconPicker]);
+
   const activeDomainId =
     domains.find((domain) => domain.id === selectedDomainId)?.id ??
     domains[0]?.id ??
@@ -738,7 +765,7 @@ export default function TabletSkillsPage({
           >
             <div className="flex h-full flex-col items-center">
               <div className="flex min-h-[58px] items-center justify-center gap-[16px]">
-                <div className="relative">
+                <div className="relative" data-skills-icon-picker-root="true">
                   <button
                     type="button"
                     disabled={!canEdit}
