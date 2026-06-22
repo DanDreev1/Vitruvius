@@ -113,7 +113,7 @@ export default function TabletUserPage({
           <textarea
             value={descriptionDraft}
             onChange={(event) => onDescriptionChange?.(event.target.value)}
-            className="mt-[24px] h-[444px] w-full resize-none rounded-[20px] border border-white/35 bg-white px-[22px] py-[18px] font-montserrat text-[20px] font-semibold leading-[1.25] text-[#172033] outline-none focus:border-white"
+            className="mt-[24px] h-[444px] w-full resize-none rounded-[14px] border border-white/35 bg-white/8 px-[16px] py-[14px] font-montserrat text-[20px] font-semibold leading-[1.25] text-white outline-none placeholder:text-white/45 focus:border-white"
             aria-label="Character description"
             placeholder="Description"
           />
