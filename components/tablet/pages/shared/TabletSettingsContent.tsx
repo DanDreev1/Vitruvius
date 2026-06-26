@@ -1,5 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+
+import {
+  isPartyConfirmationSuppressed,
+  setPartyConfirmationSuppressed,
+} from '@/features/tablet/master/party/confirmation';
 import { useSceneAudioVolume } from '@/features/tablet/useSceneAudioVolume';
 
 import {
@@ -9,6 +15,13 @@ import {
 
 export default function TabletSettingsContent() {
   const { volume, setVolume } = useSceneAudioVolume();
+  const [arePartyConfirmationsSuppressed, setArePartyConfirmationsSuppressed] =
+    useState(() => isPartyConfirmationSuppressed());
+
+  const restorePartyConfirmations = () => {
+    setPartyConfirmationSuppressed(false);
+    setArePartyConfirmationsSuppressed(false);
+  };
 
   return (
     <div className="h-full">
@@ -41,6 +54,34 @@ export default function TabletSettingsContent() {
               className="h-[8px] w-full accent-[#D6B25E]"
               aria-label="Scene audio volume"
             />
+          </div>
+
+          <div className="rounded-[20px] border border-white/10 bg-[#243047] px-[20px] py-[18px]">
+            <div className="mb-[14px] flex items-center justify-between gap-[16px]">
+              <div>
+                <p className="font-montserrat-alt text-[20px] font-extrabold text-white">
+                  Party confirmations
+                </p>
+                <p className="mt-[4px] font-montserrat text-[14px] text-white/65">
+                  Confirmation popups for check decisions
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={restorePartyConfirmations}
+                disabled={!arePartyConfirmationsSuppressed}
+                className="rounded-[14px] bg-white px-[16px] py-[9px] font-montserrat text-[13px] font-extrabold text-black disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Restore
+              </button>
+            </div>
+
+            <p className="font-montserrat text-[14px] leading-[1.5] text-white/65">
+              {arePartyConfirmationsSuppressed
+                ? 'Party decision confirmations are hidden for this browser.'
+                : 'Party decision confirmations are currently enabled.'}
+            </p>
           </div>
         </Panel>
 

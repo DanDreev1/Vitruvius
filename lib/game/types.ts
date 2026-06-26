@@ -64,6 +64,9 @@ export type DensityPreset = {
 
   tableImageMaxWidth: number;
   tableImageMaxHeight: number;
+
+  partyCheckForwardOffset: number;
+  partyBonusSideOffset: number;
 };
 
 export type SeatedPlayer = {

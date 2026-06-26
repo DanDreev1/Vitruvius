@@ -43,6 +43,7 @@ type TabletPageRendererProps = {
   characterDraft?: TabletPlayerCharacterDraft;
   portraitStatusMessage?: string | null;
   isPortraitSelectionDisabled?: boolean;
+  onClose?: () => void;
   onDescriptionChange?: (description: string) => void;
   onDomainAdd?: () => string | null | undefined;
   onDomainDelete?: (domainId: string) => void;
@@ -97,6 +98,7 @@ export default function TabletPageRenderer({
   characterDraft,
   portraitStatusMessage = null,
   isPortraitSelectionDisabled = false,
+  onClose,
   onDescriptionChange,
   onDomainAdd,
   onDomainDelete,
@@ -130,7 +132,13 @@ export default function TabletPageRenderer({
           />
         );
       case "party":
-        return <TabletPartyPage />;
+        return (
+          <TabletPartyPage
+            sessionId={sessionId}
+            inGameWorldId={inGameWorldId}
+            onClose={onClose}
+          />
+        );
       case "relationship":
         return <TabletRelationshipMasterPage />;
       case "assets":

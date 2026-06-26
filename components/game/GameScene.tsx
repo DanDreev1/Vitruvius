@@ -9,9 +9,11 @@ import type {
 } from "@/lib/game/types";
 
 import MasterSeat from "./MasterSeat";
+import PartyCheckLayer from "./PartyCheckLayer";
 import PlayerSeat from "./PlayerSeat";
 import TableSceneImageButton from "./TableSceneImageButton";
 import type { SceneImageItem } from "@/features/tablet/master/scene/types";
+import type { PartyCheckState } from "@/features/tablet/master/party/types";
 
 type GameSceneProps = {
   table: TableDefinition;
@@ -20,6 +22,18 @@ type GameSceneProps = {
   masterSeat: ResolvedSeatPosition;
   seatedPlayers: SeatedPlayer[];
   tableImage: SceneImageItem | null;
+  sessionId: string;
+  currentParticipant: GameParticipant;
+  partyCheck: PartyCheckState | null;
+  persistPartyChanges?: boolean;
+  onPartyCheckChange: (check: PartyCheckState | null) => void;
+  onPartyMessage: (payload: {
+    checkId: string;
+    type: 'roll' | 'inspiration' | 'free_bonus' | 'reset_inspiration' | 'reset_free_bonus';
+    participantId: string;
+    displayName: string;
+    text: string;
+  }) => void;
   onHoverChange?: (data: HoverCardData | null) => void;
   onTabletClick?: (targetUserId: string) => void;
   onTableImageClick?: () => void;
@@ -32,6 +46,12 @@ export default function GameScene({
   masterSeat,
   seatedPlayers,
   tableImage,
+  sessionId,
+  currentParticipant,
+  partyCheck,
+  persistPartyChanges = true,
+  onPartyCheckChange,
+  onPartyMessage,
   onHoverChange,
   onTabletClick,
   onTableImageClick,
@@ -79,6 +99,19 @@ export default function GameScene({
           onTabletClick={onTabletClick}
         />
       ))}
+
+      <PartyCheckLayer
+        sessionId={sessionId}
+        check={partyCheck}
+        currentParticipant={currentParticipant}
+        master={master}
+        masterSeat={masterSeat}
+        seatedPlayers={seatedPlayers}
+        density={density}
+        persistChanges={persistPartyChanges}
+        onCheckChange={onPartyCheckChange}
+        onMessage={onPartyMessage}
+      />
     </div>
   );
 }

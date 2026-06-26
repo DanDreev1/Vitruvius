@@ -16,6 +16,8 @@ import { disbandLobby, leaveLobby } from "@/features/lobby/api";
 import { getGameSessionByCode } from "@/features/game/getGameSessionByCode";
 import { getInGameWorldBySessionId } from "@/features/worlds/api";
 import { usePlayerSceneImages } from "@/features/tablet/player/usePlayerSceneImages";
+import { useActivePartyCheck } from "@/features/tablet/master/party/useActivePartyCheck";
+import { usePartyRollMessages } from "@/features/tablet/master/party/usePartyRollMessages";
 
 import type {
   GameParticipant,
@@ -47,6 +49,8 @@ export default function GameClient({ code }: GameClientProps) {
   const [tabletState, setTabletState] = useState<OpenTabletState>(null);
   const [inGameWorldId, setInGameWorldId] = useState<string | null>(null);
   const [isSceneImagesOpen, setIsSceneImagesOpen] = useState(false);
+  const partyCheckState = useActivePartyCheck(gameData?.session.id ?? null);
+  const partyMessages = usePartyRollMessages(gameData?.session.id ?? null);
 
   useEffect(() => {
     let isMounted = true;
@@ -298,16 +302,34 @@ export default function GameClient({ code }: GameClientProps) {
       </div>
 
       <GameViewport
+        sessionId={gameData.session.id}
         master={master}
+        currentParticipant={currentParticipant}
         players={players}
         tableImages={
           currentParticipant.role === "player"
             ? playerSceneImagesState.images
             : []
         }
+        partyCheck={partyCheckState.check}
+        onPartyCheckChange={partyCheckState.setCheck}
+        onPartyMessage={(payload) => {
+          void partyMessages.publishMessage(payload);
+        }}
         onTabletClick={handleTabletClick}
         onTableImageClick={handleTableImageClick}
       />
+
+      <div className="pointer-events-none fixed bottom-5 right-5 z-[85] flex w-[360px] max-w-[calc(100vw-40px)] flex-col gap-[8px]">
+        {partyMessages.messages.map((message) => (
+          <div
+            key={message.id}
+            className="rounded-[16px] border border-white/15 bg-black/70 px-[14px] py-[10px] font-montserrat text-[13px] font-semibold text-white shadow-xl backdrop-blur"
+          >
+            {message.text}
+          </div>
+        ))}
+      </div>
 
       <TabletHost
         isOpen={tabletState !== null}

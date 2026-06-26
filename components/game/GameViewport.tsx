@@ -10,15 +10,28 @@ import { MIN_GAME_VIEWPORT_WIDTH } from "@/lib/game/sceneConfig";
 import { sceneLayouts } from "@/lib/game/sceneLayouts";
 import type { GameParticipant, HoverCardData } from "@/lib/game/types";
 import type { SceneImageItem } from "@/features/tablet/master/scene/types";
+import type { PartyCheckState } from "@/features/tablet/master/party/types";
 
 import GameScene from "./GameScene";
 import PlayerHoverCard from "./PlayerHoverCard";
 import RotateScreenPlaceholder from "./RotateScreenPlaceholder";
 
 type GameViewportProps = {
+  sessionId: string;
   master: GameParticipant;
+  currentParticipant: GameParticipant;
   players: GameParticipant[];
   tableImages?: SceneImageItem[];
+  partyCheck?: PartyCheckState | null;
+  persistPartyChanges?: boolean;
+  onPartyCheckChange?: (check: PartyCheckState | null) => void;
+  onPartyMessage?: (payload: {
+    checkId: string;
+    type: 'roll' | 'inspiration' | 'free_bonus' | 'reset_inspiration' | 'reset_free_bonus';
+    participantId: string;
+    displayName: string;
+    text: string;
+  }) => void;
   onTabletClick?: (targetUserId: string) => void;
   onTableImageClick?: () => void;
 };
@@ -28,9 +41,15 @@ function clampValue(value: number, min: number, max: number) {
 }
 
 export default function GameViewport({
+  sessionId,
   master,
+  currentParticipant,
   players,
   tableImages = [],
+  partyCheck = null,
+  persistPartyChanges = true,
+  onPartyCheckChange,
+  onPartyMessage,
   onTabletClick,
   onTableImageClick,
 }: GameViewportProps) {
@@ -252,9 +271,15 @@ export default function GameViewport({
               table={resolvedScene.table}
               density={resolvedScene.density}
               master={master}
+              currentParticipant={currentParticipant}
               masterSeat={resolvedScene.masterSeat}
               seatedPlayers={resolvedScene.seatedPlayers}
               tableImage={tableImages[0] ?? null}
+              sessionId={sessionId}
+              partyCheck={partyCheck}
+              persistPartyChanges={persistPartyChanges}
+              onPartyCheckChange={onPartyCheckChange ?? (() => undefined)}
+              onPartyMessage={onPartyMessage ?? (() => undefined)}
               onHoverChange={setHoveredCard}
               onTabletClick={onTabletClick}
               onTableImageClick={onTableImageClick}

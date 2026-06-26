@@ -52,7 +52,7 @@ export default function SceneAudiencePanel({
             All
           </p>
           <p className="font-montserrat text-[14px] text-white/85">
-            Role: Player
+            Role: Scene
           </p>
         </div>
       </button>
@@ -76,15 +76,12 @@ export default function SceneAudiencePanel({
             ].join(' ')}
           >
             <div className="relative shrink-0">
-              <div className="h-[48px] w-[48px] overflow-hidden rounded-full bg-white/40">
-                {participant.avatarUrl ? (
-                  <img
-                    src={participant.avatarUrl}
-                    alt={participant.displayName}
-                    className="h-full w-full object-cover"
-                  />
-                ) : null}
-              </div>
+              <div
+                className="h-[48px] w-[48px] overflow-hidden rounded-full bg-white/40 bg-cover bg-center"
+                style={{
+                  backgroundImage: `url(${participant.avatarUrl ?? '/avatar-placeholder.png'})`,
+                }}
+              />
 
               {isSelected ? (
                 <div className="absolute -bottom-[2px] -right-[2px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white text-[11px] font-bold text-black">

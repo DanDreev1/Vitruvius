@@ -1590,6 +1590,7 @@ function MasterTabletShellLayout({
           sessionId={sessionId}
           inGameWorldId={inGameWorldId}
           participants={participants}
+          onClose={onClose}
         />
       </div>
     </div>

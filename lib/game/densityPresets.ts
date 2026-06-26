@@ -14,8 +14,10 @@ export const densityPresets: Record<'comfortable' | 'compact' | 'dense', Density
     tabletForwardOffset: 175,
     tabletSideOffset: 78,
     badgeDistance: 104,
-    tableImageMaxWidth: 140,
-    tableImageMaxHeight: 140,
+    tableImageMaxWidth: 120,
+    tableImageMaxHeight: 120,
+    partyCheckForwardOffset: 90,
+    partyBonusSideOffset: 82,
   },
 
   compact: {
@@ -31,8 +33,10 @@ export const densityPresets: Record<'comfortable' | 'compact' | 'dense', Density
     tabletForwardOffset: 150,
     tabletSideOffset: 68,
     badgeDistance: 92,
-    tableImageMaxWidth: 150,
-    tableImageMaxHeight: 150,
+    tableImageMaxWidth: 120,
+    tableImageMaxHeight: 120,
+    partyCheckForwardOffset: 90,
+    partyBonusSideOffset: 76,
   },
 
   dense: {
@@ -50,5 +54,7 @@ export const densityPresets: Record<'comfortable' | 'compact' | 'dense', Density
     badgeDistance: 82,
     tableImageMaxWidth: 120,
     tableImageMaxHeight: 120,
+    partyCheckForwardOffset: 90,
+    partyBonusSideOffset: 68,
   },
 };
