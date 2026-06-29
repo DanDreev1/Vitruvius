@@ -548,6 +548,21 @@ function buildSavePatch(
   };
 }
 
+function TabletInnerFrame() {
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-50 rounded-[34px] border-[3px] border-black"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-50 rounded-[34px] border-[10px] border-black/85"
+      />
+    </>
+  );
+}
+
 function PlayerTabletShellLayout({
   activeTab,
   onTabChange,
@@ -1361,6 +1376,8 @@ function PlayerTabletShellLayout({
         />
       </div>
 
+      <TabletInnerFrame />
+
       <div className="absolute left-[148px] right-[116px] top-[30px] flex h-[58px] items-center">
         {isEditMode ? (
           <input
@@ -1568,10 +1585,8 @@ function MasterTabletShellLayout({
   const isEditable = canEditTablet(targetRole, mode);
 
   return (
-    <div className="relative h-full w-full overflow-hidden rounded-[34px] border border-white/10 bg-[#1B2230] shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
-      <div className="absolute inset-[16px] rounded-[28px] border border-white/8 bg-[#0F1724]" />
-
-      <div className="absolute left-[24px] top-[24px] bottom-[24px] w-[92px] rounded-[26px] border border-white/8 bg-[#111827]">
+    <div className="relative h-full w-full overflow-hidden rounded-[34px] border border-white bg-[#172033] shadow-[0_30px_90px_rgba(0,0,0,0.5)]">
+      <div className="absolute bottom-0 left-0 top-0 w-[112px] border-r border-white/45">
         <TabletNav
           activeTab={activeTab}
           onTabChange={onTabChange}
@@ -1581,7 +1596,9 @@ function MasterTabletShellLayout({
         />
       </div>
 
-      <div className="absolute left-[136px] right-[24px] top-[24px] bottom-[24px] rounded-[28px] border border-white/8 bg-[#151D2B] p-[22px]">
+      <TabletInnerFrame />
+
+      <div className="absolute bottom-[30px] left-[148px] right-[22px] top-[30px]">
         <TabletPageRenderer
           activeTab={activeTab}
           targetRole={targetRole}

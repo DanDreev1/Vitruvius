@@ -7,7 +7,6 @@ import { usePartyMaster } from '@/features/tablet/master/party/usePartyMaster';
 
 import {
   Panel,
-  SectionTitle,
 } from '../shared/TabletPagePrimitives';
 
 type TabletPartyPageProps = {
@@ -36,7 +35,7 @@ function ThresholdPicker({
   onChange: (values: number[]) => void;
 }) {
   return (
-    <div className="grid grid-cols-6 gap-[8px]">
+    <div className="grid grid-cols-6 justify-items-center gap-[10px] pt-[18px]">
       {Array.from({ length: max }).map((_, index) => {
         const value = index + 1;
         const isSelected = values.includes(value);
@@ -45,6 +44,8 @@ function ThresholdPicker({
           <button
             key={value}
             type="button"
+            aria-label={`${isSelected ? 'Remove' : 'Add'} difficulty threshold ${value}`}
+            title={`Difficulty ${value}`}
             onClick={() => {
               onChange(
                 isSelected
@@ -53,13 +54,28 @@ function ThresholdPicker({
               );
             }}
             className={[
-              'h-[38px] rounded-[10px] border font-montserrat text-[13px] font-extrabold transition',
+              'relative flex aspect-square w-full max-w-[44px] items-center justify-center rounded-[10px] border transition duration-200',
               isSelected
-                ? 'border-[#D6B25E] bg-[#D6B25E] text-black'
-                : 'border-white/25 bg-white/5 text-white/75 hover:bg-white/10',
+                ? 'border-transparent bg-transparent text-[#D6B25E]'
+                : 'border-white/55 bg-transparent text-white/75 hover:border-white hover:bg-white/5',
             ].join(' ')}
           >
-            {value}
+            {isSelected ? (
+              <span
+                aria-hidden="true"
+                className="absolute bottom-0 h-[60px] w-[41px] bg-current"
+                style={{
+                  WebkitMaskImage: "url('/party/lock.svg')",
+                  maskImage: "url('/party/lock.svg')",
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                }}
+              />
+            ) : null}
           </button>
         );
       })}
@@ -134,11 +150,6 @@ export default function TabletPartyPage({
 
   return (
     <div className="flex h-full flex-col">
-      <SectionTitle
-        title="Party"
-        subtitle="Status controls and table checks"
-      />
-
       {party.error ? (
         <div className="mb-[12px] rounded-[16px] border border-red-400/30 bg-red-500/10 px-[14px] py-[10px] font-montserrat text-[14px] text-red-200">
           {party.error}

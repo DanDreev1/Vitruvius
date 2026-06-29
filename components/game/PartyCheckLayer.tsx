@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 
 import {
@@ -64,6 +65,15 @@ type DecisionRevealState = {
 
 const ROLL_FLASH_MS = 900;
 const DECISION_REVEAL_MS = 1000;
+
+const ATTRIBUTE_ICON_PATHS: Record<string, string> = {
+  constitution: '/attributes-imgs/Cons.png',
+  awareness: '/attributes-imgs/Awareness.png',
+  agility: '/attributes-imgs/Agility.png',
+  thinking: '/attributes-imgs/Thinking.png',
+  charisma: '/attributes-imgs/Charisma.png',
+  will: '/attributes-imgs/Will.png',
+};
 
 function getForwardVector(seatFacing: ResolvedSeatPosition['seatFacing']) {
   const vectors = {
@@ -355,27 +365,42 @@ function BonusControls({
   onResetBonuses: () => void;
 }) {
   return (
-    <div className="absolute right-[70px] top-[92px] z-30 flex flex-wrap justify-end gap-[8px]">
+    <div className="absolute right-[70px] top-[92px] z-30 flex items-start justify-end gap-[14px]">
       <button
         type="button"
         onClick={() => onBonusChange('inspiration', 1)}
-        className="rounded-full bg-[#D6B25E] px-[12px] py-[8px] font-montserrat text-[11px] font-extrabold text-black shadow-lg"
+        className="group flex w-[68px] flex-col items-center gap-[5px] font-montserrat text-[10px] font-extrabold text-white"
       >
-        Inspiration +{target.roll.inspirationSuccesses}
+        <span className="relative flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#D6B25E] shadow-lg transition-transform group-hover:scale-105">
+          <Image src="/parameters/Inspirations.png" alt="" width={23} height={23} className="object-contain" />
+          <span className="absolute -right-[5px] -top-[5px] flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-white px-[4px] text-[9px] text-black">
+            +{target.roll.inspirationSuccesses}
+          </span>
+        </span>
+        <span>Inspiration</span>
       </button>
       <button
         type="button"
         onClick={() => onBonusChange('freeBonus', 1)}
-        className="rounded-full bg-white px-[12px] py-[8px] font-montserrat text-[11px] font-extrabold text-black shadow-lg"
+        className="group flex w-[68px] flex-col items-center gap-[5px] font-montserrat text-[10px] font-extrabold text-white"
       >
-        Free bonus +{target.roll.freeBonusSuccesses}
+        <span className="relative flex h-[34px] w-[34px] items-center justify-center rounded-full bg-white font-montserrat-alt text-[22px] text-black shadow-lg transition-transform group-hover:scale-105">
+          +
+          <span className="absolute -right-[5px] -top-[5px] flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-[#D6B25E] px-[4px] font-montserrat text-[9px] text-black">
+            +{target.roll.freeBonusSuccesses}
+          </span>
+        </span>
+        <span>Free bonus</span>
       </button>
       <button
         type="button"
         onClick={onResetBonuses}
-        className="rounded-full bg-black/70 px-[12px] py-[8px] font-montserrat text-[11px] font-extrabold text-white shadow-lg ring-1 ring-white/15"
+        className="group flex w-[54px] flex-col items-center gap-[5px] font-montserrat text-[10px] font-extrabold text-white"
       >
-        Reset
+        <span className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-black/75 font-montserrat-alt text-[17px] text-white shadow-lg ring-1 ring-white/25 transition-transform group-hover:scale-105">
+          &#8634;
+        </span>
+        <span>Reset</span>
       </button>
     </div>
   );
@@ -490,8 +515,21 @@ function RollOverlay({
                     : 'border-white/12 bg-white/[0.04]',
                 ].join(' ')}
               >
-                <span className="font-montserrat-alt text-[16px] font-extrabold text-white">
-                  {attribute.label}
+                <span className="flex min-w-0 items-center gap-[11px]">
+                  {ATTRIBUTE_ICON_PATHS[attribute.key.toLowerCase()] ? (
+                    <span className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full border border-white/15 bg-black/15">
+                      <Image
+                        src={ATTRIBUTE_ICON_PATHS[attribute.key.toLowerCase()]}
+                        alt=""
+                        width={22}
+                        height={22}
+                        className="object-contain"
+                      />
+                    </span>
+                  ) : null}
+                  <span className="truncate font-montserrat-alt text-[16px] font-extrabold text-white">
+                    {attribute.label}
+                  </span>
                 </span>
                 <span className="font-montserrat text-[13px] font-bold text-white/65">
                   {target.role === 'master' ? 'Manual' : `${attribute.value} dice`}

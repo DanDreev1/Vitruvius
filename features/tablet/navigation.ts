@@ -24,12 +24,17 @@ export const PLAYER_TABLET_TABS: TabletTabConfig[] = [
 ];
 
 export const MASTER_TABLET_TABS: TabletTabConfig[] = [
-  { key: 'scene', label: 'Scene', short: 'S' },
-  { key: 'party', label: 'Party', short: 'P' },
-  { key: 'relationship', label: 'Relations', short: 'R' },
-  { key: 'assets', label: 'Assets', short: 'A' },
-  { key: 'notes', label: 'Notes', short: 'N' },
-  { key: 'settings', label: 'Settings', short: 'G' },
+  { key: 'scene', label: 'Scene', short: 'S', iconSrc: '/navigation-imgs/master/Scene.png' },
+  { key: 'party', label: 'Party', short: 'P', iconSrc: '/navigation-imgs/master/Party.png' },
+  {
+    key: 'relationship',
+    label: 'Relations',
+    short: 'R',
+    iconSrc: '/navigation-imgs/master/Relationships.png',
+  },
+  { key: 'assets', label: 'Assets', short: 'A', iconSrc: '/navigation-imgs/master/Assets.png' },
+  { key: 'notes', label: 'Notes', short: 'N', iconSrc: '/navigation-imgs/master/Notes.png' },
+  { key: 'settings', label: 'Settings', short: 'G', iconSrc: '/navigation-imgs/master/Gear.png' },
 ];
 
 export function getVisibleTabletTabs(

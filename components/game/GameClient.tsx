@@ -18,6 +18,7 @@ import { getInGameWorldBySessionId } from "@/features/worlds/api";
 import { usePlayerSceneImages } from "@/features/tablet/player/usePlayerSceneImages";
 import { useActivePartyCheck } from "@/features/tablet/master/party/useActivePartyCheck";
 import { usePartyRollMessages } from "@/features/tablet/master/party/usePartyRollMessages";
+import { useInventoryMessages } from "@/features/tablet/inventory/useInventoryMessages";
 
 import type {
   GameParticipant,
@@ -51,6 +52,7 @@ export default function GameClient({ code }: GameClientProps) {
   const [isSceneImagesOpen, setIsSceneImagesOpen] = useState(false);
   const partyCheckState = useActivePartyCheck(gameData?.session.id ?? null);
   const partyMessages = usePartyRollMessages(gameData?.session.id ?? null);
+  const inventoryMessages = useInventoryMessages(gameData?.session.id ?? null);
 
   useEffect(() => {
     let isMounted = true;
@@ -320,7 +322,15 @@ export default function GameClient({ code }: GameClientProps) {
         onTableImageClick={handleTableImageClick}
       />
 
-      <div className="pointer-events-none fixed bottom-5 right-5 z-[85] flex w-[360px] max-w-[calc(100vw-40px)] flex-col gap-[8px]">
+      <div className="pointer-events-none fixed bottom-5 right-5 z-[260] flex w-[360px] max-w-[calc(100vw-40px)] flex-col gap-[8px]">
+        {inventoryMessages.map((message) => (
+          <div
+            key={message.id}
+            className="rounded-[16px] border border-white/15 bg-black/70 px-[14px] py-[10px] font-montserrat text-[13px] font-semibold text-white shadow-xl backdrop-blur"
+          >
+            {message.text}
+          </div>
+        ))}
         {partyMessages.messages.map((message) => (
           <div
             key={message.id}

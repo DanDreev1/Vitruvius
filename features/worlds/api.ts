@@ -64,6 +64,16 @@ type SavedRelationshipLink = {
   is_visible_to_player: boolean;
 };
 
+type SavedAsset = {
+  id: string;
+  asset_key: string;
+  name: string;
+  description: string;
+  category: string;
+  image_url: string;
+  sort_order: number;
+};
+
 type PrepareInGameWorldResult = {
   createdType: 'placeholder' | 'selected';
   selectedWorldId: string | null;
@@ -175,6 +185,7 @@ async function getSavedWorldCollections(worldId: string) {
     notesResult,
     relationshipNpcsResult,
     relationshipLinksResult,
+    assetsResult,
   ] = await Promise.all([
     supabase
       .from('worlds_scene_images')
@@ -221,6 +232,11 @@ async function getSavedWorldCollections(worldId: string) {
           )
           .in('world_relationship_npc_id', worldRelationshipNpcIds)
       : Promise.resolve({ data: [], error: null }),
+    supabase
+      .from('worlds_assets')
+      .select('id, asset_key, name, description, category, image_url, sort_order')
+      .eq('world_id', worldId)
+      .order('sort_order', { ascending: true }),
   ]);
 
   const results = [
@@ -231,6 +247,7 @@ async function getSavedWorldCollections(worldId: string) {
     notesResult,
     relationshipNpcsResult,
     relationshipLinksResult,
+    assetsResult,
   ];
 
   const failedResult = results.find((result) => result?.error);
@@ -247,6 +264,7 @@ async function getSavedWorldCollections(worldId: string) {
     notes: (notesResult.data ?? []) as SavedWorldNote[],
     relationshipNpcs: (relationshipNpcsResult.data ?? []) as SavedRelationshipNpc[],
     relationshipLinks: (relationshipLinksResult.data ?? []) as SavedRelationshipLink[],
+    assets: (assetsResult.data ?? []) as SavedAsset[],
   };
 }
 
@@ -359,6 +377,20 @@ async function createSelectedInGameWorld(
       }))
     );
 
+    await insertRows(
+      'in_game_worlds_assets',
+      collections.assets.map((asset) => ({
+        in_game_world_id: inGameWorldId,
+        source_asset_id: asset.id,
+        asset_key: asset.asset_key,
+        name: asset.name,
+        description: asset.description,
+        category: asset.category,
+        image_url: asset.image_url,
+        sort_order: asset.sort_order,
+      }))
+    );
+
     const { data: insertedNpcs, error: npcsError } = await supabase
       .from('in_game_worlds_relationship_npcs')
       .insert(
@@ -422,9 +454,7 @@ async function createSelectedInGameWorld(
       })
     );
 
-    await insertRows(
-      'in_game_worlds_relationship_links',
-      collections.relationshipLinks.flatMap((link) => {
+    const relationshipLinkRows = collections.relationshipLinks.flatMap((link) => {
         const inGameNpcId = inGameNpcIdBySourceNpcId.get(link.world_relationship_npc_id);
         const inGameCharacterId = inGameCharacterIdBySourceCharacterId.get(link.character_id);
 
@@ -440,8 +470,21 @@ async function createSelectedInGameWorld(
             is_visible_to_player: link.is_visible_to_player,
           },
         ];
-      })
-    );
+      });
+
+    if (relationshipLinkRows.length) {
+      const { error: relationshipLinksError } = await supabase
+        .from('in_game_worlds_relationship_links')
+        .upsert(relationshipLinkRows, {
+          onConflict: 'in_game_npc_id,in_game_character_id',
+        });
+
+      if (relationshipLinksError) {
+        throw new Error(
+          `Failed to copy world relationship links: ${relationshipLinksError.message}`
+        );
+      }
+    }
   } catch (error) {
     if (inGameWorldId) {
       await removeInGameWorldForSession(masterParticipant.session_id);

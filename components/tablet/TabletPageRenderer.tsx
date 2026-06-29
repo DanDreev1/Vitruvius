@@ -140,9 +140,19 @@ export default function TabletPageRenderer({
           />
         );
       case "relationship":
-        return <TabletRelationshipMasterPage />;
+        return (
+          <TabletRelationshipMasterPage
+            sessionId={sessionId}
+            inGameWorldId={inGameWorldId}
+          />
+        );
       case "assets":
-        return <TabletAssetsPage />;
+        return (
+          <TabletAssetsPage
+            sessionId={sessionId}
+            inGameWorldId={inGameWorldId}
+          />
+        );
       case "notes":
         return <TabletNotesPage />;
       case "settings":
@@ -200,7 +210,13 @@ export default function TabletPageRenderer({
         />
       );
     case "backpack":
-      return <TabletBackpackPage isEditable={isEditable} />;
+      return (
+        <TabletBackpackPage
+          sessionId={sessionId}
+          characterId={playerCharacter?.id ?? null}
+          mode={mode}
+        />
+      );
     case "library":
       return (
         <TabletLibraryPage
@@ -212,7 +228,13 @@ export default function TabletPageRenderer({
         />
       );
     case "relationship":
-      return <TabletRelationshipPlayerPage isEditable={isEditable} />;
+      return (
+        <TabletRelationshipPlayerPage
+          sessionId={sessionId}
+          inGameWorldId={inGameWorldId}
+          inGameCharacterId={playerCharacter?.id ?? null}
+        />
+      );
     case "notes":
       return <TabletNotesPage />;
     case "settings":
