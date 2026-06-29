@@ -8,6 +8,7 @@ import {
   clearPartyCheck,
   getPartyAttributeTemplates,
   getPartyCharacterAttributes,
+  getPartyCharacterParameters,
   getRollAttemptSuccesses,
   rollPartyDice,
   savePartyCheckState,
@@ -65,6 +66,12 @@ type DecisionRevealState = {
 
 const ROLL_FLASH_MS = 900;
 const DECISION_REVEAL_MS = 1000;
+
+type SuccessBreakdown = {
+  dice: number;
+  freeBonus: number;
+  inspiration: number;
+};
 
 const ATTRIBUTE_ICON_PATHS: Record<string, string> = {
   constitution: '/attributes-imgs/Cons.png',
@@ -138,12 +145,30 @@ function getAttemptSuccesses(target: PartyCheckTarget, attemptId: string | null)
 function getDisplayedSuccesses(
   target: PartyCheckTarget,
   transientAttemptId: string | null
-) {
+): SuccessBreakdown {
   if (isTargetComplete(target)) {
-    return getFinalSuccesses(target);
+    return {
+      dice: getDiceSuccesses(target),
+      freeBonus: target.roll.freeBonusSuccesses,
+      inspiration: target.roll.inspirationSuccesses,
+    };
   }
 
-  return getAttemptSuccesses(target, transientAttemptId);
+  return {
+    dice: getAttemptSuccesses(target, transientAttemptId),
+    freeBonus: 0,
+    inspiration: 0,
+  };
+}
+
+function getSuccessTotal(successes: SuccessBreakdown) {
+  return successes.dice + successes.freeBonus + successes.inspiration;
+}
+
+function getSuccessColor(index: number, successes: SuccessBreakdown) {
+  if (index < successes.dice) return '#FFFFFF';
+  if (index < successes.dice + successes.freeBonus) return '#6EA6E8';
+  return '#E0BE62';
 }
 
 function hasPassedThreshold(successes: number, thresholds: number[]) {
@@ -181,7 +206,7 @@ function ThresholdTrack({
 }: {
   max: number;
   thresholds: number[];
-  successes: number;
+  successes: SuccessBreakdown;
   compact?: boolean;
   revealOutcome?: 'success' | 'failure' | null;
 }) {
@@ -195,7 +220,7 @@ function ThresholdTrack({
       {Array.from({ length: max }).map((_, index) => {
         const value = index + 1;
         const isThreshold = thresholds.includes(value);
-        const hasSuccess = successes >= value;
+        const hasSuccess = getSuccessTotal(successes) >= value;
         const shouldRevealColor = revealOutcome !== null;
         const revealColor =
           revealOutcome === 'success'
@@ -261,6 +286,7 @@ function ThresholdTrack({
                 ].join(' ')}
                 style={{
                   transitionDelay: revealOutcome ? `${index * 90}ms` : '0ms',
+                  backgroundColor: getSuccessColor(index, successes),
                   mask: 'url(/party/success.svg) center / contain no-repeat',
                   WebkitMask:
                     'url(/party/success.svg) center / contain no-repeat',
@@ -292,7 +318,7 @@ function TargetResultCard({
   density: DensityPreset;
   onRollClick: () => void;
   canRoll: boolean;
-  displayedSuccesses: number;
+  displayedSuccesses: SuccessBreakdown;
   revealOutcome: 'success' | 'failure' | null;
 }) {
   const visual = getSeatVisualConfig(seat.seatFacing, density);
@@ -304,6 +330,7 @@ function TargetResultCard({
   const partyCheckY =
     (visual.diceY + visual.tabletY) / 2 + forward.y * density.partyCheckForwardOffset;
   const partyCheckRotation = getPartyCheckRotation(seat.seatFacing);
+  const displayedSuccessTotal = getSuccessTotal(displayedSuccesses);
 
   return (
     <>
@@ -324,7 +351,7 @@ function TargetResultCard({
             revealOutcome={revealOutcome}
           />
           <p className="mt-[5px] text-center font-montserrat text-[10px] font-extrabold text-white">
-            {displayedSuccesses} success{displayedSuccesses === 1 ? '' : 'es'}
+            {displayedSuccessTotal} success{displayedSuccessTotal === 1 ? '' : 'es'}
           </p>
           <p className="mt-[2px] text-center font-montserrat text-[9px] font-bold text-white/65">
             Roll {completedRolls}/{totalRolls}
@@ -354,10 +381,12 @@ function TargetResultCard({
 
 function BonusControls({
   target,
+  inspirationAvailable,
   onBonusChange,
   onResetBonuses,
 }: {
   target: PartyCheckTarget;
+  inspirationAvailable: number | null;
   onBonusChange: (
     type: 'inspiration' | 'freeBonus',
     direction: 1 | -1 | 'reset'
@@ -369,12 +398,18 @@ function BonusControls({
       <button
         type="button"
         onClick={() => onBonusChange('inspiration', 1)}
-        className="group flex w-[68px] flex-col items-center gap-[5px] font-montserrat text-[10px] font-extrabold text-white"
+        disabled={
+          inspirationAvailable !== null &&
+          target.roll.inspirationSuccesses >= inspirationAvailable
+        }
+        className="group flex w-[68px] flex-col items-center gap-[5px] font-montserrat text-[10px] font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-45"
       >
         <span className="relative flex h-[34px] w-[34px] items-center justify-center rounded-full bg-[#D6B25E] shadow-lg transition-transform group-hover:scale-105">
           <Image src="/parameters/Inspirations.png" alt="" width={23} height={23} className="object-contain" />
           <span className="absolute -right-[5px] -top-[5px] flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-white px-[4px] text-[9px] text-black">
-            +{target.roll.inspirationSuccesses}
+            {inspirationAvailable === null
+              ? '–'
+              : Math.max(0, inspirationAvailable - target.roll.inspirationSuccesses)}
           </span>
         </span>
         <span>Inspiration</span>
@@ -602,6 +637,44 @@ export default function PartyCheckLayer({
   >({});
   const [decisionReveal, setDecisionReveal] =
     useState<DecisionRevealState>(null);
+  const [loadedInspiration, setLoadedInspiration] = useState<{
+    characterId: string;
+    value: number;
+  } | null>(null);
+
+  const currentTarget =
+    check?.targets.find(
+      (target) => target.participantId === currentParticipant.id
+    ) ?? null;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    if (!currentTarget?.inGameCharacterId) return;
+
+    void getPartyCharacterParameters(currentTarget.inGameCharacterId)
+      .then((parameters) => {
+        if (!isMounted) return;
+        const inspiration = parameters.find((parameter) =>
+          parameter.key.toLowerCase().includes('inspiration')
+        );
+        setLoadedInspiration({
+          characterId: currentTarget.inGameCharacterId as string,
+          value: inspiration?.currentValue ?? 0,
+        });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentTarget?.inGameCharacterId]);
+
+  const inspirationAvailable =
+    currentTarget?.inGameCharacterId &&
+    loadedInspiration?.characterId === currentTarget.inGameCharacterId
+      ? loadedInspiration.value
+      : null;
 
   const seatByParticipantId = useMemo(() => {
     const map = new Map<string, ResolvedSeatPosition>();
@@ -696,6 +769,15 @@ export default function PartyCheckLayer({
     type: 'inspiration' | 'freeBonus',
     direction: 1 | -1 | 'reset'
   ) => {
+    if (
+      type === 'inspiration' &&
+      direction === 1 &&
+      inspirationAvailable !== null &&
+      target.roll.inspirationSuccesses >= inspirationAvailable
+    ) {
+      return;
+    }
+
     await updateTarget(target.participantId, (currentTarget) => {
       const key =
         type === 'inspiration' ? 'inspirationSuccesses' : 'freeBonusSuccesses';
@@ -814,15 +896,21 @@ export default function PartyCheckLayer({
   const allTargetsComplete = check.targets.every(isTargetComplete);
   const hasCompletedResult = check.targets.some(isTargetComplete);
   const isMaster = currentParticipant.role === 'master';
-  const groupTotal = check.targets.reduce(
-    (total, target) =>
-      total +
-      getDisplayedSuccesses(
+  const groupSuccesses = check.targets.reduce<SuccessBreakdown>(
+    (total, target) => {
+      const successes = getDisplayedSuccesses(
         target,
         transientAttemptIds[target.participantId] ?? null
-      ),
-    0
+      );
+      return {
+        dice: total.dice + successes.dice,
+        freeBonus: total.freeBonus + successes.freeBonus,
+        inspiration: total.inspiration + successes.inspiration,
+      };
+    },
+    { dice: 0, freeBonus: 0, inspiration: 0 }
   );
+  const groupTotal = getSuccessTotal(groupSuccesses);
   const conflictScores =
     check.mode === 'conflict'
       ? check.targets.map((target) => ({
@@ -835,10 +923,6 @@ export default function PartyCheckLayer({
     conflictScores.length === 2 &&
     conflictScores[0].successes === conflictScores[1].successes &&
     allTargetsComplete;
-  const currentTarget =
-    check.targets.find(
-      (target) => target.participantId === currentParticipant.id
-    ) ?? null;
   const canAdjustCurrentBonus =
     currentTarget !== null && isTargetComplete(currentTarget);
 
@@ -889,6 +973,7 @@ export default function PartyCheckLayer({
       {currentTarget && canAdjustCurrentBonus ? (
         <BonusControls
           target={currentTarget}
+          inspirationAvailable={inspirationAvailable}
           onBonusChange={(type, direction) =>
             void handleBonusChange(currentTarget, type, direction)
           }
@@ -945,7 +1030,7 @@ export default function PartyCheckLayer({
           <ThresholdTrack
             max={12}
             thresholds={check.groupThresholds}
-            successes={groupTotal}
+            successes={groupSuccesses}
             revealOutcome={groupRevealOutcome}
           />
         </div>

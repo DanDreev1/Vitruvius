@@ -376,23 +376,25 @@ export default function TabletPartyPage({
               })}
             </div>
 
-            <button
-              type="button"
-              onClick={async () => {
-                const wasCreated = await party.createCheck();
-                if (wasCreated) {
-                  onClose?.();
-                }
-              }}
-              disabled={
-                Boolean(party.activeCheck) ||
-                !selectedCount ||
-                party.isCreatingCheck
-              }
-              className="mt-[16px] w-full rounded-[16px] bg-[#D6B25E] px-[18px] py-[13px] font-montserrat text-[15px] font-extrabold text-black disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              {party.isCreatingCheck ? 'Creating...' : 'Send check to table'}
-            </button>
+            {selectedCount ? (
+              <button
+                type="button"
+                onClick={async () => {
+                  const wasCreated = await party.createCheck();
+                  if (wasCreated) {
+                    onClose?.();
+                  }
+                }}
+                disabled={Boolean(party.activeCheck) || party.isCreatingCheck}
+                className="mt-[16px] w-full rounded-[16px] bg-[#D6B25E] px-[18px] py-[13px] font-montserrat text-[15px] font-extrabold text-black disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {party.isCreatingCheck ? 'Creating...' : 'Send check to table'}
+              </button>
+            ) : (
+              <p className="mt-[16px] rounded-[16px] border border-white/10 bg-white/[0.03] px-[18px] py-[13px] text-center font-montserrat text-[13px] font-bold text-white/55">
+                Select a user to get started.
+              </p>
+            )}
           </Panel>
         </div>
 

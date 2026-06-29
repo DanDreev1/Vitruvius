@@ -48,7 +48,16 @@ export default function TabletAssetsPage({ sessionId, inGameWorldId }: { session
               <option value="weapon">Weapon</option><option value="consumable">Consumable</option><option value="quest">Quest</option><option value="other">Other</option>
             </select>
             <textarea value={selected.description} maxLength={2000} placeholder="Description" onChange={(event) => updateSelected({ description: event.target.value })} className="mt-[8px] min-h-[80px] flex-1 resize-none rounded-[5px] border border-white/25 bg-transparent p-[8px] font-montserrat text-[11px] text-white outline-none" />
-            <button type="button" onClick={() => setDeleteCandidate(selected)} className="mt-[7px] rounded-[5px] border border-red-300/60 py-[7px] font-montserrat text-[11px] font-bold text-red-200">Delete</button>
+            <div className="mt-[10px] flex gap-[8px]">
+              {!selected.isNew ? (
+                <button type="button" onClick={() => setDeleteCandidate(selected)} disabled={assets.isSaving} className="h-[42px] rounded-[10px] border border-[#E07373]/25 px-[14px] font-montserrat text-[11px] font-bold text-[#E88A8A] disabled:opacity-50">
+                  Delete
+                </button>
+              ) : null}
+              <button type="button" disabled={!assets.hasChanges || assets.isSaving} onClick={() => void assets.save()} className="h-[42px] flex-1 rounded-[10px] bg-white px-[16px] font-montserrat text-[12px] font-extrabold text-[#172033] transition-opacity disabled:cursor-not-allowed disabled:opacity-25">
+                {assets.isSaving ? 'Saving…' : selected.isNew ? 'Create item' : 'Save changes'}
+              </button>
+            </div>
           </>
         ) : (
           <><ItemPortrait imageUrl={selected.imageUrl} name={selected.name} compact={isImageCompact} onCompactChange={setIsImageCompact} /><p className="mt-[8px] font-montserrat text-[11px] uppercase text-[#D6B25E]">{selected.category}</p><p className={['min-h-0 overflow-y-auto font-montserrat text-[13px] leading-[1.5] text-white/75 transition-[opacity,margin] duration-500', isImageCompact ? 'mt-[9px] flex-1 opacity-100' : 'h-0 opacity-0'].join(' ')}>{selected.description}</p><button type="button" onClick={() => { setGiveIds([]); setQuantity(1); setGiveOpen(true); }} className="mt-auto rounded-[8px] bg-white py-[10px] font-montserrat text-[14px] font-extrabold text-black">Give item</button></>
@@ -56,7 +65,7 @@ export default function TabletAssetsPage({ sessionId, inGameWorldId }: { session
       </aside>
 
       <div className="absolute right-[60px] top-[2px] flex h-[54px] items-start gap-[7px]">
-        {assets.isEditing ? <><button type="button" onClick={() => { const id = assets.add(); setSelectedId(id); }} className="flex w-[55px] flex-col items-center text-white"><span className="text-[28px] leading-[27px]">+</span><span className="text-[10px] font-bold">Add</span></button><button type="button" onClick={assets.cancel} className="flex w-[55px] flex-col items-center text-white"><span className="text-[27px] leading-[27px]">×</span><span className="text-[10px] font-bold">Cancel</span></button><button type="button" disabled={!assets.hasChanges || assets.isSaving} onClick={() => void assets.save()} className="flex w-[55px] flex-col items-center text-white disabled:opacity-35"><Image src="/save-icon.svg" alt="" width={25} height={25} className="invert" /><span className="text-[10px] font-bold">Save</span></button></> : <button type="button" onClick={() => assets.setIsEditing(true)} className="flex w-[55px] flex-col items-center text-white"><Image src="/Edit-icon.png" alt="" width={25} height={25} /><span className="text-[10px] font-bold">Edit</span></button>}
+        {assets.isEditing ? <><button type="button" onClick={() => { const id = assets.add(); setSelectedId(id); }} className="flex w-[55px] flex-col items-center text-white"><span className="text-[28px] leading-[27px]">+</span><span className="text-[10px] font-bold">Add</span></button><button type="button" onClick={assets.cancel} className="flex w-[55px] flex-col items-center text-white"><span className="text-[27px] leading-[27px]">×</span><span className="text-[10px] font-bold">Cancel</span></button></> : <button type="button" onClick={() => assets.setIsEditing(true)} className="flex w-[55px] flex-col items-center text-white"><Image src="/Edit-icon.png" alt="" width={25} height={25} /><span className="text-[10px] font-bold">Edit</span></button>}
       </div>
       {assets.error ? <p className="absolute bottom-0 left-0 z-40 rounded bg-red-500/20 px-[8px] py-[5px] text-[10px] text-red-200">{assets.error}</p> : null}
 
