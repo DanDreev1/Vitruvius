@@ -81,6 +81,62 @@ function NotesCard({
   );
 }
 
+function DeleteNoteDialog({
+  note,
+  isDeleting,
+  onCancel,
+  onConfirm,
+}: {
+  note: TabletNote;
+  isDeleting: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div
+      className="absolute inset-0 z-50 flex items-center justify-center bg-black/75"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="delete-note-title"
+      onPointerDown={(event) => {
+        event.stopPropagation();
+        if (event.target === event.currentTarget && !isDeleting) onCancel();
+      }}
+    >
+      <div
+        className="w-[390px] rounded-[8px] border border-white/25 bg-[#172033] p-[16px]"
+        onPointerDown={(event) => event.stopPropagation()}
+      >
+        <h2 id="delete-note-title" className="font-montserrat-alt text-[18px] font-extrabold text-white">
+          Delete {note.title || 'this note'}?
+        </h2>
+        <p className="mt-[8px] font-montserrat text-[12px] text-white/65">
+          This note will be permanently removed.
+        </p>
+
+        <div className="mt-[15px] flex justify-end gap-[8px]">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="px-[12px] py-[7px] text-[11px] text-white disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="rounded-[5px] bg-red-500 px-[14px] py-[7px] text-[11px] font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isDeleting ? 'Deleting…' : 'Delete note'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TabletNotesPage({ owner }: { owner: NotesOwner | null }) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -90,6 +146,7 @@ export default function TabletNotesPage({ owner }: { owner: NotesOwner | null })
   const [camera, setCamera] = useState<Camera>(DEFAULT_CAMERA);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<NoteDraft>(EMPTY_DRAFT);
+  const [notePendingDelete, setNotePendingDelete] = useState<TabletNote | null>(null);
 
   const selected = useMemo(() => notes.find((note) => note.id === selectedId) ?? null, [notes, selectedId]);
   const hasFormChanges = selected
@@ -115,6 +172,15 @@ export default function TabletNotesPage({ owner }: { owner: NotesOwner | null })
     }, CAMERA_SAVE_DELAY_MS);
     return () => window.clearTimeout(timeoutId);
   }, [camera, cameraStorageKey]);
+
+  useEffect(() => {
+    if (!notePendingDelete || isSaving) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setNotePendingDelete(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isSaving, notePendingDelete]);
 
   function beginNew() {
     setSelectedId(null);
@@ -228,12 +294,15 @@ export default function TabletNotesPage({ owner }: { owner: NotesOwner | null })
   }
 
   async function handleDelete() {
-    if (!selectedId || !window.confirm('Delete this note?')) return;
-    if (await remove(selectedId)) beginNew();
+    if (!notePendingDelete) return;
+    if (await remove(notePendingDelete.id)) {
+      setNotePendingDelete(null);
+      beginNew();
+    }
   }
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)_318px] gap-[16px]">
+    <div className="relative grid h-full min-h-0 grid-cols-[minmax(0,1fr)_318px] gap-[16px]">
       <section className="relative min-h-0 overflow-hidden rounded-[24px] border border-white/8 bg-[#111927]">
         <div
           ref={viewportRef}
@@ -278,11 +347,20 @@ export default function TabletNotesPage({ owner }: { owner: NotesOwner | null })
         <label className="mt-[16px] text-[12px] font-semibold text-white/50">Note</label>
         <textarea value={draft.content} maxLength={2000} onChange={(event) => setDraft((value) => ({ ...value, content: event.target.value }))} placeholder="Add details, ideas, clues…" className="mt-[7px] min-h-0 flex-1 resize-none rounded-[14px] border border-white/8 bg-[#111927] p-[14px] text-[14px] leading-[1.55] text-white outline-none placeholder:text-white/25 focus:border-white/30" />
         <div className="mt-[16px] flex gap-[10px]">
-          {selected ? <button type="button" onClick={handleDelete} disabled={isSaving} className="h-[48px] rounded-[14px] border border-[#E07373]/25 px-[16px] text-[13px] font-bold text-[#E88A8A] disabled:opacity-50">Delete</button> : null}
+          {selected ? <button type="button" onClick={() => setNotePendingDelete(selected)} disabled={isSaving} className="h-[48px] rounded-[14px] border border-[#E07373]/25 px-[16px] text-[13px] font-bold text-[#E88A8A] disabled:opacity-50">Delete</button> : null}
           <button type="button" onClick={() => void handleSubmit()} disabled={!canSave} className="h-[48px] flex-1 rounded-[14px] bg-white px-[18px] text-[14px] font-extrabold text-[#172033] transition-opacity disabled:cursor-not-allowed disabled:opacity-25">{isSaving ? 'Saving…' : selected ? 'Save changes' : 'Create note'}</button>
         </div>
         {error ? <p className="mt-[12px] text-[12px] leading-relaxed text-[#E88A8A]">{error}</p> : null}
       </aside>
+
+      {notePendingDelete ? (
+        <DeleteNoteDialog
+          note={notePendingDelete}
+          isDeleting={isSaving}
+          onCancel={() => setNotePendingDelete(null)}
+          onConfirm={() => void handleDelete()}
+        />
+      ) : null}
     </div>
   );
 }
