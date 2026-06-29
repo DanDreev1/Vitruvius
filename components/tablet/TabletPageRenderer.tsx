@@ -33,6 +33,7 @@ type TabletPageRendererProps = {
   targetRole: TabletRole;
   mode: TabletViewMode;
   isEditable: boolean;
+  viewerUserId: string;
   sessionId: string;
   inGameWorldId: string | null;
   participants?: TabletParticipant[];
@@ -88,6 +89,7 @@ export default function TabletPageRenderer({
   targetRole,
   mode,
   isEditable,
+  viewerUserId,
   sessionId,
   inGameWorldId,
   participants = [],
@@ -120,6 +122,9 @@ export default function TabletPageRenderer({
   if (!isTabletTabAllowed(activeTab, targetRole, mode)) {
     return null;
   }
+
+  const currentParticipant =
+    participants.find((participant) => participant.user_id === viewerUserId) ?? null;
 
   if (targetRole === "master") {
     switch (activeTab) {
@@ -156,7 +161,13 @@ export default function TabletPageRenderer({
       case "notes":
         return <TabletNotesPage />;
       case "settings":
-        return <TabletSettingsMasterPage />;
+        return (
+          <TabletSettingsMasterPage
+            sessionId={sessionId}
+            participant={currentParticipant}
+            viewerUserId={viewerUserId}
+          />
+        );
       default:
         return (
           <TabletScenePage
@@ -238,7 +249,13 @@ export default function TabletPageRenderer({
     case "notes":
       return <TabletNotesPage />;
     case "settings":
-      return <TabletSettingsPlayerPage />;
+      return (
+        <TabletSettingsPlayerPage
+          sessionId={sessionId}
+          participant={currentParticipant}
+          viewerUserId={viewerUserId}
+        />
+      );
     default:
       return (
         <TabletUserPage

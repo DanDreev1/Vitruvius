@@ -1,11 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
+import {
+  LOBBY_AVATAR_ALLOWED_MIME_TYPES,
+  LOBBY_AVATAR_MAX_FILE_SIZE_BYTES,
+  LOBBY_AVATAR_UPDATE_COOLDOWN_MS,
+} from '@/features/lobby/constants';
 import {
   isPartyConfirmationSuppressed,
   setPartyConfirmationSuppressed,
 } from '@/features/tablet/master/party/confirmation';
+import {
+  saveParticipantProfileAvatar,
+  saveParticipantProfileNickname,
+} from '@/features/tablet/settings/profile';
+import type { TabletParticipant } from '@/features/tablet/types';
 import { useSceneAudioVolume } from '@/features/tablet/useSceneAudioVolume';
 
 import {
@@ -13,22 +23,254 @@ import {
   SectionTitle,
 } from './TabletPagePrimitives';
 
-export default function TabletSettingsContent() {
+type TabletSettingsContentProps = {
+  sessionId: string;
+  participant: TabletParticipant | null;
+  viewerUserId: string;
+};
+
+export default function TabletSettingsContent({
+  sessionId,
+  participant,
+  viewerUserId,
+}: TabletSettingsContentProps) {
   const { volume, setVolume } = useSceneAudioVolume();
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const [nickname, setNickname] = useState(participant?.display_name ?? '');
+  const [avatarUrl, setAvatarUrl] = useState(participant?.avatar_url ?? null);
+  const [isEditingNickname, setIsEditingNickname] = useState(false);
+  const [isSavingNickname, setIsSavingNickname] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [profileMessage, setProfileMessage] = useState<string | null>(null);
+  const [avatarCooldownEndsAt, setAvatarCooldownEndsAt] = useState<number | null>(null);
   const [arePartyConfirmationsSuppressed, setArePartyConfirmationsSuppressed] =
     useState(() => isPartyConfirmationSuppressed());
+
+  useEffect(() => {
+    if (!profileMessage) return;
+
+    const timeoutId = window.setTimeout(() => setProfileMessage(null), 2600);
+    return () => window.clearTimeout(timeoutId);
+  }, [profileMessage]);
+
+  const trimmedNickname = nickname.trim();
+  const canSaveNickname = Boolean(
+    participant &&
+    trimmedNickname &&
+    trimmedNickname !== (participant.display_name ?? '').trim() &&
+    !isSavingNickname
+  );
+
+  const saveNickname = async () => {
+    if (!participant || !canSaveNickname) return;
+    setIsSavingNickname(true);
+    setProfileError(null);
+    setProfileMessage(null);
+
+    try {
+      await saveParticipantProfileNickname({
+        sessionId,
+        participantId: participant.id,
+        displayName: trimmedNickname,
+      });
+      setIsEditingNickname(false);
+      setProfileMessage('Nickname changed successfully.');
+    } catch (error) {
+      setProfileError(error instanceof Error ? error.message : 'Could not save nickname.');
+    } finally {
+      setIsSavingNickname(false);
+    }
+  };
+
+  const selectAvatar = async (file: File | null) => {
+    if (!file || !participant || isUploadingAvatar) return;
+
+    if (avatarCooldownEndsAt && avatarCooldownEndsAt > Date.now()) {
+      setProfileError('Avatar can be changed again in a few minutes.');
+      return;
+    }
+
+    if (!LOBBY_AVATAR_ALLOWED_MIME_TYPES.includes(file.type)) {
+      setProfileError('Only JPG, PNG, WEBP, or GIF images are allowed.');
+      return;
+    }
+
+    if (file.size > LOBBY_AVATAR_MAX_FILE_SIZE_BYTES) {
+      setProfileError('Avatar must be 5 MB or smaller.');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    setProfileError(null);
+    setProfileMessage(null);
+
+    try {
+      const nextAvatarUrl = await saveParticipantProfileAvatar({
+        sessionId,
+        participantId: participant.id,
+        userId: viewerUserId,
+        file,
+      });
+      setAvatarUrl(nextAvatarUrl);
+      setAvatarCooldownEndsAt(Date.now() + LOBBY_AVATAR_UPDATE_COOLDOWN_MS);
+      setProfileMessage('Avatar changed successfully.');
+    } catch (error) {
+      setProfileError(error instanceof Error ? error.message : 'Could not upload avatar.');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
 
   const restorePartyConfirmations = () => {
     setPartyConfirmationSuppressed(false);
     setArePartyConfirmationsSuppressed(false);
   };
 
-  return (
-    <div className="h-full">
-      <SectionTitle title="Settings" subtitle="Scene audio preferences" />
+  const copyNickname = async () => {
+    const value = (participant?.display_name ?? nickname).trim();
+    if (!value) return;
 
-      <div className="grid h-[calc(100%-72px)] grid-cols-[1fr_360px] gap-[18px]">
-        <Panel className="space-y-[18px]">
+    try {
+      await navigator.clipboard.writeText(value);
+      setProfileError(null);
+      setProfileMessage('Nickname copied.');
+    } catch {
+      setProfileError('Could not copy nickname.');
+    }
+  };
+
+  return (
+    <div className="relative h-full">
+      {profileMessage ? (
+        <div className="pointer-events-none absolute left-1/2 top-[4px] z-40 -translate-x-1/2 rounded-full border border-emerald-300/35 bg-black/80 px-[18px] py-[8px] font-montserrat text-[12px] font-extrabold text-emerald-300 shadow-lg">
+          {profileMessage}
+        </div>
+      ) : null}
+
+      <SectionTitle title="Settings" subtitle="Profile and local preferences" />
+
+      <div className="grid h-[calc(100%-72px)] grid-cols-[1fr_360px] gap-[18px] pb-[14px]">
+        <Panel className="space-y-[18px] overflow-y-auto">
+          <div className="rounded-[24px] border-[2px] border-white/80 bg-transparent px-[22px] py-[16px]">
+            <div className="flex min-h-[74px] items-center gap-[20px]">
+              <div className="relative shrink-0">
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={!participant || isUploadingAvatar}
+                  className="group relative block h-[64px] w-[64px] rounded-full border border-white/15 bg-[#898989] bg-cover bg-center transition hover:border-[#D6B25E] disabled:cursor-not-allowed disabled:opacity-50"
+                  style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
+                  aria-label="Change avatar"
+                />
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  disabled={!participant || isUploadingAvatar}
+                  className="absolute -bottom-[3px] -right-[3px] flex h-[25px] w-[25px] items-center justify-center rounded-full border-[2px] border-[#172033] bg-white shadow-md transition hover:scale-105 disabled:opacity-50"
+                  aria-label="Change avatar"
+                  title={isUploadingAvatar ? 'Uploading avatar' : 'Change avatar'}
+                >
+                  <span
+                    className="h-[13px] w-[13px] bg-contain bg-center bg-no-repeat"
+                    style={{ backgroundImage: "url('/PaintBrush.png')" }}
+                  />
+                </button>
+                <input
+                  ref={avatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="sr-only"
+                  onChange={(event) => {
+                    void selectAvatar(event.currentTarget.files?.[0] ?? null);
+                    event.currentTarget.value = '';
+                  }}
+                />
+              </div>
+
+              <div className="min-w-[180px] flex-1">
+                <p className="truncate font-montserrat-alt text-[23px] font-extrabold leading-none text-white">
+                  {participant?.display_name?.trim() || nickname.trim() || 'Nickname'}
+                </p>
+                <p className="mt-[6px] font-montserrat text-[17px] leading-none text-white">
+                  Role: {participant?.role === 'master' ? 'Master' : 'Player'}
+                </p>
+              </div>
+
+              {isEditingNickname ? (
+                <div className="flex min-w-0 flex-[1.4] items-center gap-[8px]">
+                  <input
+                    value={nickname}
+                    maxLength={36}
+                    disabled={!participant || isSavingNickname}
+                    onChange={(event) => {
+                      setNickname(event.target.value);
+                      setProfileError(null);
+                      setProfileMessage(null);
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') void saveNickname();
+                    }}
+                    autoFocus
+                    className="h-[42px] min-w-0 flex-1 rounded-full border border-white/25 bg-[#111A2D] px-[16px] font-montserrat text-[13px] font-bold text-white outline-none focus:border-[#D6B25E] disabled:opacity-50"
+                    placeholder="Nickname"
+                    aria-label="Nickname"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void saveNickname()}
+                    disabled={!canSaveNickname}
+                    className="h-[42px] rounded-full bg-white px-[17px] font-montserrat text-[12px] font-extrabold text-black disabled:cursor-not-allowed disabled:opacity-35"
+                  >
+                    {isSavingNickname ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNickname(participant?.display_name ?? '');
+                      setIsEditingNickname(false);
+                      setProfileError(null);
+                    }}
+                    disabled={isSavingNickname}
+                    className="h-[42px] rounded-full border border-white/30 px-[15px] font-montserrat text-[12px] font-extrabold text-white disabled:opacity-40"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <div className="flex shrink-0 items-center gap-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => void copyNickname()}
+                    disabled={!participant}
+                    className="h-[42px] min-w-[150px] rounded-full bg-white px-[20px] font-montserrat text-[12px] font-extrabold text-black transition hover:bg-white/90 disabled:opacity-40"
+                  >
+                    Copy nickname
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNickname(participant?.display_name ?? '');
+                      setIsEditingNickname(true);
+                      setProfileError(null);
+                      setProfileMessage(null);
+                    }}
+                    disabled={!participant}
+                    className="h-[42px] min-w-[150px] rounded-full bg-white px-[20px] font-montserrat text-[12px] font-extrabold text-black transition hover:bg-white/90 disabled:opacity-40"
+                  >
+                    Change nickname
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {(profileError || isUploadingAvatar) ? (
+              <p className={`mt-[8px] text-right font-montserrat text-[11px] font-semibold ${profileError ? 'text-red-300' : 'text-[#D6B25E]'}`}>
+                {profileError ?? 'Uploading avatar...'}
+              </p>
+            ) : null}
+          </div>
+
           <div className="rounded-[20px] border border-white/10 bg-[#243047] px-[20px] py-[18px]">
             <div className="mb-[14px] flex items-center justify-between gap-[16px]">
               <div>

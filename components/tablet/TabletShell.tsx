@@ -1539,6 +1539,7 @@ function PlayerTabletShellLayout({
           targetRole={targetRole}
           mode={mode}
           isEditable={isEditable}
+          viewerUserId={viewerUserId}
           sessionId={sessionId}
           inGameWorldId={inGameWorldId}
           participants={participants}
@@ -1575,6 +1576,7 @@ function PlayerTabletShellLayout({
 function MasterTabletShellLayout({
   activeTab,
   onTabChange,
+  viewerUserId,
   targetRole,
   mode,
   onClose,
@@ -1604,6 +1606,7 @@ function MasterTabletShellLayout({
           targetRole={targetRole}
           mode={mode}
           isEditable={isEditable}
+          viewerUserId={viewerUserId}
           sessionId={sessionId}
           inGameWorldId={inGameWorldId}
           participants={participants}

@@ -3,6 +3,10 @@
 import { useEffect, useRef } from 'react';
 
 import { supabase } from '@/lib/supabaseClient';
+import {
+  getParticipantProfileChannelName,
+  PARTICIPANT_PROFILE_CHANGED_EVENT,
+} from '@/features/tablet/settings/profile';
 import type { GameParticipant } from '@/lib/game/types';
 
 const HEARTBEAT_INTERVAL_MS = 5_000;
@@ -199,6 +203,15 @@ export function useGamePresence({
       void syncParticipants();
     }, HEARTBEAT_INTERVAL_MS);
 
+    const profileChannel = supabase
+      .channel(getParticipantProfileChannelName(sessionId))
+      .on(
+        'broadcast',
+        { event: PARTICIPANT_PROFILE_CHANGED_EVENT },
+        () => void syncParticipants()
+      )
+      .subscribe();
+
     const handlePageHide = () => {
       void markOffline();
     };
@@ -218,6 +231,8 @@ export function useGamePresence({
 
       window.removeEventListener('pagehide', handlePageHide);
       window.removeEventListener('beforeunload', handleBeforeUnload);
+
+      void supabase.removeChannel(profileChannel);
 
       void markOffline();
     };
