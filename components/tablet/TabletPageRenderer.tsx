@@ -159,7 +159,7 @@ export default function TabletPageRenderer({
           />
         );
       case "notes":
-        return <TabletNotesPage />;
+        return <TabletNotesPage owner={inGameWorldId ? { kind: "master", id: inGameWorldId } : null} />;
       case "settings":
         return (
           <TabletSettingsMasterPage
@@ -247,7 +247,7 @@ export default function TabletPageRenderer({
         />
       );
     case "notes":
-      return <TabletNotesPage />;
+      return <TabletNotesPage owner={playerCharacter ? { kind: "player", id: playerCharacter.id } : null} />;
     case "settings":
       return (
         <TabletSettingsPlayerPage

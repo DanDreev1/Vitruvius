@@ -42,7 +42,10 @@ export function getVisibleTabletTabs(
   mode: TabletViewMode
 ) {
   if (targetRole === 'master') {
-    return MASTER_TABLET_TABS;
+    if (mode === 'self') return MASTER_TABLET_TABS;
+    return MASTER_TABLET_TABS.filter(
+      (tab) => tab.key !== 'notes' && tab.key !== 'settings'
+    );
   }
 
   if (mode === 'self') {

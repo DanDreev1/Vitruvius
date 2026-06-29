@@ -43,7 +43,7 @@ type SavedSceneMusicTarget = {
 type SavedWorldNote = {
   id: string;
   title: string;
-  description: string;
+  content: string;
   position_x: number;
   position_y: number;
 };
@@ -215,7 +215,7 @@ async function getSavedWorldCollections(worldId: string) {
 
     supabase
       .from('worlds_notes')
-      .select('id, title, description, position_x, position_y')
+      .select('id, title, content, position_x, position_y')
       .eq('world_id', worldId),
 
     supabase
@@ -371,7 +371,7 @@ async function createSelectedInGameWorld(
       collections.notes.map((note) => ({
         in_game_world_id: inGameWorldId,
         title: note.title,
-        description: note.description,
+        content: note.content,
         position_x: note.position_x,
         position_y: note.position_y,
       }))

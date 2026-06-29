@@ -85,8 +85,8 @@ export type CharacterInventoryItemTemplate = {
 export type CharacterNoteTemplate = {
   title: string;
   content: string | null;
-  canvas_x: number;
-  canvas_y: number;
+  position_x: number;
+  position_y: number;
   sort_order: number;
   metadata: Record<string, unknown>;
 };

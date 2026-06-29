@@ -86,8 +86,8 @@ type SavedNote = {
   id: string;
   title: string;
   content: string | null;
-  canvas_x: number;
-  canvas_y: number;
+  position_x: number;
+  position_y: number;
   sort_order: number;
   metadata: Record<string, unknown>;
 };
@@ -393,7 +393,7 @@ async function getSavedCharacterCollections(characterId: string) {
       .order('sort_order', { ascending: true }),
     supabase
       .from('character_notes')
-      .select('id, title, content, canvas_x, canvas_y, sort_order, metadata')
+      .select('id, title, content, position_x, position_y, sort_order, metadata')
       .eq('character_id', characterId)
       .order('sort_order', { ascending: true }),
     supabase
@@ -614,8 +614,8 @@ async function createSelectedInGameCharacter(
         source_note_id: note.id,
         title: note.title,
         content: note.content,
-        canvas_x: note.canvas_x,
-        canvas_y: note.canvas_y,
+        position_x: note.position_x,
+        position_y: note.position_y,
         sort_order: note.sort_order,
         metadata: note.metadata,
       }))
