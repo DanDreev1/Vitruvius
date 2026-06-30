@@ -125,7 +125,8 @@ export function useGamePresence({
             last_seen_at: nowIso,
           })
           .eq('session_id', sessionId)
-          .eq('user_id', currentUserId);
+          .eq('user_id', currentUserId)
+          .eq('participation_status', 'active');
 
         if (error) {
           console.error('heartbeat update error:', error);
@@ -149,6 +150,7 @@ export function useGamePresence({
             'id, user_id, role, display_name, avatar_url, joined_at, connection_status, last_seen_at'
           )
           .eq('session_id', sessionId)
+          .eq('participation_status', 'active')
           .order('joined_at', { ascending: true });
 
         if (error) {
@@ -186,7 +188,8 @@ export function useGamePresence({
             connection_status: 'offline',
           })
           .eq('session_id', sessionId)
-          .eq('user_id', currentUserId);
+          .eq('user_id', currentUserId)
+          .eq('participation_status', 'active');
       } catch (error) {
         console.error('mark offline error:', error);
       }

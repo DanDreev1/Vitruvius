@@ -94,6 +94,7 @@ async function getMasterParticipant(sessionId: string) {
     .from('session_participants')
     .select('id, session_id, user_id, selected_world_id, role')
     .eq('session_id', sessionId)
+    .eq('participation_status', 'active')
     .eq('role', 'master')
     .maybeSingle();
 

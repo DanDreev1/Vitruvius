@@ -131,6 +131,7 @@ export async function getSceneImageAudience(
     .from('session_participants')
     .select('id, display_name, avatar_url, role, joined_at')
     .eq('session_id', sessionId)
+    .eq('participation_status', 'active')
     .eq('role', 'player')
     .order('joined_at', { ascending: true });
 
@@ -385,11 +386,12 @@ export async function getInGameWorldSceneMusic(
 }
 
 async function uploadSceneMusicFile(
+  sessionId: string,
   inGameWorldId: string,
   file: File
 ) {
   const safeName = sanitizeFileName(file.name);
-  const objectPath = `${SCENE_MUSIC_STORAGE_FOLDER}/${inGameWorldId}/${crypto.randomUUID()}-${safeName}`;
+  const objectPath = `${SCENE_MUSIC_STORAGE_FOLDER}/${sessionId}/worlds/${inGameWorldId}/${crypto.randomUUID()}-${safeName}`;
 
   const { error: uploadError } = await supabase.storage
     .from(SCENE_MUSIC_STORAGE_BUCKET)
@@ -419,7 +421,7 @@ export async function createInGameWorldSceneMusic(
   sessionId: string
 ) {
   const [{ publicUrl, title }, sortOrder] = await Promise.all([
-    uploadSceneMusicFile(inGameWorldId, file),
+    uploadSceneMusicFile(sessionId, inGameWorldId, file),
     getNextSceneMusicSortOrder(inGameWorldId),
   ]);
 
@@ -747,11 +749,12 @@ export async function getAvailablePlayerSceneMusic({
 }
 
 async function uploadSceneImageFile(
+  sessionId: string,
   inGameWorldId: string,
   file: File
 ) {
   const safeName = sanitizeFileName(file.name);
-  const objectPath = `${SCENE_IMAGE_STORAGE_FOLDER}/${inGameWorldId}/${crypto.randomUUID()}-${safeName}`;
+  const objectPath = `${SCENE_IMAGE_STORAGE_FOLDER}/${sessionId}/worlds/${inGameWorldId}/${crypto.randomUUID()}-${safeName}`;
 
   const { error: uploadError } = await supabase.storage
     .from(SCENE_IMAGE_STORAGE_BUCKET)
@@ -798,7 +801,7 @@ export async function createInGameWorldSceneImage(
   sessionId: string
 ) {
   const [{ publicUrl, storagePath, mimeType, title }, sortOrder] = await Promise.all([
-    uploadSceneImageFile(inGameWorldId, file),
+    uploadSceneImageFile(sessionId, inGameWorldId, file),
     getNextSceneImageSortOrder(inGameWorldId),
   ]);
 

@@ -294,6 +294,7 @@ async function getPlayerParticipants(sessionId: string) {
     .from('session_participants')
     .select('id, session_id, user_id, selected_character_id')
     .eq('session_id', sessionId)
+    .eq('participation_status', 'active')
     .eq('role', 'player')
     .order('joined_at', { ascending: true });
 
@@ -662,40 +663,6 @@ async function createInGameCharacterForParticipant(participant: PlayerParticipan
   return 'selected' as const;
 }
 
-async function copyInventoryVisibilityForSession(sessionId: string) {
-  const { data: characters, error: characterError } = await supabase
-    .from('in_game_characters')
-    .select('id, source_character_id')
-    .eq('session_id', sessionId);
-  if (characterError) throw new Error(`Failed to load visibility characters: ${characterError.message}`);
-  const characterIdBySource = new Map(
-    (characters ?? []).flatMap((character) => character.source_character_id
-      ? [[character.source_character_id as string, character.id as string] as const]
-      : [])
-  );
-  const characterIds = (characters ?? []).map((character) => character.id as string);
-  if (!characterIds.length) return;
-  const { data: items, error: itemError } = await supabase
-    .from('in_game_character_inventory_items')
-    .select('id, source_item_id')
-    .in('in_game_character_id', characterIds)
-    .not('source_item_id', 'is', null);
-  if (itemError) throw new Error(`Failed to load visibility items: ${itemError.message}`);
-  const itemIdBySource = new Map((items ?? []).map((item) => [item.source_item_id as string, item.id as string]));
-  const sourceItemIds = [...itemIdBySource.keys()];
-  if (!sourceItemIds.length) return;
-  const { data: visibility, error: visibilityError } = await supabase
-    .from('character_inventory_item_visibility')
-    .select('inventory_item_id, viewer_character_id')
-    .in('inventory_item_id', sourceItemIds);
-  if (visibilityError) throw new Error(`Failed to load saved item visibility: ${visibilityError.message}`);
-  await insertRows('in_game_character_inventory_item_visibility', (visibility ?? []).flatMap((row) => {
-    const inventoryItemId = itemIdBySource.get(row.inventory_item_id as string);
-    const viewerId = characterIdBySource.get(row.viewer_character_id as string);
-    return inventoryItemId && viewerId ? [{ inventory_item_id: inventoryItemId, viewer_in_game_character_id: viewerId }] : [];
-  }));
-}
-
 export async function prepareInGameCharactersForSession(sessionId: string) {
   try {
     const participants = await getPlayerParticipants(sessionId);
@@ -716,8 +683,6 @@ export async function prepareInGameCharactersForSession(sessionId: string) {
         placeholderCount += 1;
       }
     }
-
-    await copyInventoryVisibilityForSession(sessionId);
 
     return {
       playerCount: participants.length,

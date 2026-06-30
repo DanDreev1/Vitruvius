@@ -6,6 +6,43 @@ body {
   font-family: var(--font-montserrat), sans-serif;
 }
 
+/* Neutral application scrollbar. Keep scrolling discoverable without the
+   browser's bright track, arrow buttons, or an accent-colored thumb. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 158, 177, 0.55) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  min-height: 32px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(148, 158, 177, 0.52);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(183, 191, 207, 0.72);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-button,
+*::-webkit-scrollbar-corner {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
 .font-montserrat {
   font-family: var(--font-montserrat), sans-serif;
 }

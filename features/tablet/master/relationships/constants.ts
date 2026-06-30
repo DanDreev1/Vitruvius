@@ -1,5 +1,6 @@
-export const RELATIONSHIP_NPC_STORAGE_BUCKET = 'relationship-npc-images';
-export const RELATIONSHIP_NPC_STORAGE_FOLDER = 'in-game-worlds';
+export const RELATIONSHIP_NPC_STORAGE_BUCKET = 'temporary-relationship-npc-images';
+export const SAVED_RELATIONSHIP_NPC_STORAGE_BUCKET = 'relationship-npc-images';
+export const RELATIONSHIP_NPC_STORAGE_FOLDER = 'sessions';
 
 export const RELATIONSHIP_NPC_NAME_MAX_LENGTH = 80;
 export const RELATIONSHIP_NPC_DESCRIPTION_MAX_LENGTH = 2000;

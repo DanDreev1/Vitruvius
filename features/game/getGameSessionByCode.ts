@@ -22,13 +22,19 @@ export async function getGameSessionByCode(code: string): Promise<{
     throw new Error('Game session was not found.');
   }
 
-  const { data: participantsRaw, error: participantsError } = await supabase
+  let participantsQuery = supabase
     .from('session_participants')
     .select(
       'id, session_id, user_id, role, display_name, avatar_url, joined_at, connection_status, last_seen_at'
     )
     .eq('session_id', session.id)
     .order('joined_at', { ascending: true });
+
+  if (session.phase !== 'ended') {
+    participantsQuery = participantsQuery.eq('participation_status', 'active');
+  }
+
+  const { data: participantsRaw, error: participantsError } = await participantsQuery;
 
   if (participantsError) {
     console.error('session_participants error:', participantsError);

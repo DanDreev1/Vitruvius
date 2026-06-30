@@ -51,8 +51,9 @@ export async function getActiveParticipants(sessionId: string) {
       joined_at,
       selected_character_id,
       selected_world_id
-    `)
+        `)
         .eq('session_id', sessionId)
+        .eq('participation_status', 'active')
         .order('joined_at', { ascending: true });
 
     if (error) throw new Error(error.message);
@@ -206,13 +207,13 @@ export async function selectParticipantCharacter(
 }
 
 export async function selectParticipantWorld(
-    participantId: string,
-    worldId: string
+  participantId: string,
+  worldId: string
 ) {
-    const { error } = await supabase
-        .from('session_participants')
-        .update({ selected_world_id: worldId })
-        .eq('id', participantId);
+    const { error } = await supabase.rpc('select_lobby_world', {
+        p_participant_id: participantId,
+        p_world_id: worldId,
+    });
 
     if (error) throw new Error(error.message);
 }

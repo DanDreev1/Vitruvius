@@ -21,6 +21,7 @@ export async function getActiveSessionForUser(
     `
     )
     .eq('user_id', userId)
+    .eq('participation_status', 'active')
     .eq('live_sessions.phase', 'active')
     .limit(1)
     .maybeSingle();

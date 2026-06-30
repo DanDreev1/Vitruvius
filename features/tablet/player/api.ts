@@ -588,8 +588,15 @@ export async function uploadTabletPlayerPortrait(
   characterId: string,
   file: File
 ) {
+  void uploaderUserId;
   const version = Date.now();
-  const objectPath = `${uploaderUserId}/${PLAYER_TABLET_PORTRAIT_STORAGE_FOLDER}/${characterId}/portrait`;
+  const { data: character, error: characterError } = await supabase
+    .from('in_game_characters')
+    .select('session_id')
+    .eq('id', characterId)
+    .single();
+  if (characterError) throw new Error(characterError.message);
+  const objectPath = `sessions/${character.session_id}/characters/${characterId}/${PLAYER_TABLET_PORTRAIT_STORAGE_FOLDER}/portrait`;
 
   const { error: uploadError } = await supabase.storage
     .from(PLAYER_TABLET_PORTRAIT_STORAGE_BUCKET)
@@ -617,8 +624,15 @@ export async function uploadTabletPlayerCustomIcon(
   iconType: 'domain' | 'skill',
   file: File
 ) {
+  void uploaderUserId;
   const version = Date.now();
-  const objectPath = `${uploaderUserId}/${PLAYER_TABLET_CUSTOM_ICON_STORAGE_FOLDER}/${characterId}/${iconType}s/${ownerId}/icon`;
+  const { data: character, error: characterError } = await supabase
+    .from('in_game_characters')
+    .select('session_id')
+    .eq('id', characterId)
+    .single();
+  if (characterError) throw new Error(characterError.message);
+  const objectPath = `sessions/${character.session_id}/characters/${characterId}/${PLAYER_TABLET_CUSTOM_ICON_STORAGE_FOLDER}/${iconType}s/${ownerId}/icon`;
 
   const { error: uploadError } = await supabase.storage
     .from(PLAYER_TABLET_PORTRAIT_STORAGE_BUCKET)

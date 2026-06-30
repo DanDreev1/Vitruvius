@@ -166,6 +166,7 @@ export default function TabletPageRenderer({
             sessionId={sessionId}
             participant={currentParticipant}
             viewerUserId={viewerUserId}
+            inGameWorldId={inGameWorldId}
           />
         );
       default:

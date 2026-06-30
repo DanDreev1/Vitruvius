@@ -1,6 +1,6 @@
 import { supabase } from '@/lib/supabaseClient';
 
-import { ASSET_IMAGE_BUCKET, ASSET_IMAGE_MAX_BYTES } from './constants';
+import { ASSET_IMAGE_BUCKET, ASSET_IMAGE_MAX_BYTES, SAVED_ASSET_IMAGE_BUCKET } from './constants';
 import type {
   AssetDraft,
   AssetItem,
@@ -81,11 +81,13 @@ export async function publishInventoryMessage(
 async function resolveImageUrl(path: string | null) {
   if (!path) return null;
   if (/^https?:\/\//i.test(path)) return path;
-  const { data, error } = await supabase.storage
-    .from(ASSET_IMAGE_BUCKET)
-    .createSignedUrl(path, 3600);
-  if (error) throw new Error(`Failed to load item image: ${error.message}`);
-  return data.signedUrl;
+  for (const bucket of [ASSET_IMAGE_BUCKET, SAVED_ASSET_IMAGE_BUCKET]) {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, 3600);
+    if (!error) return data.signedUrl;
+  }
+  throw new Error('Failed to load item image.');
 }
 
 export async function getInventoryAudience(sessionId: string) {
@@ -93,6 +95,7 @@ export async function getInventoryAudience(sessionId: string) {
     .from('session_participants')
     .select('id, display_name, avatar_url, joined_at')
     .eq('session_id', sessionId)
+    .eq('participation_status', 'active')
     .eq('role', 'player')
     .order('joined_at');
   if (error) throw new Error(`Failed to load inventory players: ${error.message}`);
@@ -142,12 +145,12 @@ function safeFileName(name: string) {
   return name.normalize('NFKD').replace(/[^a-zA-Z0-9.\-_]/g, '-').toLowerCase();
 }
 
-async function uploadAssetImage(worldId: string, file: File) {
+async function uploadAssetImage(sessionId: string, worldId: string, file: File) {
   if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
     throw new Error('Item image must be JPEG, PNG, or WebP.');
   }
   if (file.size > ASSET_IMAGE_MAX_BYTES) throw new Error('Item image must be 5 MB or smaller.');
-  const path = `in-game-worlds/${worldId}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+  const path = `sessions/${sessionId}/worlds/${worldId}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
   const { error } = await supabase.storage.from(ASSET_IMAGE_BUCKET).upload(path, file);
   if (error) throw new Error(`Failed to upload item image: ${error.message}`);
   return path;
@@ -167,7 +170,7 @@ export async function saveAssets(
   for (let index = 0; index < drafts.length; index += 1) {
     const draft = drafts[index];
     let imagePath = draft.imagePath;
-    if (draft.imageFile) imagePath = await uploadAssetImage(inGameWorldId, draft.imageFile);
+    if (draft.imageFile) imagePath = await uploadAssetImage(sessionId, inGameWorldId, draft.imageFile);
     if (!imagePath) throw new Error(`An image is required for ${draft.name}.`);
     const payload = {
       in_game_world_id: inGameWorldId,

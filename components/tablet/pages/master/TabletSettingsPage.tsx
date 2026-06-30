@@ -7,10 +7,12 @@ export default function TabletSettingsPage({
   sessionId,
   participant,
   viewerUserId,
+  inGameWorldId,
 }: {
   sessionId: string;
   participant: TabletParticipant | null;
   viewerUserId: string;
+  inGameWorldId: string | null;
 }) {
   return (
     <TabletSettingsContent
@@ -18,6 +20,7 @@ export default function TabletSettingsPage({
       sessionId={sessionId}
       participant={participant}
       viewerUserId={viewerUserId}
+      inGameWorldId={inGameWorldId}
     />
   );
 }

@@ -2,17 +2,15 @@
 
 import { useGamePresence } from "@/features/game/useGamePresence";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import BackHomeButton from "@/components/ui/BackHomeButton";
 import { supabase } from "@/lib/supabaseClient";
 import GameViewport from "@/components/game/GameViewport";
 import PlayerSceneImagesHost from "@/components/game/PlayerSceneImagesHost";
 import PlayerSceneMusicAudio from "@/components/game/PlayerSceneMusicAudio";
 import SceneMusicMasterRuntime from "@/components/game/SceneMusicMasterRuntime";
 import TabletHost from "./TabletHost";
-import { disbandLobby, leaveLobby } from "@/features/lobby/api";
 import { getGameSessionByCode } from "@/features/game/getGameSessionByCode";
 import { getInGameWorldBySessionId } from "@/features/worlds/api";
 import { usePlayerSceneImages } from "@/features/tablet/player/usePlayerSceneImages";
@@ -46,7 +44,6 @@ export default function GameClient({ code }: GameClientProps) {
 
   const [gameData, setGameData] = useState<LoadedGameData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLeavingGame, setIsLeavingGame] = useState(false);
   const [tabletState, setTabletState] = useState<OpenTabletState>(null);
   const [inGameWorldId, setInGameWorldId] = useState<string | null>(null);
   const [isSceneImagesOpen, setIsSceneImagesOpen] = useState(false);
@@ -75,7 +72,7 @@ export default function GameClient({ code }: GameClientProps) {
 
         const { session, participants } = await getGameSessionByCode(code);
 
-        if (session.phase !== "active") {
+        if (session.phase === "lobby") {
           router.replace(`/lobby/${code}`);
           return;
         }
@@ -84,7 +81,7 @@ export default function GameClient({ code }: GameClientProps) {
           (participant) => participant.userId === currentUserId,
         );
 
-        if (!currentParticipant) {
+        if (!currentParticipant && session.phase !== "ended") {
           router.replace("/");
           return;
         }
@@ -154,33 +151,6 @@ export default function GameClient({ code }: GameClientProps) {
       (participant) => participant.role === "player",
     );
   }, [gameData]);
-
-  function areParticipantsVisuallyEqual(
-    currentParticipants: GameParticipant[],
-    nextParticipants: GameParticipant[],
-  ) {
-    if (currentParticipants.length !== nextParticipants.length) {
-      return false;
-    }
-
-    return currentParticipants.every((currentParticipant, index) => {
-      const nextParticipant = nextParticipants[index];
-
-      if (!nextParticipant) {
-        return false;
-      }
-
-      return (
-        currentParticipant.id === nextParticipant.id &&
-        currentParticipant.userId === nextParticipant.userId &&
-        currentParticipant.role === nextParticipant.role &&
-        currentParticipant.displayName === nextParticipant.displayName &&
-        currentParticipant.avatarUrl === nextParticipant.avatarUrl &&
-        currentParticipant.joinedAt === nextParticipant.joinedAt &&
-        currentParticipant.connectionStatus === nextParticipant.connectionStatus
-      );
-    });
-  }
 
   useGamePresence({
     sessionId: gameData?.session.id ?? null,
@@ -252,27 +222,6 @@ export default function GameClient({ code }: GameClientProps) {
     setIsSceneImagesOpen(false);
   };
 
-  const handleLeaveGame = useCallback(async () => {
-    if (!gameData || !currentParticipant || isLeavingGame) {
-      return;
-    }
-
-    setIsLeavingGame(true);
-
-    try {
-      if (currentParticipant.role === "master") {
-        await disbandLobby(gameData.session.id);
-      } else {
-        await leaveLobby(currentParticipant.id);
-      }
-
-      router.push("/");
-    } catch (error) {
-      console.error(error);
-      setIsLeavingGame(false);
-    }
-  }, [currentParticipant, gameData, isLeavingGame, router]);
-
   const mappedTabletParticipants = useMemo(() => {
     if (!gameData) return [];
 
@@ -295,14 +244,6 @@ export default function GameClient({ code }: GameClientProps) {
 
   return (
     <>
-      <div className="fixed left-4 top-4 z-[80] lg:left-8 lg:top-8">
-        <BackHomeButton
-          label="Leave game"
-          onClick={handleLeaveGame}
-          disabled={isLeavingGame}
-        />
-      </div>
-
       <GameViewport
         sessionId={gameData.session.id}
         master={master}

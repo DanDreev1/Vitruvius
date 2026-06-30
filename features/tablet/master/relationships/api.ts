@@ -5,6 +5,7 @@ import {
   RELATIONSHIP_NPC_IMAGE_MAX_BYTES,
   RELATIONSHIP_NPC_STORAGE_BUCKET,
   RELATIONSHIP_NPC_STORAGE_FOLDER,
+  SAVED_RELATIONSHIP_NPC_STORAGE_BUCKET,
 } from './constants';
 import type {
   RelationshipAudienceMember,
@@ -53,6 +54,7 @@ export async function getRelationshipAudience(sessionId: string) {
     .from('session_participants')
     .select('id, display_name, avatar_url, joined_at')
     .eq('session_id', sessionId)
+    .eq('participation_status', 'active')
     .eq('role', 'player')
     .order('joined_at', { ascending: true });
 
@@ -165,15 +167,16 @@ export async function getRelationshipAvatarUrl(path: string | null) {
   if (!path) return null;
   if (/^https?:\/\//i.test(path)) return path;
 
-  const { data, error } = await supabase.storage
-    .from(RELATIONSHIP_NPC_STORAGE_BUCKET)
-    .createSignedUrl(path, 60 * 60);
-
-  if (error) {
-    throw new Error(`Failed to load NPC image: ${error.message}`);
+  for (const bucket of [
+    RELATIONSHIP_NPC_STORAGE_BUCKET,
+    SAVED_RELATIONSHIP_NPC_STORAGE_BUCKET,
+  ]) {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(path, 60 * 60);
+    if (!error) return data.signedUrl;
   }
-
-  return data.signedUrl;
+  throw new Error('Failed to load NPC image.');
 }
 
 function sanitizeFileName(fileName: string) {
@@ -185,6 +188,7 @@ function sanitizeFileName(fileName: string) {
 }
 
 async function uploadRelationshipAvatar(
+  sessionId: string,
   inGameWorldId: string,
   npcId: string,
   file: File
@@ -197,7 +201,7 @@ async function uploadRelationshipAvatar(
     throw new Error('NPC image must be 5 MB or smaller.');
   }
 
-  const objectPath = `${RELATIONSHIP_NPC_STORAGE_FOLDER}/${inGameWorldId}/${npcId}-${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+  const objectPath = `${RELATIONSHIP_NPC_STORAGE_FOLDER}/${sessionId}/worlds/${inGameWorldId}/${npcId}-${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
   const { error } = await supabase.storage
     .from(RELATIONSHIP_NPC_STORAGE_BUCKET)
     .upload(objectPath, file, { cacheControl: '3600', upsert: false });
@@ -243,6 +247,7 @@ export async function saveRelationshipChanges({
 
     if (npc.avatarFile) {
       nextAvatarPath = await uploadRelationshipAvatar(
+        sessionId,
         inGameWorldId,
         generatedId,
         npc.avatarFile

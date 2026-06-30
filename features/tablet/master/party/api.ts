@@ -84,6 +84,7 @@ export async function getPartyAudience(
     .from('session_participants')
     .select('id, user_id, display_name, avatar_url, role, joined_at')
     .eq('session_id', sessionId)
+    .eq('participation_status', 'active')
     .order('joined_at', { ascending: true });
 
   if (participantsError) {
@@ -235,6 +236,7 @@ async function getMasterParticipantId(sessionId: string) {
     .from('session_participants')
     .select('id')
     .eq('session_id', sessionId)
+    .eq('participation_status', 'active')
     .eq('role', 'master')
     .maybeSingle();
 

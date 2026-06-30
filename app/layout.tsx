@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 import { montserrat, montserratAlternates } from './fonts';
+import SessionExitProvider from '@/features/session-exit/SessionExitProvider';
 
 export const metadata: Metadata = {
   title: 'Vitruvius',
@@ -18,7 +19,7 @@ export default function RootLayout({
       <body
         className={`${montserrat.variable} ${montserratAlternates.variable} min-h-screen overflow-x-hidden bg-[#0B1020] text-white`}
       >
-        {children}
+        <SessionExitProvider>{children}</SessionExitProvider>
       </body>
     </html>
   );

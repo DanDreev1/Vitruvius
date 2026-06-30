@@ -542,9 +542,20 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
       if (!currentParticipant) return;
 
       try {
+        setStartGameSubmitError(null);
         await selectParticipantWorld(currentParticipant.id, worldId);
+        setParticipants((currentParticipants) =>
+          currentParticipants.map((participant) =>
+            participant.id === currentParticipant.id
+              ? { ...participant, selected_world_id: worldId }
+              : participant
+          )
+        );
       } catch (error) {
         console.error(error);
+        setStartGameSubmitError(
+          error instanceof Error ? error.message : 'Could not select this world.'
+        );
       }
     },
     [currentParticipant]

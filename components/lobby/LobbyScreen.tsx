@@ -258,10 +258,10 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                                                                     : 'border-white/10 bg-white/5'
                                                                                     }`}
                                                                             >
-                                                                                {world.cover_url ? (
+                                                                                {world.avatar_url ? (
                                                                                     <img
-                                                                                        src={world.cover_url}
-                                                                                        alt={world.title}
+                                                                                        src={world.avatar_url}
+                                                                                        alt={world.name}
                                                                                         className="h-[72px] w-[72px] shrink-0 rounded-[18px] object-cover"
                                                                                     />
                                                                                 ) : (
@@ -270,10 +270,10 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
 
                                                                                 <div className="min-w-0 flex-1">
                                                                                     <p className="font-montserrat text-[20px] font-bold leading-none">
-                                                                                        {world.title}
+                                                                                        {world.name}
                                                                                     </p>
                                                                                     <p className="font-montserrat mt-2 line-clamp-2 text-[15px] text-[#E7E7E7]">
-                                                                                        {world.description || 'No description'}
+                                                                                        Saved world
                                                                                     </p>
                                                                                 </div>
 

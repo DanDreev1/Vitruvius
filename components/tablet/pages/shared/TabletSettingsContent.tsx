@@ -17,6 +17,12 @@ import {
 } from '@/features/tablet/settings/profile';
 import type { TabletParticipant } from '@/features/tablet/types';
 import { useSceneAudioVolume } from '@/features/tablet/useSceneAudioVolume';
+import { useSessionExit } from '@/features/session-exit/SessionExitProvider';
+import {
+  loadInGameWorldProfile,
+  saveInGameWorldAvatar,
+  saveInGameWorldName,
+} from '@/features/tablet/settings/worldProfile';
 
 import {
   Panel,
@@ -27,15 +33,19 @@ type TabletSettingsContentProps = {
   sessionId: string;
   participant: TabletParticipant | null;
   viewerUserId: string;
+  inGameWorldId?: string | null;
 };
 
 export default function TabletSettingsContent({
   sessionId,
   participant,
   viewerUserId,
+  inGameWorldId = null,
 }: TabletSettingsContentProps) {
   const { volume, setVolume } = useSceneAudioVolume();
+  const { requestExit, isBusy: isExitingSession } = useSessionExit();
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
+  const worldAvatarInputRef = useRef<HTMLInputElement | null>(null);
   const [nickname, setNickname] = useState(participant?.display_name ?? '');
   const [avatarUrl, setAvatarUrl] = useState(participant?.avatar_url ?? null);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
@@ -46,6 +56,28 @@ export default function TabletSettingsContent({
   const [avatarCooldownEndsAt, setAvatarCooldownEndsAt] = useState<number | null>(null);
   const [arePartyConfirmationsSuppressed, setArePartyConfirmationsSuppressed] =
     useState(() => isPartyConfirmationSuppressed());
+  const [worldName, setWorldName] = useState('');
+  const [savedWorldName, setSavedWorldName] = useState('');
+  const [worldAvatarUrl, setWorldAvatarUrl] = useState<string | null>(null);
+  const [isSavingWorld, setIsSavingWorld] = useState(false);
+
+  useEffect(() => {
+    if (!inGameWorldId) return;
+    let isActive = true;
+
+    void loadInGameWorldProfile(inGameWorldId)
+      .then((profile) => {
+        if (!isActive) return;
+        setWorldName(profile.name);
+        setSavedWorldName(profile.name);
+        setWorldAvatarUrl(profile.avatarUrl);
+      })
+      .catch((error) => {
+        if (isActive) setProfileError(error instanceof Error ? error.message : 'Could not load world.');
+      });
+
+    return () => { isActive = false; };
+  }, [inGameWorldId]);
 
   useEffect(() => {
     if (!profileMessage) return;
@@ -127,6 +159,47 @@ export default function TabletSettingsContent({
     setArePartyConfirmationsSuppressed(false);
   };
 
+  const saveWorldName = async () => {
+    const nextName = worldName.trim();
+    if (!inGameWorldId || !nextName || nextName === savedWorldName || isSavingWorld) return;
+    setIsSavingWorld(true);
+    setProfileError(null);
+    try {
+      await saveInGameWorldName(inGameWorldId, nextName);
+      setWorldName(nextName);
+      setSavedWorldName(nextName);
+      setProfileMessage('World name saved.');
+    } catch (error) {
+      setProfileError(error instanceof Error ? error.message : 'Could not save world name.');
+    } finally {
+      setIsSavingWorld(false);
+    }
+  };
+
+  const selectWorldAvatar = async (file: File | null) => {
+    if (!file || !inGameWorldId || isSavingWorld) return;
+    if (!LOBBY_AVATAR_ALLOWED_MIME_TYPES.includes(file.type)) {
+      setProfileError('Only JPG, PNG, WEBP, or GIF images are allowed.');
+      return;
+    }
+    if (file.size > LOBBY_AVATAR_MAX_FILE_SIZE_BYTES) {
+      setProfileError('World image must be 5 MB or smaller.');
+      return;
+    }
+
+    setIsSavingWorld(true);
+    setProfileError(null);
+    try {
+      const nextUrl = await saveInGameWorldAvatar({ sessionId, worldId: inGameWorldId, file });
+      setWorldAvatarUrl(nextUrl);
+      setProfileMessage('World image saved.');
+    } catch (error) {
+      setProfileError(error instanceof Error ? error.message : 'Could not upload world image.');
+    } finally {
+      setIsSavingWorld(false);
+    }
+  };
+
   const copyNickname = async () => {
     const value = (participant?.display_name ?? nickname).trim();
     if (!value) return;
@@ -152,6 +225,54 @@ export default function TabletSettingsContent({
 
       <div className="grid h-[calc(100%-72px)] grid-cols-[1fr_360px] gap-[18px] pb-[14px]">
         <Panel className="space-y-[18px] overflow-y-auto">
+          {participant?.role === 'master' && inGameWorldId ? (
+            <div className="rounded-[24px] border-[2px] border-[#D6B25E]/60 bg-transparent px-[22px] py-[16px]">
+              <div className="flex items-center gap-[18px]">
+                <button
+                  type="button"
+                  onClick={() => worldAvatarInputRef.current?.click()}
+                  disabled={isSavingWorld}
+                  className="h-[74px] w-[74px] shrink-0 rounded-[18px] border border-white/20 bg-[#111A2D] bg-cover bg-center transition hover:border-[#D6B25E] disabled:opacity-50"
+                  style={worldAvatarUrl ? { backgroundImage: `url(${worldAvatarUrl})` } : undefined}
+                  aria-label="Change world image"
+                />
+                <input
+                  ref={worldAvatarInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  className="sr-only"
+                  onChange={(event) => {
+                    void selectWorldAvatar(event.currentTarget.files?.[0] ?? null);
+                    event.currentTarget.value = '';
+                  }}
+                />
+                <div className="min-w-0 flex-1">
+                  <p className="mb-[8px] font-montserrat-alt text-[18px] font-extrabold text-white">World profile</p>
+                  <div className="flex gap-[8px]">
+                    <input
+                      value={worldName}
+                      maxLength={80}
+                      disabled={isSavingWorld}
+                      onChange={(event) => setWorldName(event.target.value)}
+                      onKeyDown={(event) => { if (event.key === 'Enter') void saveWorldName(); }}
+                      className="h-[42px] min-w-0 flex-1 rounded-full border border-white/25 bg-[#111A2D] px-[16px] font-montserrat text-[13px] font-bold text-white outline-none focus:border-[#D6B25E]"
+                      placeholder="World name"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => void saveWorldName()}
+                      disabled={!worldName.trim() || worldName.trim() === savedWorldName || isSavingWorld}
+                      className="rounded-full bg-white px-[18px] font-montserrat text-[12px] font-extrabold text-black disabled:opacity-35"
+                    >
+                      {isSavingWorld ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                  <p className="mt-[7px] font-montserrat text-[11px] text-white/55">Click the image to replace it.</p>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
           <div className="rounded-[24px] border-[2px] border-white/80 bg-transparent px-[22px] py-[16px]">
             <div className="flex min-h-[74px] items-center gap-[20px]">
               <div className="relative shrink-0">
@@ -333,6 +454,26 @@ export default function TabletSettingsContent({
             <p className="font-montserrat text-[14px] leading-[1.5] text-white/65">
               This volume is local to your device and does not affect other players.
             </p>
+          </div>
+          <div className="rounded-[20px] border border-[#E07373]/25 bg-[#E07373]/5 p-[18px]">
+            <p className="font-montserrat-alt text-[18px] font-extrabold text-white">
+              {participant?.role === 'master' ? 'End session' : 'Exit the game'}
+            </p>
+            <p className="mt-[6px] font-montserrat text-[12px] leading-relaxed text-white/55">
+              {participant?.role === 'master'
+                ? 'Close the room for everyone and choose what to do with the world.'
+                : 'Leave the table and choose what to do with your character.'}
+            </p>
+            <button
+              type="button"
+              disabled={!participant || isExitingSession}
+              onClick={() => {
+                if (participant) requestExit(sessionId, participant.role);
+              }}
+              className="mt-[14px] w-full rounded-[14px] border border-[#E07373]/40 px-[16px] py-[11px] font-montserrat text-[13px] font-extrabold text-[#E88A8A] transition hover:bg-[#E07373]/10 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {participant?.role === 'master' ? 'End session' : 'Exit the game'}
+            </button>
           </div>
         </Panel>
       </div>
