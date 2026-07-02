@@ -41,6 +41,10 @@ export type StudioCharacterDraft = {
   relationships: PlayerRelationshipNpc[];
 };
 
+export type StudioCharacterRecord = StudioCharacterDraft & {
+  id: string;
+};
+
 export type StudioCharacterPayload = Omit<
   StudioCharacterDraft,
   'portraitFile' | 'portraitPreviewUrl' | 'relationships'

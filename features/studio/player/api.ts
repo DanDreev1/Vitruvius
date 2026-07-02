@@ -1,7 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/supabaseClient';
-import type { StudioCharacterDraft, StudioCharacterPayload } from './types';
+import type { StudioCharacterDraft, StudioCharacterPayload, StudioCharacterRecord } from './types';
 
 async function authHeaders() {
   const { data } = await supabase.auth.getSession();
@@ -15,7 +15,16 @@ async function parse<T>(response: Response) {
   return value as T;
 }
 
-export async function saveStudioCharacter(draft: StudioCharacterDraft) {
+export async function loadStudioCharacter(characterId: string) {
+  return parse<{ character: StudioCharacterRecord }>(
+    await fetch(`/api/studio/character?id=${encodeURIComponent(characterId)}`, {
+      headers: await authHeaders(),
+      cache: 'no-store',
+    })
+  );
+}
+
+export async function saveStudioCharacter(draft: StudioCharacterDraft, characterId?: string) {
   const payload: StudioCharacterPayload = {
     name: draft.name, description: draft.description, avatarUrl: draft.avatarUrl,
     attributes: draft.attributes, parameters: draft.parameters, domains: draft.domains,
@@ -25,6 +34,8 @@ export async function saveStudioCharacter(draft: StudioCharacterDraft) {
   form.set('character', JSON.stringify(payload));
   if (draft.portraitFile) form.set('portrait', draft.portraitFile);
   return parse<{ character: { id: string; name: string; avatar_url: string | null } }>(
-    await fetch('/api/studio/character', { method: 'POST', headers: await authHeaders(), body: form })
+    await fetch(characterId ? `/api/studio/character?id=${encodeURIComponent(characterId)}` : '/api/studio/character', {
+      method: characterId ? 'PUT' : 'POST', headers: await authHeaders(), body: form,
+    })
   );
 }
