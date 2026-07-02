@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import Header from "@/components/ui/Header";
+import ScaledPageViewport from "@/components/layout/ScaledPageViewport";
 import { createRoom } from "@/features/home/createRoom";
 import { joinRoomByCode } from "@/features/home/joinRoomByCode";
 import { useResumeActiveGame } from "@/features/home/useResumeActiveGame";
@@ -70,7 +71,7 @@ export default function HomePage() {
   };
 
   if (isChecking) {
-    return (
+    return <ScaledPageViewport>{(
       <main className="flex min-h-[calc(100dvh-86px)] items-center justify-center px-6">
         <div className="text-center">
           <h1 className="font-montserrat-alt text-[28px] font-extrabold text-[#D6B25E]">
@@ -78,11 +79,11 @@ export default function HomePage() {
           </h1>
         </div>
       </main>
-    );
+    )}</ScaledPageViewport>;
   }
 
   if (activeGameCode) {
-    return (
+    return <ScaledPageViewport>{(
       <main className="flex min-h-[calc(100dvh-86px)] items-center justify-center px-6">
         <div className="max-w-[460px] text-center">
           <h1 className="font-montserrat-alt text-[28px] font-extrabold text-[#D6B25E]">
@@ -104,45 +105,45 @@ export default function HomePage() {
           ) : null}
         </div>
       </main>
-    );
+    )}</ScaledPageViewport>;
   }
 
   return (
-    <>
-      <Header />
+    <ScaledPageViewport headerBackdrop>
+      <Header fixedLayout />
 
-      <main className="flex min-h-[calc(100dvh-56px)] items-center justify-center px-5 py-8 sm:min-h-[calc(100dvh-68px)] sm:px-6 sm:py-10 md:min-h-[calc(100dvh-86px)] md:px-10 md:py-12">
-        <section className="flex w-full max-w-[520px] flex-col items-center sm:max-w-[560px] md:max-w-[680px]">
+      <main className="flex h-[780px] items-center justify-center overflow-hidden px-10 py-[70px]">
+        <section className="flex w-full max-w-[620px] flex-col items-center">
           <Image
             src="/Logo_Icon.png"
             alt="Vitruvius logo"
             width={260}
             height={150}
             priority
-            className="mb-4 h-auto w-[100px] sm:mb-5 sm:w-[120px] md:mb-6 md:w-[200px]"
+            className="mb-3 h-auto w-[120px]"
           />
 
-          <h1 className="font-montserrat-alt text-center text-[46px] font-extrabold leading-none tracking-[-0.05em] text-[#D6B25E] sm:text-[58px] md:text-[88px]">
+          <h1 className="font-montserrat-alt text-center text-[72px] font-extrabold leading-none tracking-[-0.05em] text-[#D6B25E]">
             Vitruvius
           </h1>
 
-          <p className="font-montserrat-alt mt-3 text-center text-[14px] font-extrabold leading-[1.12] text-white sm:mt-4 sm:text-[16px] md:mt-5 md:text-[24px]">
+          <p className="font-montserrat-alt mt-3 text-center text-[20px] font-extrabold leading-[1.12] text-white">
             Gather your party around one digital
             <br />
             table
           </p>
 
-          <div className="mt-7 flex w-full max-w-[460px] flex-col gap-4 sm:mt-8 sm:max-w-[500px] sm:gap-5 md:mt-10 md:max-w-[620px] md:gap-6">
+          <div className="mt-6 flex w-full max-w-[560px] flex-col gap-[14px]">
             <button
               type="button"
               onClick={handleCreateRoom}
               disabled={isCreatingRoom || isJoiningRoom}
-              className="btn-primary"
+              className="btn-primary home-compact-button"
             >
               {isCreatingRoom ? "Creating Room..." : "Create Room"}
             </button>
 
-            <div className="grid grid-cols-[1fr_96px] gap-2.5 sm:grid-cols-[1fr_110px] sm:gap-3 md:grid-cols-[1fr_150px] md:gap-4">
+            <div className="grid grid-cols-[1fr_150px] gap-4">
               <input
                 type="text"
                 inputMode="numeric"
@@ -156,14 +157,14 @@ export default function HomePage() {
                 }}
                 placeholder="Enter the code"
                 maxLength={6}
-                className="font-montserrat h-[56px] rounded-full bg-white px-5 text-[17px] font-medium text-black outline-none placeholder:text-[#9A9A9A] sm:h-[62px] sm:px-6 sm:text-[18px] md:h-[74px] md:px-8 md:text-[22px]"
+                className="font-montserrat h-[60px] rounded-full bg-white px-7 text-[20px] font-medium text-black outline-none placeholder:text-[#9A9A9A]"
               />
 
               <button
                 type="button"
                 onClick={handleJoinRoom}
                 disabled={isJoiningRoom || isCreatingRoom}
-                className="btn-primary"
+                className="btn-primary home-compact-button"
               >
                 {isJoiningRoom ? "Joining..." : "Join"}
               </button>
@@ -171,21 +172,21 @@ export default function HomePage() {
 
             <div className="flex items-center gap-3 md:gap-4">
               <div className="h-px flex-1 bg-white/60" />
-              <span className="font-montserrat-alt text-[16px] font-extrabold text-white sm:text-[18px] md:text-[22px]">
+              <span className="font-montserrat-alt text-[22px] font-extrabold text-white">
                 Or
               </span>
               <div className="h-px flex-1 bg-white/60" />
             </div>
 
-            <p className="font-montserrat-alt text-center text-[18px] font-extrabold leading-[1.15] text-white sm:text-[22px] md:text-[32px]">
+            <p className="font-montserrat-alt text-center text-[26px] font-extrabold leading-[1.15] text-white">
               Prepare for the game in advance
             </p>
 
             <button
               type="button"
-              onClick={() => router.push("/workshop")}
+              onClick={() => router.push("/studio")}
               disabled={isCreatingRoom || isJoiningRoom}
-              className="btn-primary"
+              className="btn-primary home-compact-button"
             >
               Vitruvian Studio
             </button>
@@ -198,6 +199,6 @@ export default function HomePage() {
           </div>
         </section>
       </main>
-    </>
+    </ScaledPageViewport>
   );
 }

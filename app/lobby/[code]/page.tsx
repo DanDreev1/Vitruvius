@@ -1,4 +1,5 @@
 import LobbyScreen from '@/components/lobby/LobbyScreen';
+import ScaledPageViewport from '@/components/layout/ScaledPageViewport';
 
 export default async function LobbyPage({
   params,
@@ -7,5 +8,5 @@ export default async function LobbyPage({
 }) {
   const { code } = await params;
 
-  return <LobbyScreen code={code} />;
+  return <ScaledPageViewport fluidWidth><LobbyScreen code={code} /></ScaledPageViewport>;
 }

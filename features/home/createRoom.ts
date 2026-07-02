@@ -12,6 +12,8 @@ export async function createRoom(): Promise<CreateRoomResult> {
   const user = await getOrCreateGuestUser();
   const code = await generateUniqueRoomCode();
   const cleanupAt = new Date(Date.now() + LOBBY_TIMEOUT_MS).toISOString();
+  const nickname = typeof user.user_metadata?.nickname === 'string' ? user.user_metadata.nickname : null;
+  const avatarUrl = typeof user.user_metadata?.avatar_url === 'string' ? user.user_metadata.avatar_url : null;
 
   const { data: session, error: sessionError } = await supabase
     .from('live_sessions')
@@ -36,6 +38,8 @@ export async function createRoom(): Promise<CreateRoomResult> {
       user_id: user.id,
       role: 'master',
       is_ready: false,
+      display_name: nickname,
+      avatar_url: avatarUrl,
     });
 
   if (participantError) {

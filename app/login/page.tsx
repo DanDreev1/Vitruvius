@@ -4,8 +4,8 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import Header from '@/components/ui/Header';
+import ScaledPageViewport from '@/components/layout/ScaledPageViewport';
 import { signInWithEmail } from '@/features/auth/signInWithEmail';
-import { signUpWithEmail } from '@/features/auth/signUpWithEmail';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,7 +13,6 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSigningIn, setIsSigningIn] = useState(false);
-  const [isSigningUp, setIsSigningUp] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   const handleSignIn = async () => {
@@ -32,30 +31,14 @@ export default function LoginPage() {
     }
   };
 
-  const handleSignUp = async () => {
-    try {
-      setErrorMessage('');
-      setIsSigningUp(true);
-
-      await signUpWithEmail({ email, password });
-      router.push('/');
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : 'Failed to sign up.'
-      );
-    } finally {
-      setIsSigningUp(false);
-    }
-  };
-
   return (
-    <>
-      <Header />
+    <ScaledPageViewport headerBackdrop>
+      <Header fixedLayout />
 
-      <main className="mx-auto flex min-h-[calc(100vh-56px)] w-full max-w-[1440px] items-center justify-center px-4 py-10 min-[480px]:min-h-[calc(100vh-68px)] min-[480px]:px-6 min-[768px]:min-h-[calc(100vh-86px)] min-[768px]:px-10">
-        <section className="w-full max-w-[680px] rounded-[28px] bg-[#182135] p-4 min-[480px]:p-6 min-[768px]:p-8">
+      <main className="mx-auto flex h-[780px] w-full max-w-[1440px] items-center justify-center px-10 py-12">
+        <section className="w-full max-w-[620px] rounded-[28px] bg-[#182135] p-8">
           <div className="flex flex-col gap-4">
-            <h1 className="font-montserrat-alt text-center text-[32px] font-extrabold text-[#D6B25E] min-[768px]:text-[48px]">
+              <h1 className="font-montserrat-alt text-center text-[44px] font-extrabold text-[#D6B25E]">
               Login
             </h1>
 
@@ -78,7 +61,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={handleSignIn}
-              disabled={isSigningIn || isSigningUp}
+              disabled={isSigningIn}
               className="btn-primary"
             >
               {isSigningIn ? 'Signing in...' : 'Login'}
@@ -86,11 +69,11 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={handleSignUp}
-              disabled={isSigningUp || isSigningIn}
+              onClick={() => router.push('/signup')}
+              disabled={isSigningIn}
               className="btn-secondary"
             >
-              {isSigningUp ? 'Creating account...' : 'Create account'}
+              Create account
             </button>
 
             {errorMessage ? (
@@ -101,6 +84,6 @@ export default function LoginPage() {
           </div>
         </section>
       </main>
-    </>
+    </ScaledPageViewport>
   );
 }

@@ -68,12 +68,12 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
     ].filter((message): message is string => Boolean(message));
 
     return (
-        <div className="min-h-screen text-white">
-            <main className="w-full max-w-none min-h-screen px-4 md:px-6 lg:px-0 xl:px-0">
-                <div className="grid min-h-screen grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_460px] lg:gap-0">
+        <div className="h-[900px] text-white">
+            <main className="h-[900px] w-full max-w-none px-0">
+                <div className="grid h-[900px] grid-cols-[minmax(0,4fr)_minmax(288px,1fr)] gap-0">
                     {/* LEFT SIDE */}
-                    <section className="relative mb-0 flex min-w-0 flex-col items-center justify-center lg:pr-10">
-                        <div className="absolute left-4 top-4 z-20 lg:left-8 lg:top-8">
+                    <section className="relative mb-0 flex min-w-0 flex-col items-center justify-center pr-10">
+                        <div className="absolute left-8 top-8 z-20">
                             <BackHomeButton
                                 onClick={handleRequestLobbyExit}
                                 disabled={isLoading || isLobbyExitSubmitting}
@@ -82,12 +82,12 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                         </div>
 
                         <div className="mt-24 mb-10 flex w-full flex-col items-center text-center md:mb-12">
-                            <h1 className="font-montserrat-alt mb-6 text-[36px] font-bold leading-none md:text-[48px] xl:text-[60px]">
+                            <h1 className="font-montserrat-alt mb-6 text-[60px] font-bold leading-none">
                                 Waiting for the players
                             </h1>
 
-                            <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
-                                <p className="font-montserrat text-[24px] font-bold leading-none md:text-[32px]">
+                            <div className="flex flex-row items-center gap-5">
+                                <p className="font-montserrat text-[32px] font-bold leading-none">
                                     Code: {session?.code ?? code}
                                 </p>
 
@@ -361,9 +361,9 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                     </section>
 
                     {/* RIGHT SIDE */}
-                    <aside className="border-t-2 border-[#7C5CFF] pt-10 lg:ml-auto lg:w-[460px] lg:border-l-2 lg:border-t-0 lg:pr-6 lg:pl-8 lg:py-10">
+                    <aside className="w-full border-l-2 border-[#7C5CFF] px-5 py-10">
                         <div className="flex h-full min-h-[620px] flex-col">
-                            <h2 className="font-montserrat-alt mb-8 text-[28px] font-bold leading-none md:text-[34px]">
+                            <h2 className="font-montserrat-alt mb-7 text-[27px] font-bold leading-none">
                                 Players in lobby: {participants.length}
                             </h2>
 
@@ -374,17 +374,17 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                             <img
                                                 src={participant.avatar_url}
                                                 alt={participant.display_name || 'Player'}
-                                                className="h-[74px] w-[74px] rounded-full object-cover"
+                                                className="h-[60px] w-[60px] rounded-full object-cover"
                                             />
                                         ) : (
-                                            <div className="h-[74px] w-[74px] rounded-full bg-[#D9D9D9]" />
+                                            <div className="h-[60px] w-[60px] rounded-full bg-[#D9D9D9]" />
                                         )}
 
                                         <div className="min-w-0 flex-1">
-                                            <p className="font-montserrat text-[22px] font-bold leading-none md:text-[30px]">
+                                            <p className="font-montserrat text-[20px] font-bold leading-none">
                                                 {participant.display_name || 'Nickname'}
                                             </p>
-                                            <p className="font-montserrat mt-2 text-[18px] leading-none text-[#E7E7E7] md:text-[22px]">
+                                            <p className="font-montserrat mt-2 text-[16px] leading-none text-[#E7E7E7]">
                                                 Role: {participant.role === 'master' ? 'Master' : 'Player'}
                                             </p>
                                         </div>
@@ -397,7 +397,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                 ))}
                             </div>
 
-                            <div className={`mt-8 grid gap-4 ${isMaster ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'}`}>
+                            <div className={`mt-8 grid gap-4 ${isMaster ? 'grid-cols-2' : 'grid-cols-1'}`}>
                                 <button
                                     type="button"
                                     onClick={handleToggleReady}

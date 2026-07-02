@@ -279,7 +279,10 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
         return;
       }
 
-      await ensureParticipant(liveSession.id, user.id, liveSession.created_by);
+      await ensureParticipant(liveSession.id, user.id, liveSession.created_by, {
+        nickname: typeof user.user_metadata?.nickname === 'string' ? user.user_metadata.nickname : null,
+        avatarUrl: typeof user.user_metadata?.avatar_url === 'string' ? user.user_metadata.avatar_url : null,
+      });
 
       const result = await syncLobbyState(liveSession.id, user.id);
       if (!result) return;

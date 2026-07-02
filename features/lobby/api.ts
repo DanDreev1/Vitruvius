@@ -80,7 +80,8 @@ export async function refreshLobbyState(
 export async function ensureParticipant(
     sessionId: string,
     userId: string,
-    createdBy: string
+    createdBy: string,
+    profile?: { nickname: string | null; avatarUrl: string | null }
 ) {
     const { data: existingParticipant, error } = await supabase
         .from('session_participants')
@@ -103,8 +104,8 @@ export async function ensureParticipant(
             session_id: sessionId,
             user_id: userId,
             role: defaultRole,
-            display_name: null,
-            avatar_url: null,
+            display_name: profile?.nickname ?? null,
+            avatar_url: profile?.avatarUrl ?? null,
             is_ready: false
         });
 
