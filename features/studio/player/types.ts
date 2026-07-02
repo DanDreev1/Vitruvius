@@ -13,6 +13,7 @@ export type StudioInventoryItem = {
   description: string;
   category: InventoryCategory;
   quantity: number;
+  imagePath: string | null;
   imageUrl: string | null;
   sortOrder: number;
 };

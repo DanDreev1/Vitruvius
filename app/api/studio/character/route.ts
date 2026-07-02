@@ -7,6 +7,11 @@ export const runtime = 'nodejs';
 
 type Admin = Awaited<ReturnType<typeof authenticateSessionExitRequest>>['admin'];
 
+async function signedUrl(admin: Admin, bucket: string, value: string | null) {
+  if (!value || /^https?:\/\//i.test(value)) return value;
+  return (await admin.storage.from(bucket).createSignedUrl(value, 3600)).data?.signedUrl ?? null;
+}
+
 function validPayload(value: unknown): value is StudioCharacterPayload {
   if (!value || typeof value !== 'object') return false;
   const draft = value as Partial<StudioCharacterPayload>;
@@ -32,7 +37,7 @@ async function authorize(request: Request, characterId?: string | null) {
 }
 
 async function loadCharacter(admin: Admin, characterId: string) {
-  const [character, attributes, parameters, domains, inventoryItems, notes, experiences] = await Promise.all([
+  const [character, attributes, parameters, domains, inventoryItems, notes, experiences, relationshipLinks] = await Promise.all([
     admin.from('characters').select('id, name, description, avatar_url').eq('id', characterId).single(),
     admin.from('character_attributes').select('id, attribute_key, label, icon_key, value, sort_order').eq('character_id', characterId).order('sort_order'),
     admin.from('character_parameters').select('id, parameter_key, label, icon_key, current_value, max_value, sort_order').eq('character_id', characterId).order('sort_order'),
@@ -40,8 +45,9 @@ async function loadCharacter(admin: Admin, characterId: string) {
     admin.from('character_inventory_items').select('id, name, description, category, quantity, image_url, sort_order').eq('character_id', characterId).order('sort_order'),
     admin.from('character_notes').select('id, title, content, position_x, position_y, sort_order').eq('character_id', characterId).order('sort_order'),
     admin.from('character_experiences').select('id, headline, description, xp, tag, session_label, happened_at, sort_order, metadata').eq('character_id', characterId).order('sort_order'),
+    admin.from('worlds_relationship_links').select('world_relationship_npc_id, relationship_value').eq('character_id', characterId).eq('is_visible_to_player', true),
   ]);
-  const failed = [character, attributes, parameters, domains, inventoryItems, notes, experiences].find((result) => result.error);
+  const failed = [character, attributes, parameters, domains, inventoryItems, notes, experiences, relationshipLinks].find((result) => result.error);
   if (failed?.error) throw failed.error;
   if (!character.data) throw new Error('Character not found.');
 
@@ -51,6 +57,24 @@ async function loadCharacter(admin: Admin, characterId: string) {
     ? await admin.from('character_domain_skills').select('id, domain_id, skill_key, name, description, is_primary, level, sort_order, metadata').in('domain_id', domainIds).order('sort_order')
     : { data: [], error: null };
   if (skills.error) throw skills.error;
+
+  const relationshipNpcIds = (relationshipLinks.data ?? []).map((link) => link.world_relationship_npc_id as string);
+  const relationshipNpcs = relationshipNpcIds.length
+    ? await admin.from('worlds_relationship_npcs').select('id, name, description, avatar_url, sort_order').in('id', relationshipNpcIds).order('sort_order')
+    : { data: [], error: null };
+  if (relationshipNpcs.error) throw relationshipNpcs.error;
+  const relationshipByNpcId = new Map((relationshipLinks.data ?? []).map((link) => [link.world_relationship_npc_id as string, link.relationship_value as number]));
+  const inventoryRows = await Promise.all((inventoryItems.data ?? []).map(async (item) => ({
+    id: item.id, name: item.name, description: item.description ?? '', category: item.category,
+    quantity: item.quantity, imagePath: item.image_url, imageUrl: await signedUrl(admin, 'asset-images', item.image_url),
+    sortOrder: item.sort_order,
+  })));
+  const relationshipRows = await Promise.all((relationshipNpcs.data ?? []).map(async (npc) => ({
+    id: npc.id, name: npc.name, description: npc.description,
+    avatarDisplayUrl: await signedUrl(admin, 'relationship-npc-images', npc.avatar_url),
+    relationshipValue: relationshipByNpcId.get(npc.id) ?? 0,
+    sortOrder: npc.sort_order,
+  })));
 
   return {
     id: character.data.id,
@@ -72,10 +96,10 @@ async function loadCharacter(admin: Admin, characterId: string) {
         metadata: skill.metadata ?? {}, isDraft: false,
       })),
     })),
-    inventoryItems: (inventoryItems.data ?? []).map((item) => ({ id: item.id, name: item.name, description: item.description ?? '', category: item.category, quantity: item.quantity, imageUrl: item.image_url, sortOrder: item.sort_order })),
+    inventoryItems: inventoryRows,
     notes: (notes.data ?? []).map((note) => ({ id: note.id, title: note.title, content: note.content ?? '', positionX: note.position_x, positionY: note.position_y, sortOrder: note.sort_order })),
     experiences: (experiences.data ?? []).map((item) => ({ id: item.id, headline: item.headline, description: item.description, xp: item.xp, tag: item.tag, sessionLabel: item.session_label, happenedAt: item.happened_at, sortOrder: item.sort_order, metadata: item.metadata ?? {}, isDraft: false })),
-    relationships: [],
+    relationships: relationshipRows,
   };
 }
 
@@ -104,7 +128,7 @@ async function replaceCollections(admin: Admin, characterId: string, payload: St
     if (error) throw error;
     await insert('character_domain_skills', domain.skills.map((skill, skillIndex) => ({ domain_id: data.id, skill_key: skill.key, name: skill.name.trim(), description: skill.description?.trim() || null, is_primary: skill.isPrimary, level: skill.isPrimary ? domain.level : skill.level, sort_order: skillIndex, metadata: { ...(skill.metadata ?? {}), icon_key: skill.iconKey } })));
   }
-  await insert('character_inventory_items', payload.inventoryItems.map((item, index) => ({ character_id: characterId, name: item.name.trim(), description: item.description.trim() || null, category: item.category, quantity: item.quantity, image_url: item.imageUrl, sort_order: index, metadata: {} })));
+  await insert('character_inventory_items', payload.inventoryItems.map((item, index) => ({ character_id: characterId, name: item.name.trim(), description: item.description.trim() || null, category: item.category, quantity: item.quantity, image_url: item.imagePath, sort_order: index, metadata: {} })));
   await insert('character_notes', payload.notes.map((note, index) => ({ character_id: characterId, title: note.title.trim(), content: note.content.trim() || null, position_x: note.positionX, position_y: note.positionY, sort_order: index, metadata: {} })));
   await insert('character_experiences', payload.experiences.map((item, index) => ({ character_id: characterId, headline: item.headline.trim(), description: item.description?.trim() || null, xp: item.xp, tag: item.tag, session_label: item.sessionLabel, happened_at: item.happenedAt, sort_order: index, metadata: item.metadata ?? {} })));
 }

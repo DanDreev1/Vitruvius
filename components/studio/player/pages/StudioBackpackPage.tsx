@@ -23,8 +23,8 @@ export default function StudioBackpackPage({ items }: { items: StudioInventoryIt
   const emptySlotCount = items.length ? Math.max(0, 16 - filtered.length) : 0;
 
   return (
-    <div className="grid h-full min-h-0 grid-cols-[minmax(0,1fr)_280px] gap-[28px] text-white">
-      <div className="flex min-h-0 flex-col gap-[28px]">
+    <div className="relative left-1/2 top-1/2 grid h-[calc(100%-70px)] min-h-0 w-[calc(100%-100px)] -translate-x-1/2 -translate-y-1/2 grid-cols-[minmax(0,1fr)_280px] gap-[28px] text-white">
+      <div className="flex min-h-0 flex-col gap-[40px]">
         <CategoryTabs
           value={category}
           onChange={(value) => {
