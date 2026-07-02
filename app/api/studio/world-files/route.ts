@@ -15,6 +15,7 @@ const targets = {
 export async function POST(request: Request) {
   try {
     const { admin, user } = await authenticateSessionExitRequest(request);
+    if (user.is_anonymous) return Response.json({ error: 'A permanent account is required.' }, { status: 403 });
     const form = await request.formData();
     const worldId = String(form.get('worldId') ?? '');
     const kind = String(form.get('kind') ?? '') as keyof typeof targets;

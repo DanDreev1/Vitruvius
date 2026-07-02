@@ -2,44 +2,68 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 
 import ScaledPageViewport from '@/components/layout/ScaledPageViewport';
 import Header from '@/components/ui/Header';
 import { createStudioEntity, deleteStudioEntity, loadStudioEntities, type StudioEntity } from '@/features/studio/api';
 import type { StudioRole, StudioTab, StudioTabConfig } from '@/features/studio/types';
 
+export type StudioDraftExitActions = {
+  canSave: boolean;
+  save: () => Promise<boolean>;
+};
+
 type StudioWorkspaceProps<TTab extends StudioTab> = {
   role: StudioRole;
   entityLabel: string;
   tabs: StudioTabConfig<TTab>[];
-  renderContent: (tab: TTab, entity: StudioEntity, onEntityChange: (patch: Partial<StudioEntity>) => void) => React.ReactNode;
+  renderContent: (tab: TTab, entity: StudioEntity, onEntityChange: (patch: Partial<StudioEntity>) => void, registerDraftExitActions: (actions: StudioDraftExitActions | null) => void) => React.ReactNode;
 };
 
 export default function StudioWorkspace<TTab extends StudioTab>({ role, entityLabel, tabs, renderContent }: StudioWorkspaceProps<TTab>) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TTab>(tabs[0].key);
   const [entities, setEntities] = useState<StudioEntity[]>([]);
   const [selected, setSelected] = useState<StudioEntity | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<StudioEntity | null>(null);
+  const [isLeaveConfirmationOpen, setIsLeaveConfirmationOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isBusy, setIsBusy] = useState(false);
+  const [canSaveDraftOnExit, setCanSaveDraftOnExit] = useState(false);
+  const [isSavingDraftOnExit, setIsSavingDraftOnExit] = useState(false);
+  const [draftExitActions, setDraftExitActions] = useState<StudioDraftExitActions | null>(null);
   const [error, setError] = useState<string | null>(null);
   const pluralLabel = role === 'master' ? 'worlds' : 'characters';
   const entityTitle = entityLabel.charAt(0).toUpperCase() + entityLabel.slice(1);
   const pluralTitle = pluralLabel.charAt(0).toUpperCase() + pluralLabel.slice(1);
-  const updateSelectedEntity = (patch: Partial<StudioEntity>) => {
+  const updateSelectedEntity = useCallback((patch: Partial<StudioEntity>) => {
     if (!selected) return;
     const next = { ...selected, ...patch };
     setSelected(next);
-    setEntities((current) => current.map((entity) => entity.id === next.id ? next : entity));
-  };
+    setEntities((current) => {
+      const previousIndex = current.findIndex((entity) => entity.id === selected.id);
+      if (previousIndex < 0) return next.isDraft ? current : [next, ...current];
+      return current.map((entity, index) => index === previousIndex ? next : entity);
+    });
+  }, [selected]);
 
   useEffect(() => {
-    void loadStudioEntities(role).then(setEntities).catch((loadError) => setError(loadError instanceof Error ? loadError.message : 'Could not load Studio.')).finally(() => setIsLoading(false));
-  }, [role]);
+    void loadStudioEntities(role).then(setEntities).catch((loadError) => {
+      const message = loadError instanceof Error ? loadError.message : 'Could not load Studio.';
+      if (message.includes('Log in')) { router.replace(`/login?next=/studio/${role}`); return; }
+      setError(message);
+    }).finally(() => setIsLoading(false));
+  }, [role, router]);
 
   const createEntity = async () => {
     if (isBusy) return;
+    if (role === 'player') {
+      setActiveTab(tabs[0].key);
+      setSelected({ id: `draft-${crypto.randomUUID()}`, name: 'New character', avatarUrl: null, isDraft: true });
+      return;
+    }
     setIsBusy(true); setError(null);
     try {
       const entity = await createStudioEntity(role);
@@ -53,12 +77,46 @@ export default function StudioWorkspace<TTab extends StudioTab>({ role, entityLa
     if (!deleteTarget || isBusy) return;
     setIsBusy(true); setError(null);
     try {
-      await deleteStudioEntity(role, deleteTarget.id);
+      if (!deleteTarget.isDraft) await deleteStudioEntity(role, deleteTarget.id);
       setEntities((current) => current.filter((entity) => entity.id !== deleteTarget.id));
       if (selected?.id === deleteTarget.id) setSelected(null);
       setDeleteTarget(null);
     } catch (deleteError) { setError(deleteError instanceof Error ? deleteError.message : 'Could not delete item.'); }
     finally { setIsBusy(false); }
+  };
+
+  const requestEditorExit = () => {
+    if (selected?.isDraft) {
+      setIsLeaveConfirmationOpen(true);
+      return;
+    }
+    setSelected(null);
+  };
+
+  const confirmEditorExit = () => {
+    setIsLeaveConfirmationOpen(false);
+    setSelected(null);
+    setActiveTab(tabs[0].key);
+  };
+
+  const registerDraftExitActions = useCallback((actions: StudioDraftExitActions | null) => {
+    setDraftExitActions(actions);
+    setCanSaveDraftOnExit(actions?.canSave ?? false);
+  }, []);
+
+  const saveAndExitEditor = async () => {
+    const actions = draftExitActions;
+    if (!actions?.canSave || isSavingDraftOnExit) return;
+    setIsSavingDraftOnExit(true);
+    try {
+      if (await actions.save()) {
+        setIsLeaveConfirmationOpen(false);
+        setSelected(null);
+        setActiveTab(tabs[0].key);
+      }
+    } finally {
+      setIsSavingDraftOnExit(false);
+    }
   };
 
   return (
@@ -86,7 +144,7 @@ export default function StudioWorkspace<TTab extends StudioTab>({ role, entityLa
       ) : (
         <main className="grid h-[780px] grid-cols-[145px_minmax(0,1fr)] gap-5 p-6">
           <aside className="flex h-full min-h-0 flex-col items-center rounded-[25px] border border-white/[.08] bg-[#11192A] px-2.5 py-5">
-            <button type="button" onClick={() => setSelected(null)} className="group mb-2 flex h-[82px] w-full shrink-0 flex-col items-center justify-center gap-2 font-montserrat text-[15px] font-extrabold text-white transition hover:opacity-70">
+            <button type="button" onClick={requestEditorExit} className="group mb-2 flex h-[82px] w-full shrink-0 flex-col items-center justify-center gap-2 font-montserrat text-[15px] font-extrabold text-white transition hover:opacity-70">
               <Image
                 src={role === 'master' ? '/navigation-imgs/master/Scene.png' : '/navigation-imgs/player/User.png'}
                 alt=""
@@ -104,13 +162,14 @@ export default function StudioWorkspace<TTab extends StudioTab>({ role, entityLa
             </nav>
           </aside>
           <section className="flex h-full min-h-0 flex-col">
-            <div className="mb-5 flex h-[64px] shrink-0 items-center justify-between rounded-[18px] border border-white/[.08] bg-[#182135] px-5"><div><p className="font-montserrat text-[11px] font-extrabold uppercase tracking-[.16em] text-white">{entityTitle}</p><p className="mt-1 font-montserrat-alt text-[18px] font-extrabold text-white">{selected.name}</p></div><button type="button" onClick={() => setSelected(null)} className="rounded-[12px] border border-white/15 px-4 py-2 font-montserrat text-[11px] font-extrabold text-white transition hover:bg-white/[.05]">Change {entityTitle}</button></div>
-            <div className="min-h-0 flex-1 overflow-hidden rounded-[24px] border border-white/[.08] bg-[#141D2E] p-5">{renderContent(activeTab, selected, updateSelectedEntity)}</div>
+            <div className="mb-5 flex h-[64px] shrink-0 items-center justify-between rounded-[18px] border border-white/[.08] bg-[#182135] px-5"><div><p className="font-montserrat text-[11px] font-extrabold uppercase tracking-[.16em] text-white">{entityTitle}</p><p className="mt-1 font-montserrat-alt text-[18px] font-extrabold text-white">{selected.name}</p></div><button type="button" onClick={requestEditorExit} className="rounded-[12px] border border-white/15 px-4 py-2 font-montserrat text-[11px] font-extrabold text-white transition hover:bg-white/[.05]">Change {entityTitle}</button></div>
+            <div className="min-h-0 flex-1 overflow-hidden rounded-[24px] border border-white/[.08] bg-[#141D2E] p-5">{renderContent(activeTab, selected, updateSelectedEntity, registerDraftExitActions)}</div>
           </section>
         </main>
       )}
 
       {deleteTarget ? <div className="fixed inset-0 z-[1000] grid place-items-center bg-[#070C17]/85 p-5 backdrop-blur-md"><section className="w-full max-w-[450px] rounded-[24px] border border-red-300/15 bg-[#172033] p-6"><p className="text-[11px] font-bold uppercase tracking-[.18em] text-red-300/55">Delete {entityLabel}</p><h2 className="mt-2 font-montserrat-alt text-[26px] font-extrabold text-white">Delete “{deleteTarget.name}”?</h2><p className="mt-3 font-montserrat text-[13px] leading-relaxed text-white/50">This action permanently removes the {entityLabel} and its related files.</p><div className="mt-6 grid grid-cols-2 gap-2"><button type="button" onClick={() => setDeleteTarget(null)} disabled={isBusy} className="rounded-[13px] border border-white/15 py-3 font-bold text-white">Cancel</button><button type="button" onClick={() => void confirmDelete()} disabled={isBusy} className="rounded-[13px] bg-red-400 py-3 font-bold text-[#172033] disabled:opacity-40">{isBusy ? 'Deleting…' : 'Delete'}</button></div></section></div> : null}
+      {isLeaveConfirmationOpen ? <div className="fixed inset-0 z-[1000] grid place-items-center bg-[#070C17]/85 p-5 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="leave-character-editor-title"><section className="w-full max-w-[520px] rounded-[24px] border border-white/15 bg-[#172033] p-6 shadow-[0_28px_80px_rgba(0,0,0,.5)]"><p className="text-[11px] font-bold uppercase tracking-[.18em] text-white/40">Unsaved character</p><h2 id="leave-character-editor-title" className="mt-2 font-montserrat-alt text-[27px] font-extrabold text-white">Save before leaving?</h2><p className="mt-3 font-montserrat text-[13px] leading-relaxed text-white/55">You can keep editing, leave and discard this draft, or save the character before returning to your character list.</p>{!canSaveDraftOnExit ? <div className="mt-4 rounded-[12px] border border-white/10 bg-white/[.04] px-4 py-3"><p className="font-montserrat text-[11px] font-semibold text-white/55">Add a character name and description to enable saving.</p></div> : null}<button type="button" onClick={() => void saveAndExitEditor()} disabled={!canSaveDraftOnExit || isSavingDraftOnExit} className="mt-5 h-[50px] w-full rounded-[13px] bg-white font-montserrat-alt text-[14px] font-extrabold text-[#172033] transition hover:bg-white/90 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/30">{isSavingDraftOnExit ? 'Saving character…' : 'Save and exit'}</button><div className="mt-3 grid grid-cols-2 gap-2"><button type="button" onClick={() => setIsLeaveConfirmationOpen(false)} disabled={isSavingDraftOnExit} className="rounded-[13px] border border-white/15 py-3 font-bold text-white transition hover:bg-white/[.05] disabled:opacity-40">Keep editing</button><button type="button" onClick={confirmEditorExit} disabled={isSavingDraftOnExit} className="rounded-[13px] border border-red-300/25 py-3 font-bold text-red-200 transition hover:bg-red-400/10 disabled:opacity-40">Exit without saving</button></div></section></div> : null}
     </ScaledPageViewport>
   );
 }

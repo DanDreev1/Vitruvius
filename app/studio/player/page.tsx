@@ -5,5 +5,5 @@ import StudioWorkspace from '@/components/studio/StudioWorkspace';
 import { PLAYER_STUDIO_TABS } from '@/features/studio/navigation';
 
 export default function PlayerStudioPage() {
-  return <StudioWorkspace role="player" entityLabel="character" tabs={PLAYER_STUDIO_TABS} renderContent={(tab) => <PlayerStudioContent tab={tab} />} />;
+  return <StudioWorkspace role="player" entityLabel="character" tabs={PLAYER_STUDIO_TABS} renderContent={(tab, entity, onEntityChange, registerDraftExitActions) => <PlayerStudioContent tab={tab} entity={entity} onEntityChange={onEntityChange} registerDraftExitActions={registerDraftExitActions} />} />;
 }

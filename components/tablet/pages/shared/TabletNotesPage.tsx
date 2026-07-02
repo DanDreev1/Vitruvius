@@ -137,12 +137,24 @@ function DeleteNoteDialog({
   );
 }
 
-export default function TabletNotesPage({ owner }: { owner: NotesOwner | null }) {
+type TabletNotesPageProps = {
+  owner?: NotesOwner | null;
+  draftNotes?: TabletNote[];
+  onDraftNotesChange?: (notes: TabletNote[]) => void;
+  cameraStorageKey?: string;
+};
+
+export default function TabletNotesPage({ owner = null, draftNotes, onDraftNotesChange, cameraStorageKey: providedCameraStorageKey }: TabletNotesPageProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
   const movedRef = useRef(false);
   const restoredCameraKeyRef = useRef<string | null>(null);
-  const { notes, isLoading, isSaving, error, save, move, remove } = useNotes(owner);
+  const remote = useNotes(owner);
+  const isLocalDraft = Boolean(draftNotes && onDraftNotesChange);
+  const notes = draftNotes ?? remote.notes;
+  const isLoading = isLocalDraft ? false : remote.isLoading;
+  const isSaving = isLocalDraft ? false : remote.isSaving;
+  const error = isLocalDraft ? null : remote.error;
   const [camera, setCamera] = useState<Camera>(DEFAULT_CAMERA);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [draft, setDraft] = useState<NoteDraft>(EMPTY_DRAFT);
@@ -153,7 +165,27 @@ export default function TabletNotesPage({ owner }: { owner: NotesOwner | null })
     ? draft.title !== selected.title || draft.content !== selected.content
     : Boolean(draft.title || draft.content);
   const canSave = Boolean(draft.title.trim()) && hasFormChanges && !isSaving;
-  const cameraStorageKey = owner ? getCameraStorageKey(owner) : null;
+  const cameraStorageKey = providedCameraStorageKey ?? (owner ? getCameraStorageKey(owner) : null);
+
+  const saveNote = async (noteId: string | null, noteDraft: NoteDraft, position: { x: number; y: number }) => {
+    if (!isLocalDraft) return remote.save(noteId, noteDraft, position);
+    const nextNote: TabletNote = noteId
+      ? { ...(notes.find((note) => note.id === noteId) as TabletNote), ...noteDraft }
+      : { id: `draft-note-${crypto.randomUUID()}`, ...noteDraft, ...position };
+    onDraftNotesChange?.(noteId ? notes.map((note) => note.id === noteId ? nextNote : note) : [...notes, nextNote]);
+    return nextNote;
+  };
+
+  const moveNote = async (noteId: string, position: { x: number; y: number }) => {
+    if (!isLocalDraft) return remote.move(noteId, position);
+    onDraftNotesChange?.(notes.map((note) => note.id === noteId ? { ...note, ...position } : note));
+  };
+
+  const removeNote = async (noteId: string) => {
+    if (!isLocalDraft) return remote.remove(noteId);
+    onDraftNotesChange?.(notes.filter((note) => note.id !== noteId));
+    return true;
+  };
 
   useEffect(() => {
     if (!cameraStorageKey) return;
@@ -247,7 +279,7 @@ export default function TabletNotesPage({ owner }: { owner: NotesOwner | null })
     if (movedRef.current) {
       const dx = (event.clientX - drag.startX) / camera.scale;
       const dy = (event.clientY - drag.startY) / camera.scale;
-      void move(drag.id, { x: Math.round(drag.originX + dx), y: Math.round(drag.originY + dy) });
+      void moveNote(drag.id, { x: Math.round(drag.originX + dx), y: Math.round(drag.originY + dy) });
     }
     dragRef.current = null;
     window.setTimeout(() => { movedRef.current = false; }, 0);
@@ -289,13 +321,13 @@ export default function TabletNotesPage({ owner }: { owner: NotesOwner | null })
       x: Math.round(((bounds?.width ?? 800) / 2 - camera.x) / camera.scale - CARD_WIDTH / 2),
       y: Math.round(((bounds?.height ?? 600) / 2 - camera.y) / camera.scale - CARD_HEIGHT / 2),
     };
-    const saved = await save(selectedId, draft, position);
+    const saved = await saveNote(selectedId, draft, position);
     if (saved) beginNew();
   }
 
   async function handleDelete() {
     if (!notePendingDelete) return;
-    if (await remove(notePendingDelete.id)) {
+    if (await removeNote(notePendingDelete.id)) {
       setNotePendingDelete(null);
       beginNew();
     }

@@ -4,7 +4,7 @@ import { getOwnedCharacters, getOwnedWorlds } from '@/features/lobby/api';
 import { supabase } from '@/lib/supabaseClient';
 import type { StudioRole } from './types';
 
-export type StudioEntity = { id: string; name: string; avatarUrl: string | null };
+export type StudioEntity = { id: string; name: string; avatarUrl: string | null; isDraft?: boolean };
 
 async function getAuth() {
   const { data } = await supabase.auth.getSession();

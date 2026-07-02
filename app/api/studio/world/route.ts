@@ -15,6 +15,7 @@ type Collection = keyof typeof collections;
 
 async function authorize(request: Request, worldId: string) {
   const auth = await authenticateSessionExitRequest(request);
+  if (auth.user.is_anonymous) throw new Response('A permanent account is required.', { status: 403 });
   const { data, error } = await auth.admin.from('worlds').select('id, name, avatar_url').eq('id', worldId).eq('owner_user_id', auth.user.id).maybeSingle();
   if (error) throw error;
   if (!data) throw new Response('World not found.', { status: 404 });

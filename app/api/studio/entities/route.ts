@@ -9,12 +9,9 @@ export async function POST(request: Request) {
     const { admin, user } = await authenticateSessionExitRequest(request);
     if (user.is_anonymous) return Response.json({ error: 'A permanent account is required.' }, { status: 403 });
     const body = (await request.json()) as { kind?: EntityKind };
-    if (body.kind !== 'character' && body.kind !== 'world') return Response.json({ error: 'Invalid entity type.' }, { status: 400 });
-    const table = body.kind === 'world' ? 'worlds' : 'characters';
-    const payload = body.kind === 'world'
-      ? { owner_user_id: user.id, name: 'New world', avatar_url: null }
-      : { owner_user_id: user.id, name: 'New character', description: null, avatar_url: null };
-    const { data, error } = await admin.from(table).insert(payload).select('id, name, avatar_url').single();
+    if (body.kind === 'character') return Response.json({ error: 'Characters must be completed before they are created.' }, { status: 400 });
+    if (body.kind !== 'world') return Response.json({ error: 'Invalid entity type.' }, { status: 400 });
+    const { data, error } = await admin.from('worlds').insert({ owner_user_id: user.id, name: 'New world', avatar_url: null }).select('id, name, avatar_url').single();
     if (error) throw error;
     return Response.json({ entity: data });
   } catch (error) {
@@ -25,6 +22,7 @@ export async function POST(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const { admin, user } = await authenticateSessionExitRequest(request);
+    if (user.is_anonymous) return Response.json({ error: 'A permanent account is required.' }, { status: 403 });
     const body = (await request.json()) as { kind?: EntityKind; id?: string };
     if ((body.kind !== 'character' && body.kind !== 'world') || !body.id) return Response.json({ error: 'Invalid entity.' }, { status: 400 });
     const table = body.kind === 'world' ? 'worlds' : 'characters';

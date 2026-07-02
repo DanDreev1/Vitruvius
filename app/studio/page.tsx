@@ -3,6 +3,7 @@ import Link from 'next/link';
 
 import ScaledPageViewport from '@/components/layout/ScaledPageViewport';
 import Header from '@/components/ui/Header';
+import StudioAccessGate from '@/components/studio/StudioAccessGate';
 
 const studioRoles = [
   { href: '/studio/player', eyebrow: 'Player Studio', title: 'Characters', description: 'Create and maintain characters before joining a game.', icon: '/navigation-imgs/player/User.png' },
@@ -10,7 +11,7 @@ const studioRoles = [
 ];
 
 export default function StudioPage() {
-  return (
+  return <StudioAccessGate>{(
     <ScaledPageViewport headerBackdrop>
       <Header fixedLayout />
       <main className="flex h-[780px] items-center justify-center px-10 py-12">
@@ -22,5 +23,5 @@ export default function StudioPage() {
         </section>
       </main>
     </ScaledPageViewport>
-  );
+  )}</StudioAccessGate>;
 }
