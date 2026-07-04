@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import SceneImageLightbox from '@/components/tablet/pages/master/TabletScenePage/SceneImagesPage/SceneImageLightbox';
 import SceneImagesStackViewer from '@/components/tablet/pages/master/TabletScenePage/SceneImagesPage/SceneImagesStackViewer';
@@ -15,17 +16,27 @@ import { createWorldRow, deleteWorldRow, updateStudioWorld, updateWorldRow, uplo
 import type { StudioWorldData, WorldCollection } from '@/features/studio/master/types';
 import { useStudioWorld } from '@/features/studio/master/useStudioWorld';
 import type { MasterStudioTab } from '@/features/studio/types';
+import type { StudioDraftExitActions } from '@/components/studio/StudioWorkspace';
+import { createStudioEntity } from '@/features/studio/api';
 import StudioWorldNotesEditor from './StudioNotesEditor';
 import StudioSettingsEditor from './StudioSettingsEditor';
 
 type Row = Record<string, unknown> & { id: string };
 type Field = { key: string; label: string; type?: 'text' | 'textarea' | 'select' | 'checkbox'; options?: string[] };
+type UploadKind = 'avatar' | 'image' | 'music' | 'cover' | 'npc' | 'asset';
+type DraftMutations = {
+  createRow: <T>(worldId: string, collection: WorldCollection, data: Record<string, unknown>) => Promise<{ row: T }>;
+  updateRow: <T>(worldId: string, collection: WorldCollection, id: string, data: Record<string, unknown>) => Promise<{ row: T }>;
+  deleteRow: (worldId: string, collection: WorldCollection, id: string) => Promise<void>;
+  uploadFile: (worldId: string, kind: UploadKind, file: File) => Promise<{ value: string; displayUrl: string | null; path: string }>;
+};
 
 function StudioDeleteDialog({ title, itemName, busy, onCancel, onConfirm }: { title: string; itemName: string; busy: boolean; onCancel: () => void; onConfirm: () => void }) {
+  const t = useTranslations('StudioMaster');
   return <div className="absolute inset-0 z-[80] flex items-center justify-center rounded-[24px] bg-[#050914]/80 p-6 backdrop-blur-[5px]" role="dialog" aria-modal="true" aria-labelledby="studio-delete-title" onMouseDown={(event) => { if (event.target === event.currentTarget && !busy) onCancel(); }}>
     <div className="w-[410px] overflow-hidden rounded-[24px] border border-white/15 bg-[#182236] shadow-[0_28px_90px_rgba(0,0,0,.55)]">
-      <div className="border-b border-white/10 px-6 py-5"><p className="font-montserrat text-[10px] font-bold uppercase tracking-[.2em] text-[#D6B25E]">Confirm action</p><h2 id="studio-delete-title" className="mt-2 font-montserrat-alt text-[24px] font-extrabold text-white">{title}</h2><p className="mt-2 font-montserrat text-[13px] leading-relaxed text-white/55">This action cannot be undone. <span className="font-bold text-white/80">{itemName}</span> will be permanently removed.</p></div>
-      <div className="grid grid-cols-2 gap-3 p-5"><button type="button" onClick={onCancel} disabled={busy} className="h-[46px] rounded-[14px] border border-white/15 font-montserrat text-[12px] font-extrabold text-white transition hover:bg-white/[.06] disabled:opacity-40">Cancel</button><button type="button" onClick={onConfirm} disabled={busy} className="h-[46px] rounded-[14px] border border-[#E07373]/35 bg-[#E07373]/10 font-montserrat text-[12px] font-extrabold text-[#F09696] transition hover:bg-[#E07373]/20 disabled:opacity-40">{busy ? 'Deleting…' : 'Delete'}</button></div>
+      <div className="border-b border-white/10 px-6 py-5"><p className="font-montserrat text-[10px] font-bold uppercase tracking-[.2em] text-[#D6B25E]">{t('confirmAction')}</p><h2 id="studio-delete-title" className="mt-2 font-montserrat-alt text-[24px] font-extrabold text-white">{title}</h2><p className="mt-2 font-montserrat text-[13px] leading-relaxed text-white/55">{t('cannotUndo', { name: itemName })}</p></div>
+      <div className="grid grid-cols-2 gap-3 p-5"><button type="button" onClick={onCancel} disabled={busy} className="h-[46px] rounded-[14px] border border-white/15 font-montserrat text-[12px] font-extrabold text-white transition hover:bg-white/[.06] disabled:opacity-40">{t('cancel')}</button><button type="button" onClick={onConfirm} disabled={busy} className="h-[46px] rounded-[14px] border border-[#E07373]/35 bg-[#E07373]/10 font-montserrat text-[12px] font-extrabold text-[#F09696] transition hover:bg-[#E07373]/20 disabled:opacity-40">{busy ? t('deleting') : t('delete')}</button></div>
     </div>
   </div>;
 }
@@ -77,7 +88,8 @@ function CollectionEditor({ worldId, title, collection, rows, fields, imageKey, 
   </div>;
 }
 
-function StudioSceneImagesEditor({ worldId, data, reload, setError }: EditorProps) {
+function StudioSceneImagesEditor({ worldId, data, reload, setError, createRow: createWorldRow, updateRow: updateWorldRow, deleteRow: deleteWorldRow, uploadFile: uploadStudioWorldFile }: EditorProps) {
+  const t = useTranslations('StudioMaster');
   void reload;
   const [images, setImages] = useState(data.images);
   const [viewMode, setViewMode] = useState<SceneImagesViewMode>('stack');
@@ -111,10 +123,10 @@ function StudioSceneImagesEditor({ worldId, data, reload, setError }: EditorProp
   return <div className="relative flex h-full min-h-0 flex-col">
     <input id={`studio-scene-file-${worldId}`} type="file" accept="image/*" className="hidden" onChange={(event) => { void upload(event.target.files?.[0] ?? null); event.currentTarget.value = ''; }} />
     <div className="mb-3"><SceneImagesToolbar canDelete={Boolean(active) && !isBusy} isCurrentImageActive={active?.is_active ?? false} viewMode={viewMode} onAddImage={addImage} onDeleteImage={() => setDeleteOpen(true)} onToggleImageActive={() => void toggleActive()} onChangeViewMode={setViewMode} /></div>
-    {active ? <div className="mb-3 flex h-[40px] items-center gap-2"><input value={title} onChange={(event) => setTitle(event.target.value)} className="h-full flex-1 rounded-[11px] border border-white/10 bg-[#0B1020] px-3 text-[12px] font-bold text-white outline-none" /><button type="button" onClick={() => void saveTitle()} disabled={isBusy || !title.trim()} className="h-full rounded-[11px] bg-white px-5 text-[11px] font-extrabold text-[#172033] disabled:opacity-35">Save title</button></div> : null}
-    <div className="min-h-0 flex-1 rounded-[24px] border border-white/10 bg-white/[.02] p-3">{!items.length ? <button type="button" onClick={addImage} className="flex h-full w-full flex-col items-center justify-center rounded-[20px] bg-[#0B1327] text-white/55"><span className="text-[54px] font-light">+</span><span className="mt-2 text-[15px] font-bold">Add image</span></button> : viewMode === 'stack' ? <SceneImagesStackViewer items={items} activeIndex={resolvedIndex} onChangeIndex={selectIndex} onAddImage={addImage} onOpenLightbox={() => setLightboxOpen(true)} showVisibilityStatus={false} /> : <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[20px] bg-[#0B1327]"><button type="button" onClick={() => setLightboxOpen(true)} className="flex h-full w-full items-center justify-center"><img src={activeItem?.imageUrl ?? ''} alt={activeItem?.title ?? ''} className="h-full w-full object-contain" /></button><div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-5 pb-14 pt-12"><p className="font-montserrat-alt text-[20px] font-extrabold text-white">{activeItem?.title}</p></div><div className="absolute inset-x-0 bottom-3 flex justify-center"><div className="flex items-center gap-3 rounded-full bg-[#5C5C5C] px-3 py-2"><button onClick={() => selectIndex(resolvedIndex - 1)} className="rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-black">Prev</button><span className="min-w-[48px] text-center text-[11px] text-white">{resolvedIndex + 1}/{items.length}</span><button onClick={() => selectIndex(resolvedIndex + 1)} className="rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-black">Next</button></div></div></div>}</div>
+    {active ? <div className="mb-3 flex h-[40px] items-center gap-2"><input value={title} onChange={(event) => setTitle(event.target.value)} className="h-full flex-1 rounded-[11px] border border-white/10 bg-[#0B1020] px-3 text-[12px] font-bold text-white outline-none" /><button type="button" onClick={() => void saveTitle()} disabled={isBusy || !title.trim()} className="h-full rounded-[11px] bg-white px-5 text-[11px] font-extrabold text-[#172033] disabled:opacity-35">{t('saveTitle')}</button></div> : null}
+    <div className="min-h-0 flex-1 rounded-[24px] border border-white/10 bg-white/[.02] p-3">{!items.length ? <button type="button" onClick={addImage} className="flex h-full w-full flex-col items-center justify-center rounded-[20px] bg-[#0B1327] text-white/55"><span className="text-[54px] font-light">+</span><span className="mt-2 text-[15px] font-bold">{t('addImage')}</span></button> : viewMode === 'stack' ? <SceneImagesStackViewer items={items} activeIndex={resolvedIndex} onChangeIndex={selectIndex} onAddImage={addImage} onOpenLightbox={() => setLightboxOpen(true)} showVisibilityStatus={false} /> : <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-[20px] bg-[#0B1327]"><button type="button" onClick={() => setLightboxOpen(true)} className="flex h-full w-full items-center justify-center"><img src={activeItem?.imageUrl ?? ''} alt={activeItem?.title ?? ''} className="h-full w-full object-contain" /></button><div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 to-transparent px-5 pb-14 pt-12"><p className="font-montserrat-alt text-[20px] font-extrabold text-white">{activeItem?.title}</p></div><div className="absolute inset-x-0 bottom-3 flex justify-center"><div className="flex items-center gap-3 rounded-full bg-[#5C5C5C] px-3 py-2"><button onClick={() => selectIndex(resolvedIndex - 1)} className="rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-black">{t('previous')}</button><span className="min-w-[48px] text-center text-[11px] text-white">{resolvedIndex + 1}/{items.length}</span><button onClick={() => selectIndex(resolvedIndex + 1)} className="rounded-full bg-white px-3 py-1.5 text-[11px] font-bold text-black">{t('next')}</button></div></div></div>}</div>
     <SceneImageLightbox isOpen={lightboxOpen} item={activeItem} currentIndex={resolvedIndex} totalCount={items.length} canGoPrev={resolvedIndex > 0} canGoNext={resolvedIndex < items.length - 1} onClose={() => setLightboxOpen(false)} onPrev={() => selectIndex(resolvedIndex - 1)} onNext={() => selectIndex(resolvedIndex + 1)} showVisibilityStatus={false} />
-    {deleteOpen && active ? <StudioDeleteDialog title="Delete scene image?" itemName={active.title} busy={isBusy} onCancel={() => setDeleteOpen(false)} onConfirm={() => void remove()} /> : null}
+    {deleteOpen && active ? <StudioDeleteDialog title={t('deleteImage')} itemName={active.title} busy={isBusy} onCancel={() => setDeleteOpen(false)} onConfirm={() => void remove()} /> : null}
   </div>;
 }
 
@@ -140,7 +152,8 @@ function StudioAudioPlayer({ src }: { src: string }) {
   return <div className="rounded-[13px] border border-white/10 bg-[#0B1020] px-3 py-2.5"><audio ref={audioRef} src={src} onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} onTimeUpdate={(event) => setCurrent(event.currentTarget.currentTime)} onLoadedMetadata={(event) => setDuration(event.currentTarget.duration)} /><div className="flex items-center gap-3"><button type="button" onClick={() => void toggle()} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[13px] text-[#172033]">{playing ? 'Ⅱ' : '▶'}</button><span className="w-[36px] text-[10px] font-bold text-white/55">{formatAudioTime(current)}</span><input type="range" min={0} max={duration || 0} step={0.1} value={Math.min(current, duration || 0)} onChange={(event) => { const next = Number(event.target.value); if (audioRef.current) audioRef.current.currentTime = next; setCurrent(next); }} className="h-1 min-w-0 flex-1 accent-white" /><span className="w-[36px] text-right text-[10px] font-bold text-white/55">{formatAudioTime(duration)}</span></div></div>;
 }
 
-function StudioMusicEditor({ worldId, data: initialData, reload, setError }: EditorProps) {
+function StudioMusicEditor({ worldId, data: initialData, reload, setError, createRow: createWorldRow, updateRow: updateWorldRow, deleteRow: deleteWorldRow, uploadFile: uploadStudioWorldFile }: EditorProps) {
+  const t = useTranslations('StudioMaster');
   void reload;
   const [tracks, setTracks] = useState(initialData.music);
   const data = useMemo(() => ({ ...initialData, music: tracks }), [initialData, tracks]);
@@ -156,13 +169,14 @@ function StudioMusicEditor({ worldId, data: initialData, reload, setError }: Edi
   const remove = async (confirmed = false) => { if (!selected) return; if (!confirmed) { setDeleteOpen(true); return; } const previous = tracks; const remaining = tracks.filter((track) => track.id !== selected.id); const nextSelected = remaining[0] ?? null; setTracks(remaining); setSelectedId(nextSelected?.id ?? null); setDraft(nextSelected ? { title: nextSelected.title, is_active: nextSelected.is_active, audio_url: nextSelected.audio_url, cover_url: nextSelected.cover_url } : { title: '', is_active: false, audio_url: '', cover_url: null }); setBusy(true); try { await deleteWorldRow(worldId, 'music', selected.id); } catch (e) { setTracks(previous); setSelectedId(selected.id); setDraft({ title: selected.title, is_active: selected.is_active, audio_url: selected.audio_url, cover_url: selected.cover_url }); setError(e instanceof Error ? e.message : 'Could not delete track.'); } finally { setBusy(false); setDeleteOpen(false); } };
 
   return <div className="relative grid h-full min-h-0 grid-cols-[minmax(0,1fr)_330px] gap-5">
-    <div className="flex min-h-0 flex-col"><div className="mb-4 flex items-center justify-between"><div><h2 className="font-montserrat-alt text-[26px] font-extrabold text-white">Scene music</h2><p className="mt-1 text-[12px] text-white/40">Build the world soundtrack before the session.</p></div><button type="button" onClick={() => void add()} disabled={busy} className="rounded-[12px] bg-white px-5 py-2.5 text-[12px] font-extrabold text-[#172033]">+ Add track</button></div><div className="grid min-h-0 flex-1 auto-rows-[112px] grid-cols-2 gap-3 overflow-y-auto pr-2">{data.music.map((track) => <button key={track.id} type="button" onClick={() => choose(track.id)} className={`group flex overflow-hidden rounded-[17px] border text-left transition ${selected?.id === track.id ? 'border-white/40 bg-white/[.08]' : 'border-white/[.08] bg-[#101828] hover:border-white/20'}`}><div className="relative flex h-full w-[112px] shrink-0 items-center justify-center bg-[#0B1020] bg-cover bg-center" style={track.cover_url ? { backgroundImage: `url(${track.cover_url})` } : undefined}>{!track.cover_url ? <span className="text-[30px] text-white/20">♫</span> : null}<span className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-[10px] text-white">▶</span></div><div className="min-w-0 p-4"><p className="truncate font-montserrat-alt text-[14px] font-extrabold text-white">{track.title}</p><p className="mt-2 text-[10px] text-white/35">{track.audio_url ? 'Audio attached' : 'No audio file'}</p><p className={`mt-2 text-[9px] font-bold uppercase ${track.is_active ? 'text-emerald-300/70' : 'text-white/25'}`}>{track.is_active ? 'Active' : 'Inactive'}</p></div></button>)}</div></div>
-    <aside className="flex min-h-0 flex-col rounded-[20px] border border-white/10 bg-[#101828] p-4">{selected ? <><div className="relative h-[180px] shrink-0 overflow-hidden rounded-[16px] border border-white/10 bg-[#0B1020] bg-cover bg-center" style={draft.cover_url ? { backgroundImage: `url(${draft.cover_url})` } : undefined}>{!draft.cover_url ? <div className="flex h-full flex-col items-center justify-center text-white/25"><span className="text-[46px]">♫</span><span className="mt-2 text-[10px] font-bold uppercase tracking-widest">No cover</span></div> : null}<label className="absolute right-3 top-3 cursor-pointer rounded-[10px] bg-black/70 px-3 py-2 text-[10px] font-bold text-white">{draft.cover_url ? 'Replace cover' : 'Add cover'}<input type="file" accept="image/*" className="sr-only" onChange={(event) => void upload('cover', event.target.files?.[0] ?? null)} /></label></div><input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} className="mt-3 h-[44px] rounded-[12px] border border-white/10 bg-[#0B1020] px-3 font-montserrat-alt text-[14px] font-extrabold text-white outline-none" placeholder="Track title" />{draft.audio_url ? <div className="mt-3"><StudioAudioPlayer key={draft.audio_url} src={draft.audio_url} /></div> : <div className="mt-3 rounded-[13px] border border-dashed border-white/10 py-4 text-center text-[10px] font-bold text-white/35">No audio file attached</div>}<label className="mt-3 cursor-pointer rounded-[12px] border border-white/10 py-2.5 text-center text-[10px] font-bold text-white/60 transition hover:bg-white/[.04]">{draft.audio_url ? 'Replace audio file' : 'Choose audio file'}<input type="file" accept="audio/*" className="sr-only" onChange={(event) => void upload('music', event.target.files?.[0] ?? null)} /></label><label className="mt-3 flex items-center justify-between rounded-[12px] border border-white/10 px-3 py-2.5 text-[11px] font-bold text-white/65"><span>Active track</span><input type="checkbox" checked={draft.is_active} onChange={(event) => setDraft({ ...draft, is_active: event.target.checked })} className="h-4 w-4 accent-white" /></label><div className="mt-auto flex gap-2 pt-4"><button type="button" onClick={() => void remove()} disabled={busy} className="rounded-[12px] border border-red-300/15 px-4 py-2.5 text-[11px] font-bold text-red-300">Delete</button><button type="button" onClick={() => void save()} disabled={busy || !draft.title.trim()} className="flex-1 rounded-[12px] bg-white px-4 py-2.5 text-[11px] font-extrabold text-[#172033] disabled:opacity-40">Save changes</button></div></> : <div className="grid h-full place-items-center text-center text-[12px] text-white/35">Add or select a track.</div>}</aside>
-    {deleteOpen && selected ? <StudioDeleteDialog title="Delete music track?" itemName={selected.title} busy={busy} onCancel={() => setDeleteOpen(false)} onConfirm={() => void remove(true)} /> : null}
+    <div className="flex min-h-0 flex-col"><div className="mb-4 flex items-center justify-between"><div><h2 className="font-montserrat-alt text-[26px] font-extrabold text-white">{t('sceneMusic')}</h2><p className="mt-1 text-[12px] text-white/40">{t('musicHelp')}</p></div><button type="button" onClick={() => void add()} disabled={busy} className="rounded-[12px] bg-white px-5 py-2.5 text-[12px] font-extrabold text-[#172033]">+ {t('addTrack')}</button></div><div className="grid min-h-0 flex-1 auto-rows-[112px] grid-cols-2 gap-3 overflow-y-auto pr-2">{data.music.map((track) => <button key={track.id} type="button" onClick={() => choose(track.id)} className={`group flex overflow-hidden rounded-[17px] border text-left transition ${selected?.id === track.id ? 'border-white/40 bg-white/[.08]' : 'border-white/[.08] bg-[#101828] hover:border-white/20'}`}><div className="relative flex h-full w-[112px] shrink-0 items-center justify-center bg-[#0B1020] bg-cover bg-center" style={track.cover_url ? { backgroundImage: `url(${track.cover_url})` } : undefined}>{!track.cover_url ? <span className="text-[30px] text-white/20">♫</span> : null}<span className="absolute bottom-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-[10px] text-white">▶</span></div><div className="min-w-0 p-4"><p className="truncate font-montserrat-alt text-[14px] font-extrabold text-white">{track.title}</p><p className="mt-2 text-[10px] text-white/35">{track.audio_url ? t('audioAttached') : t('noAudio')}</p><p className={`mt-2 text-[9px] font-bold uppercase ${track.is_active ? 'text-emerald-300/70' : 'text-white/25'}`}>{track.is_active ? t('active') : t('inactive')}</p></div></button>)}</div></div>
+    <aside className="flex min-h-0 flex-col rounded-[20px] border border-white/10 bg-[#101828] p-4">{selected ? <><div className="relative h-[180px] shrink-0 overflow-hidden rounded-[16px] border border-white/10 bg-[#0B1020] bg-cover bg-center" style={draft.cover_url ? { backgroundImage: `url(${draft.cover_url})` } : undefined}>{!draft.cover_url ? <div className="flex h-full flex-col items-center justify-center text-white/25"><span className="text-[46px]">♫</span><span className="mt-2 text-[10px] font-bold uppercase tracking-widest">{t('noCover')}</span></div> : null}<label className="absolute right-3 top-3 cursor-pointer rounded-[10px] bg-black/70 px-3 py-2 text-[10px] font-bold text-white">{draft.cover_url ? t('replaceCover') : t('addCover')}<input type="file" accept="image/*" className="sr-only" onChange={(event) => void upload('cover', event.target.files?.[0] ?? null)} /></label></div><input value={draft.title} onChange={(event) => setDraft({ ...draft, title: event.target.value })} className="mt-3 h-[44px] rounded-[12px] border border-white/10 bg-[#0B1020] px-3 font-montserrat-alt text-[14px] font-extrabold text-white outline-none" placeholder={t('trackTitle')} />{draft.audio_url ? <div className="mt-3"><StudioAudioPlayer key={draft.audio_url} src={draft.audio_url} /></div> : <div className="mt-3 rounded-[13px] border border-dashed border-white/10 py-4 text-center text-[10px] font-bold text-white/35">{t('noAudio')}</div>}<label className="mt-3 cursor-pointer rounded-[12px] border border-white/10 py-2.5 text-center text-[10px] font-bold text-white/60 transition hover:bg-white/[.04]">{draft.audio_url ? t('replaceAudio') : t('chooseAudio')}<input type="file" accept="audio/*" className="sr-only" onChange={(event) => void upload('music', event.target.files?.[0] ?? null)} /></label><label className="mt-3 flex items-center justify-between rounded-[12px] border border-white/10 px-3 py-2.5 text-[11px] font-bold text-white/65"><span>{t('activeTrack')}</span><input type="checkbox" checked={draft.is_active} onChange={(event) => setDraft({ ...draft, is_active: event.target.checked })} className="h-4 w-4 accent-white" /></label><div className="mt-auto flex gap-2 pt-4"><button type="button" onClick={() => void remove()} disabled={busy} className="rounded-[12px] border border-red-300/15 px-4 py-2.5 text-[11px] font-bold text-red-300">{t('delete')}</button><button type="button" onClick={() => void save()} disabled={busy || !draft.title.trim()} className="flex-1 rounded-[12px] bg-white px-4 py-2.5 text-[11px] font-extrabold text-[#172033] disabled:opacity-40">{t('saveChanges')}</button></div></> : <div className="grid h-full place-items-center text-center text-[12px] text-white/35">{t('selectTrack')}</div>}</aside>
+    {deleteOpen && selected ? <StudioDeleteDialog title={t('deleteTrack')} itemName={selected.title} busy={busy} onCancel={() => setDeleteOpen(false)} onConfirm={() => void remove(true)} /> : null}
   </div>;
 }
 
-function StudioNpcCard({ worldId, npc, reload, setError }: { worldId: string; npc: StudioWorldData['npcs'][number]; reload: () => Promise<void>; setError: (value: string | null) => void }) {
+function StudioNpcCard({ worldId, npc, reload, setError, updateRow: updateWorldRow, deleteRow: deleteWorldRow, uploadFile: uploadStudioWorldFile }: { worldId: string; npc: StudioWorldData['npcs'][number]; reload: () => Promise<void>; setError: (value: string | null) => void } & Pick<DraftMutations, 'updateRow' | 'deleteRow' | 'uploadFile'>) {
+  const t = useTranslations('StudioMaster');
   const [name, setName] = useState(npc.name);
   const [description, setDescription] = useState(npc.description);
   const [image, setImage] = useState(npc.display_url);
@@ -172,35 +186,38 @@ function StudioNpcCard({ worldId, npc, reload, setError }: { worldId: string; np
   const save = async () => { setBusy(true); try { await updateWorldRow(worldId, 'npcs', npc.id, { name: name.trim() || 'Unnamed NPC', description }); await reload(); } catch (e) { setError(e instanceof Error ? e.message : 'Could not save NPC.'); } finally { setBusy(false); } };
   const remove = async () => { if (!window.confirm(`Delete ${name || 'this NPC'}?`)) return; setBusy(true); try { await deleteWorldRow(worldId, 'npcs', npc.id); await reload(); } catch (e) { setError(e instanceof Error ? e.message : 'Could not delete NPC.'); } finally { setBusy(false); } };
   return <article className="relative flex h-full min-h-0 w-[280px] flex-col overflow-hidden rounded-[10px] border border-[#8190A8] bg-[#111A2A] shadow-[0_18px_42px_rgba(0,0,0,.34)]">
-    <button type="button" onClick={() => void remove()} disabled={busy} title="Delete NPC" className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-[19px] text-white transition hover:bg-red-500">×</button>
+    <button type="button" onClick={() => void remove()} disabled={busy} title={t('deleteNpc')} className="absolute right-4 top-4 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/70 text-[19px] text-white transition hover:bg-red-500">×</button>
     <div className={`relative m-3 mb-0 shrink-0 overflow-hidden rounded-[7px] border border-white/20 bg-[#0F1724] bg-cover bg-center transition-[height] duration-500 ${expanded ? 'h-[165px]' : 'h-[250px]'}`} style={image ? { backgroundImage: `url(${image})` } : undefined}>
-      {!image ? <div className="flex h-full items-center justify-center text-[12px] text-white/35">Image required</div> : null}
+      {!image ? <div className="flex h-full items-center justify-center text-[12px] text-white/35">{t('imageRequired')}</div> : null}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[45%] bg-gradient-to-b from-transparent to-black/85" />
-      <label className="absolute left-3 top-3 cursor-pointer rounded-[6px] border border-white/20 bg-black/70 px-3 py-2 text-[9px] font-bold text-white">Choose image<input type="file" accept="image/*" className="sr-only" onChange={(event) => void upload(event.target.files?.[0] ?? null)} /></label>
-      <div className="absolute inset-x-3 bottom-3"><label className="text-[8px] font-bold uppercase text-white/55">Name</label><input value={name} maxLength={100} onChange={(event) => setName(event.target.value)} className="mt-1 w-full border-b border-white/35 bg-transparent pb-1 font-montserrat-alt text-[18px] font-extrabold text-white outline-none focus:border-[#D6B25E]" /></div>
+      <label className="absolute left-3 top-3 cursor-pointer rounded-[6px] border border-white/20 bg-black/70 px-3 py-2 text-[9px] font-bold text-white">{t('chooseImage')}<input type="file" accept="image/*" className="sr-only" onChange={(event) => void upload(event.target.files?.[0] ?? null)} /></label>
+      <div className="absolute inset-x-3 bottom-3"><label className="text-[8px] font-bold uppercase text-white/55">{t('name')}</label><input value={name} maxLength={100} onChange={(event) => setName(event.target.value)} className="mt-1 w-full border-b border-white/35 bg-transparent pb-1 font-montserrat-alt text-[18px] font-extrabold text-white outline-none focus:border-[#D6B25E]" /></div>
     </div>
-    <div className={`min-h-0 px-4 transition-all duration-500 ${expanded ? 'mt-3 flex flex-1 flex-col opacity-100' : 'h-0 overflow-hidden opacity-0'}`}><div className="mb-1 flex justify-between"><label className="text-[9px] font-bold uppercase text-white/40">Description</label><span className="text-[9px] text-white/30">{description.length}/2000</span></div><textarea value={description} maxLength={2000} onChange={(event) => setDescription(event.target.value)} className="min-h-[80px] flex-1 resize-none rounded-[6px] border border-white/15 bg-[#0C1422] p-2 text-[11px] leading-relaxed text-white outline-none" /></div>
-    <div className="mt-auto border-t border-white/10 bg-[#0D1625] p-3"><div className="flex gap-2"><button type="button" onClick={() => setExpanded((value) => !value)} className="rounded-[8px] border border-white/15 px-4 py-2 text-[10px] font-bold text-white/60">{expanded ? 'Hide details' : 'Edit description'}</button><button type="button" onClick={() => void save()} disabled={busy || !name.trim()} className="flex-1 rounded-[8px] bg-white px-4 py-2 text-[10px] font-extrabold text-[#172033] disabled:opacity-35">Save NPC</button></div></div>
+    <div className={`min-h-0 px-4 transition-all duration-500 ${expanded ? 'mt-3 flex flex-1 flex-col opacity-100' : 'h-0 overflow-hidden opacity-0'}`}><div className="mb-1 flex justify-between"><label className="text-[9px] font-bold uppercase text-white/40">{t('description')}</label><span className="text-[9px] text-white/30">{description.length}/2000</span></div><textarea value={description} maxLength={2000} onChange={(event) => setDescription(event.target.value)} className="min-h-[80px] flex-1 resize-none rounded-[6px] border border-white/15 bg-[#0C1422] p-2 text-[11px] leading-relaxed text-white outline-none" /></div>
+    <div className="mt-auto border-t border-white/10 bg-[#0D1625] p-3"><div className="flex gap-2"><button type="button" onClick={() => setExpanded((value) => !value)} className="rounded-[8px] border border-white/15 px-4 py-2 text-[10px] font-bold text-white/60">{expanded ? t('hideDetails') : t('editDescription')}</button><button type="button" onClick={() => void save()} disabled={busy || !name.trim()} className="flex-1 rounded-[8px] bg-white px-4 py-2 text-[10px] font-extrabold text-[#172033] disabled:opacity-35">{t('saveNpc')}</button></div></div>
   </article>;
 }
 
-function StudioNpcEditor({ worldId, data, reload, setError }: EditorProps) {
+function StudioNpcEditor({ worldId, data, reload, setError, createRow: createWorldRow, updateRow, deleteRow, uploadFile }: EditorProps) {
+  const t = useTranslations('StudioMaster');
   const [page, setPage] = useState(0);
   const pageCount = Math.max(1, Math.ceil(data.npcs.length / 2));
   const safePage = Math.min(page, pageCount - 1);
   const visible = data.npcs.slice(safePage * 2, safePage * 2 + 2);
   const add = async () => { try { await createWorldRow(worldId, 'npcs', { name: 'New NPC', description: '', avatar_url: null, sort_order: data.npcs.length }); await reload(); setPage(Math.floor(data.npcs.length / 2)); } catch (e) { setError(e instanceof Error ? e.message : 'Could not add NPC.'); } };
-  return <div className="relative flex h-full min-h-0 flex-col"><div className="mb-3 flex h-[48px] shrink-0 items-center justify-between"><div><h2 className="font-montserrat-alt text-[25px] font-extrabold text-white">World NPCs</h2><p className="text-[11px] text-white/40">Characters that belong to this world.</p></div><button type="button" onClick={() => void add()} className="rounded-[12px] bg-white px-5 py-2.5 text-[11px] font-extrabold text-[#172033]">+ Add NPC</button></div><div className="relative min-h-0 flex-1 pb-7">{visible.length ? <div className="grid h-full grid-cols-[repeat(2,280px)] justify-start gap-5">{visible.map((npc) => <StudioNpcCard key={npc.id} worldId={worldId} npc={npc} reload={reload} setError={setError} />)}</div> : <div className="grid h-full place-items-center text-center"><div><p className="font-montserrat-alt text-[24px] font-extrabold text-white">No NPCs yet</p><p className="mt-2 text-[12px] text-white/40">Add the first character to this world.</p></div></div>}{pageCount > 1 ? <><button type="button" disabled={safePage === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="absolute left-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 text-[28px] text-white disabled:opacity-20">‹</button><button type="button" disabled={safePage >= pageCount - 1} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 text-[28px] text-white disabled:opacity-20">›</button><div className="absolute inset-x-0 bottom-0 flex justify-center gap-2">{Array.from({ length: pageCount }).map((_, index) => <button key={index} onClick={() => setPage(index)} className={`h-2.5 w-2.5 rounded-full border border-white ${index === safePage ? 'bg-white' : 'bg-transparent'}`} />)}</div></> : null}</div></div>;
+  return <div className="relative flex h-full min-h-0 flex-col"><div className="mb-3 flex h-[48px] shrink-0 items-center justify-between"><div><h2 className="font-montserrat-alt text-[25px] font-extrabold text-white">{t('worldNpcs')}</h2><p className="text-[11px] text-white/40">{t('npcHelp')}</p></div><button type="button" onClick={() => void add()} className="rounded-[12px] bg-white px-5 py-2.5 text-[11px] font-extrabold text-[#172033]">+ {t('addNpc')}</button></div><div className="relative min-h-0 flex-1 pb-7">{visible.length ? <div className="grid h-full grid-cols-[repeat(2,280px)] justify-start gap-5">{visible.map((npc) => <StudioNpcCard key={npc.id} worldId={worldId} npc={npc} reload={reload} setError={setError} updateRow={updateRow} deleteRow={deleteRow} uploadFile={uploadFile} />)}</div> : <div className="grid h-full place-items-center text-center"><div><p className="font-montserrat-alt text-[24px] font-extrabold text-white">{t('noNpcs')}</p><p className="mt-2 text-[12px] text-white/40">{t('addFirstNpc')}</p></div></div>}{pageCount > 1 ? <><button type="button" disabled={safePage === 0} onClick={() => setPage((value) => Math.max(0, value - 1))} className="absolute left-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 text-[28px] text-white disabled:opacity-20">‹</button><button type="button" disabled={safePage >= pageCount - 1} onClick={() => setPage((value) => Math.min(pageCount - 1, value + 1))} className="absolute right-0 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/30 text-[28px] text-white disabled:opacity-20">›</button><div className="absolute inset-x-0 bottom-0 flex justify-center gap-2">{Array.from({ length: pageCount }).map((_, index) => <button key={index} onClick={() => setPage(index)} className={`h-2.5 w-2.5 rounded-full border border-white ${index === safePage ? 'bg-white' : 'bg-transparent'}`} />)}</div></> : null}</div></div>;
 }
 
-function SceneEditor({ worldId, data, reload, setError }: EditorProps) {
+function SceneEditor(props: EditorProps) {
+  const t = useTranslations('StudioMaster');
   const [mode, setMode] = useState<'images' | 'music'>('images');
-  return <div className="flex h-full min-h-0 flex-col"><div className="mb-3 flex justify-center gap-2"><button onClick={() => setMode('images')} className={`rounded-full px-6 py-2 text-[12px] font-bold ${mode === 'images' ? 'bg-white text-[#172033]' : 'bg-white/[.05] text-white/55'}`}>Images</button><button onClick={() => setMode('music')} className={`rounded-full px-6 py-2 text-[12px] font-bold ${mode === 'music' ? 'bg-white text-[#172033]' : 'bg-white/[.05] text-white/55'}`}>Music</button></div><div className="min-h-0 flex-1">{mode === 'images' ? <StudioSceneImagesEditor worldId={worldId} data={data} reload={reload} setError={setError} /> : <StudioMusicEditor worldId={worldId} data={data} reload={reload} setError={setError} />}</div></div>;
+  return <div className="flex h-full min-h-0 flex-col"><div className="mb-3 flex justify-center gap-2"><button onClick={() => setMode('images')} className={`rounded-full px-6 py-2 text-[12px] font-bold ${mode === 'images' ? 'bg-white text-[#172033]' : 'bg-white/[.05] text-white/55'}`}>{t('images')}</button><button onClick={() => setMode('music')} className={`rounded-full px-6 py-2 text-[12px] font-bold ${mode === 'music' ? 'bg-white text-[#172033]' : 'bg-white/[.05] text-white/55'}`}>{t('music')}</button></div><div className="min-h-0 flex-1">{mode === 'images' ? <StudioSceneImagesEditor {...props} /> : <StudioMusicEditor {...props} />}</div></div>;
 }
 
-type EditorProps = { worldId: string; data: StudioWorldData; reload: () => Promise<void>; setError: (value: string | null) => void };
+type EditorProps = { worldId: string; data: StudioWorldData; reload: () => Promise<void>; setError: (value: string | null) => void } & DraftMutations;
 
-function StudioAssetsEditor({ worldId, data, reload, setError }: EditorProps) {
+function StudioAssetsEditor({ worldId, data, reload, setError, createRow: createWorldRow, updateRow: updateWorldRow, deleteRow: deleteWorldRow, uploadFile: uploadStudioWorldFile }: EditorProps) {
+  const t = useTranslations('StudioMaster');
   const [category, setCategory] = useState<'all' | InventoryCategory>('all');
   const [isImageCompact, setIsImageCompact] = useState(true);
   const filtered = data.assets.filter((asset) => category === 'all' || asset.category === category);
@@ -214,7 +231,7 @@ function StudioAssetsEditor({ worldId, data, reload, setError }: EditorProps) {
   const upload = async (file: File | null) => { if (!file || !selected) return; setBusy(true); try { const result = await uploadStudioWorldFile(worldId, 'asset', file); setDraft({ ...draft, image_url: result.value, display_url: result.displayUrl }); await updateWorldRow(worldId, 'assets', selected.id, { image_url: result.value }); await reload(); } catch (e) { setError(e instanceof Error ? e.message : 'Could not upload image.'); } finally { setBusy(false); } };
   const remove = async () => { if (!selected || !window.confirm(`Delete ${selected.name}?`)) return; setBusy(true); try { await deleteWorldRow(worldId, 'assets', selected.id); setSelectedId(null); await reload(); } catch (e) { setError(e instanceof Error ? e.message : 'Could not delete asset.'); } finally { setBusy(false); } };
   const emptySlots = Math.max(0, 16 - filtered.length);
-  return <div className="relative grid h-full min-h-0 grid-cols-[minmax(0,1fr)_280px] gap-9 px-6 pb-3 pt-14"><div className="flex min-h-0 flex-col gap-5"><CategoryTabs value={category} onChange={setCategory} /><div className="grid min-h-0 flex-1 auto-rows-[84px] grid-cols-4 gap-2 overflow-y-auto pr-1">{filtered.map((asset) => <ItemTile key={asset.id} item={{ id: asset.id, name: asset.name, imageUrl: asset.display_url, category: asset.category as InventoryCategory }} selected={selected?.id === asset.id} onClick={() => choose(asset.id)} />)}{Array.from({ length: emptySlots }).map((_, index) => <EmptyItemTile key={index} />)}</div></div><aside className="flex h-[471px] min-h-0 flex-col self-start rounded-[8px] border-2 border-white/70 p-3">{selected ? <><div className="relative"><ItemPortrait imageUrl={draft.display_url} name={draft.name} compact={isImageCompact} onCompactChange={setIsImageCompact} /><label className="absolute right-2 top-2 cursor-pointer rounded-[5px] border border-white/25 bg-black/75 px-2 py-1.5 text-[9px] font-bold text-white">Choose image<input type="file" accept="image/*" className="sr-only" onChange={(event) => void upload(event.target.files?.[0] ?? null)} /></label></div><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="mt-2 border-b border-white/30 bg-transparent pb-1 font-montserrat-alt text-[16px] font-extrabold text-white outline-none" /><select value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} className="mt-2 rounded-[5px] border border-white/30 bg-[#172033] px-2 py-2 text-[11px] text-white"><option value="weapon">Weapon</option><option value="consumable">Consumable</option><option value="quest">Quest</option><option value="other">Other</option></select><textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} className={['resize-none rounded-[5px] bg-transparent text-[11px] text-white outline-none transition-all duration-500', isImageCompact ? 'mt-2 min-h-[60px] flex-1 border border-white/20 p-2 opacity-100' : 'pointer-events-none h-0 min-h-0 flex-none overflow-hidden border-0 p-0 opacity-0'].join(' ')} placeholder="Description" /><div className="mt-auto flex gap-2 pt-2"><button onClick={() => void remove()} disabled={busy} className="rounded-[9px] border border-red-300/20 px-3 text-[10px] font-bold text-red-300">Delete</button><button onClick={() => void save()} disabled={busy || !draft.name.trim()} className="h-[42px] flex-1 rounded-[9px] bg-white text-[11px] font-extrabold text-[#172033]">Save changes</button></div></> : <div className="grid h-full place-items-center text-[11px] text-white/40">Add or select an item.</div>}</aside><button type="button" onClick={() => void add()} disabled={busy} className="absolute right-6 top-0 flex w-[60px] flex-col items-center text-white"><span className="text-[30px] leading-7">+</span><span className="text-[10px] font-bold">Add</span></button></div>;
+  return <div className="relative grid h-full min-h-0 grid-cols-[minmax(0,1fr)_280px] gap-9 px-6 pb-3 pt-14"><div className="flex min-h-0 flex-col gap-5"><CategoryTabs value={category} onChange={setCategory} /><div className="grid min-h-0 flex-1 auto-rows-[84px] grid-cols-4 gap-2 overflow-y-auto pr-1">{filtered.map((asset) => <ItemTile key={asset.id} item={{ id: asset.id, name: asset.name, imageUrl: asset.display_url, category: asset.category as InventoryCategory }} selected={selected?.id === asset.id} onClick={() => choose(asset.id)} />)}{Array.from({ length: emptySlots }).map((_, index) => <EmptyItemTile key={index} />)}</div></div><aside className="flex h-[471px] min-h-0 flex-col self-start rounded-[8px] border-2 border-white/70 p-3">{selected ? <><div className="relative"><ItemPortrait imageUrl={draft.display_url} name={draft.name} compact={isImageCompact} onCompactChange={setIsImageCompact} /><label className="absolute right-2 top-2 cursor-pointer rounded-[5px] border border-white/25 bg-black/75 px-2 py-1.5 text-[9px] font-bold text-white">{t('chooseImage')}<input type="file" accept="image/*" className="sr-only" onChange={(event) => void upload(event.target.files?.[0] ?? null)} /></label></div><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="mt-2 border-b border-white/30 bg-transparent pb-1 font-montserrat-alt text-[16px] font-extrabold text-white outline-none" /><select value={draft.category} onChange={(event) => setDraft({ ...draft, category: event.target.value })} className="mt-2 rounded-[5px] border border-white/30 bg-[#172033] px-2 py-2 text-[11px] text-white"><option value="weapon">{t('weapon')}</option><option value="consumable">{t('consumable')}</option><option value="quest">{t('quest')}</option><option value="other">{t('other')}</option></select><textarea value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} className={['resize-none rounded-[5px] bg-transparent text-[11px] text-white outline-none transition-all duration-500', isImageCompact ? 'mt-2 min-h-[60px] flex-1 border border-white/20 p-2 opacity-100' : 'pointer-events-none h-0 min-h-0 flex-none overflow-hidden border-0 p-0 opacity-0'].join(' ')} placeholder={t('description')} /><div className="mt-auto flex gap-2 pt-2"><button onClick={() => void remove()} disabled={busy} className="rounded-[9px] border border-red-300/20 px-3 text-[10px] font-bold text-red-300">{t('delete')}</button><button onClick={() => void save()} disabled={busy || !draft.name.trim()} className="h-[42px] flex-1 rounded-[9px] bg-white text-[11px] font-extrabold text-[#172033]">{t('saveChanges')}</button></div></> : <div className="grid h-full place-items-center text-[11px] text-white/40">{t('addOrSelectItem')}</div>}</aside><button type="button" onClick={() => void add()} disabled={busy} className="absolute right-6 top-0 flex w-[60px] flex-col items-center text-white"><span className="text-[30px] leading-7">+</span><span className="text-[10px] font-bold">{t('add')}</span></button></div>;
 }
 
 function StudioNotesEditor({ worldId, data, reload, setError }: EditorProps) {
@@ -237,18 +254,170 @@ function SettingsEditor({ worldId, data, reload, setError, onWorldUpdated }: Edi
   return <div className="h-full"><SectionTitle title="Settings" subtitle="Permanent world profile and local Studio preferences" /><div className="grid h-[calc(100%-72px)] grid-cols-[1fr_320px] gap-5"><Panel className="flex items-center"><div className="flex w-full items-center gap-6"><label className="flex h-[180px] w-[240px] shrink-0 cursor-pointer items-center justify-center rounded-[18px] border border-dashed border-white/20 bg-[#0B1020] bg-cover bg-center text-[11px] font-bold text-white/50" style={data.world.avatar_url ? { backgroundImage: `url(${data.world.avatar_url})` } : undefined}>{data.world.avatar_url ? <span className="rounded bg-black/65 px-3 py-2">Replace image</span> : 'Choose world image'}<input type="file" accept="image/*" className="sr-only" onChange={(event) => void avatar(event.target.files?.[0] ?? null)} /></label><div className="flex-1"><p className="font-montserrat-alt text-[22px] font-extrabold text-white">World profile</p><p className="mt-2 text-[12px] leading-relaxed text-white/45">This name and image are displayed in Studio and lobby selection.</p><label className="mt-6 block text-[10px] font-bold uppercase tracking-wider text-white/40">World name</label><input value={name} maxLength={100} onChange={(event) => setName(event.target.value)} className="mt-2 h-[50px] w-full rounded-[13px] border border-white/10 bg-[#0B1020] px-4 font-montserrat-alt text-[16px] font-extrabold text-white outline-none" /><button type="button" onClick={() => void save()} disabled={busy || !name.trim()} className="mt-3 w-full rounded-[13px] bg-white py-3 text-[12px] font-extrabold text-[#172033] disabled:opacity-40">Save settings</button></div></div></Panel><Panel className="flex flex-col justify-between"><div><p className="font-montserrat-alt text-[19px] font-extrabold text-white">Studio settings</p><p className="mt-2 text-[12px] leading-relaxed text-white/45">Session controls and exit actions are intentionally unavailable here.</p></div><div className="rounded-[16px] border border-white/[.08] bg-[#111927] p-4"><p className="text-[11px] font-bold uppercase tracking-wider text-white/35">Storage</p><p className="mt-2 text-[12px] leading-relaxed text-white/55">Changes are saved directly to this permanent world.</p></div></Panel></div></div>;
 }
 
-export default function MasterStudioContent({ tab, worldId, onWorldUpdated }: { tab: MasterStudioTab; worldId: string; onWorldUpdated: (patch: { name?: string; avatarUrl?: string | null }) => void }) {
-  const world = useStudioWorld(worldId);
+const collectionFields: Record<WorldCollection, string[]> = {
+  images: ['title', 'image_url', 'storage_path', 'mime_type', 'sort_order', 'is_active'],
+  music: ['title', 'audio_url', 'cover_url', 'sort_order', 'is_active'],
+  npcs: ['name', 'description', 'avatar_url', 'sort_order'],
+  assets: ['asset_key', 'name', 'description', 'category', 'image_url', 'sort_order'],
+  notes: ['title', 'content', 'position_x', 'position_y'],
+};
+
+function pickRow(row: Record<string, unknown>, fields: string[]) {
+  return Object.fromEntries(fields.map((field) => [field, row[field]]));
+}
+
+export default function MasterStudioContent({ tab, worldId, initialName, onWorldUpdated, registerDraftExitActions }: { tab: MasterStudioTab; worldId: string; initialName: string; onWorldUpdated: (patch: { id?: string; name?: string; avatarUrl?: string | null; isDraft?: boolean }) => void; registerDraftExitActions: (actions: StudioDraftExitActions | null) => void }) {
+  const isNewWorld = worldId.startsWith('draft-');
+  const world = useStudioWorld(worldId, !isNewWorld);
+  const reloadWorld = world.reload;
+  const setWorldError = world.setError;
+  const [draftData, setDraftData] = useState<StudioWorldData | null>(null);
+  const [baseData, setBaseData] = useState<StudioWorldData | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const pendingFiles = useRef(new Map<string, { file: File; kind: UploadKind; preview: string; uploaded?: Awaited<ReturnType<typeof uploadStudioWorldFile>> }>());
+  const persistedWorldId = useRef<string | null>(null);
+
+  useEffect(() => () => {
+    for (const pending of new Set(pendingFiles.current.values())) URL.revokeObjectURL(pending.preview);
+    pendingFiles.current.clear();
+  }, []);
+
+  useEffect(() => {
+    if (!isNewWorld || draftData) return;
+    const timeout = window.setTimeout(() => {
+      const empty: StudioWorldData = { world: { id: worldId, name: initialName, avatar_url: null }, images: [], music: [], npcs: [], assets: [], notes: [] };
+      setDraftData(empty);
+      setBaseData(structuredClone(empty));
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [draftData, initialName, isNewWorld, worldId]);
+
+  useEffect(() => {
+    if (!world.data || isDirty) return;
+    const snapshot = structuredClone(world.data);
+    const timeout = window.setTimeout(() => {
+      setDraftData(snapshot);
+      setBaseData(structuredClone(snapshot));
+    }, 0);
+    return () => window.clearTimeout(timeout);
+  }, [isDirty, world.data]);
+
+  const replaceCollection = useCallback((collection: WorldCollection, recipe: (rows: Row[]) => Row[]) => {
+    setDraftData((current) => current ? { ...current, [collection]: recipe(current[collection] as Row[]) } as StudioWorldData : current);
+    setIsDirty(true);
+  }, []);
+
+  const createRow = useCallback(async <T,>(_ignoredWorldId: string, collection: WorldCollection, values: Record<string, unknown>) => {
+    const id = `draft-${collection}-${crypto.randomUUID()}`;
+    const row = { id, ...values } as Row;
+    if (collection === 'npcs') row.display_url = pendingFiles.current.get(String(row.avatar_url))?.preview ?? null;
+    if (collection === 'assets') row.display_url = pendingFiles.current.get(String(row.image_url))?.preview ?? null;
+    replaceCollection(collection, (rows) => [...rows, row]);
+    return { row: row as T };
+  }, [replaceCollection]);
+
+  const updateRow = useCallback(async <T,>(_ignoredWorldId: string, collection: WorldCollection, id: string, values: Record<string, unknown>) => {
+    let result: Row | null = null;
+    replaceCollection(collection, (rows) => rows.map((row) => {
+      if (row.id !== id) return row;
+      const next = { ...row, ...values };
+      const fileValue = values.avatar_url ?? values.image_url;
+      const pending = typeof fileValue === 'string' ? pendingFiles.current.get(fileValue) : null;
+      if (pending && (collection === 'npcs' || collection === 'assets')) next.display_url = pending.preview;
+      result = next;
+      return next;
+    }));
+    return { row: result as T };
+  }, [replaceCollection]);
+
+  const deleteRow = useCallback(async (_ignoredWorldId: string, collection: WorldCollection, id: string) => {
+    replaceCollection(collection, (rows) => rows.filter((row) => row.id !== id));
+  }, [replaceCollection]);
+
+  const uploadFile = useCallback(async (_ignoredWorldId: string, kind: UploadKind, file: File) => {
+    const token = `draft-file:${crypto.randomUUID()}`;
+    const preview = URL.createObjectURL(file);
+    const pending = { file, kind, preview };
+    pendingFiles.current.set(token, pending);
+    pendingFiles.current.set(preview, pending);
+    setIsDirty(true);
+    return { value: kind === 'npc' || kind === 'asset' ? token : preview, displayUrl: preview, path: token };
+  }, []);
+
+  const updateWorldDraft = useCallback((patch: { name?: string; avatar_url?: string | null }) => {
+    setDraftData((current) => current ? { ...current, world: { ...current.world, ...patch } } : current);
+    setIsDirty(true);
+  }, []);
+
+  const saveDraft = useCallback(async () => {
+    if (!draftData || !baseData || !isDirty || isSavingDraft) return false;
+    setIsSavingDraft(true);
+    setWorldError(null);
+    try {
+      let targetWorldId = persistedWorldId.current ?? worldId;
+      if (targetWorldId.startsWith('draft-')) {
+        const created = await createStudioEntity('master', { name: draftData.world.name.trim() });
+        targetWorldId = created.id;
+        persistedWorldId.current = created.id;
+      }
+      const resolveField = async (field: string, value: unknown) => {
+        if (typeof value !== 'string') return value;
+        const pending = pendingFiles.current.get(value);
+        if (!pending) return value;
+        pending.uploaded ??= await uploadStudioWorldFile(targetWorldId, pending.kind, pending.file);
+        return field === 'storage_path' ? pending.uploaded.path : pending.uploaded.value;
+      };
+      const resolveValues = async (values: Record<string, unknown>) => Object.fromEntries(await Promise.all(Object.entries(values).map(async ([field, value]) => [field, await resolveField(field, value)])));
+
+      const worldPatch = await resolveValues({ name: draftData.world.name.trim(), avatar_url: draftData.world.avatar_url });
+      if (targetWorldId !== worldId || JSON.stringify(worldPatch) !== JSON.stringify({ name: baseData.world.name, avatar_url: baseData.world.avatar_url })) await updateStudioWorld(targetWorldId, worldPatch);
+
+      for (const collection of Object.keys(collectionFields) as WorldCollection[]) {
+        const fields = collectionFields[collection];
+        const before = baseData[collection] as Row[];
+        const after = draftData[collection] as Row[];
+        const afterIds = new Set(after.filter((row) => !row.id.startsWith('draft-')).map((row) => row.id));
+        for (const row of before) if (!row.id.startsWith('draft-') && !afterIds.has(row.id)) await deleteWorldRow(targetWorldId, collection, row.id);
+        for (const row of after) {
+          const values = await resolveValues(pickRow(row, fields));
+          if (row.id.startsWith('draft-')) await createWorldRow(targetWorldId, collection, values);
+          else {
+            const previous = before.find((item) => item.id === row.id);
+            if (!previous || JSON.stringify(values) !== JSON.stringify(pickRow(previous, fields))) await updateWorldRow(targetWorldId, collection, row.id, values);
+          }
+        }
+      }
+      for (const pending of new Set(pendingFiles.current.values())) URL.revokeObjectURL(pending.preview);
+      pendingFiles.current.clear();
+      setIsDirty(false);
+      if (targetWorldId === worldId) await reloadWorld();
+      onWorldUpdated({ id: targetWorldId, name: draftData.world.name.trim(), avatarUrl: typeof worldPatch.avatar_url === 'string' ? worldPatch.avatar_url : null, isDraft: false });
+      return true;
+    } catch (error) {
+      if (persistedWorldId.current) onWorldUpdated({ id: persistedWorldId.current, isDraft: false });
+      setWorldError(error instanceof Error ? error.message : 'Could not save world draft.');
+      return false;
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [baseData, draftData, isDirty, isSavingDraft, onWorldUpdated, reloadWorld, setWorldError, worldId]);
+
+  useEffect(() => {
+    registerDraftExitActions(isDirty ? { canSave: Boolean(draftData?.world.name.trim()), save: saveDraft } : null);
+    return () => registerDraftExitActions(null);
+  }, [draftData?.world.name, isDirty, registerDraftExitActions, saveDraft]);
+
   const editor = useMemo(() => {
-    if (!world.data) return null;
-    const props = { worldId, data: world.data, reload: world.reload, setError: world.setError };
+    if (!draftData) return null;
+    const props = { worldId, data: draftData, reload: async () => {}, setError: world.setError, createRow, updateRow, deleteRow, uploadFile };
     if (tab === 'scene') return <SceneEditor {...props} />;
     if (tab === 'relationships') return <StudioNpcEditor {...props} />;
     if (tab === 'assets') return <StudioAssetsEditor {...props} />;
     if (tab === 'notes') return <StudioWorldNotesEditor {...props} />;
-    return <StudioSettingsEditor {...props} onWorldUpdated={onWorldUpdated} />;
-  }, [onWorldUpdated, tab, world.data, world.reload, world.setError, worldId]);
-  if (world.isLoading) return <div className="grid h-full place-items-center text-white/45">Loading world…</div>;
-  if (!world.data) return <div className="grid h-full place-items-center text-red-300">{world.error ?? 'World not found.'}</div>;
+    return <StudioSettingsEditor worldId={worldId} data={draftData} setError={world.setError} updateWorldDraft={updateWorldDraft} uploadFile={uploadFile} saveDraft={saveDraft} isDirty={isDirty} isSavingDraft={isSavingDraft} />;
+  }, [createRow, deleteRow, draftData, isDirty, isSavingDraft, saveDraft, tab, updateRow, updateWorldDraft, uploadFile, world.setError, worldId]);
+  if (world.isLoading && !draftData) return <div className="grid h-full place-items-center text-white/45">Loading world…</div>;
+  if (!draftData) return <div className="grid h-full place-items-center text-red-300">{world.error ?? 'World not found.'}</div>;
   return <div className="relative h-full">{editor}{world.error ? <p className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-red-400/15 px-4 py-2 text-[11px] text-red-200">{world.error}</p> : null}</div>;
 }

@@ -8,6 +8,7 @@ import {
   type PointerEvent,
   type WheelEvent,
 } from 'react';
+import { useTranslations } from 'next-intl';
 
 import {
   createWorldRow,
@@ -33,6 +34,9 @@ type Props = {
   data: StudioWorldData;
   reload: () => Promise<void>;
   setError: (message: string | null) => void;
+  createRow: typeof createWorldRow;
+  updateRow: typeof updateWorldRow;
+  deleteRow: typeof deleteWorldRow;
 };
 
 function clamp(value: number, min: number, max: number) {
@@ -56,6 +60,7 @@ function NoteCard({
   onDragMove: (event: PointerEvent<HTMLButtonElement>) => void;
   onDragEnd: (event: PointerEvent<HTMLButtonElement>) => void;
 }) {
+  const t = useTranslations('StudioMaster');
   return (
     <article
       className={`absolute select-none overflow-hidden rounded-[18px] border bg-[#253249] shadow-[0_18px_45px_rgba(3,8,18,.32)] transition-[border-color,box-shadow] ${selected ? 'border-white/35 shadow-[0_0_0_2px_rgba(255,255,255,.08),0_18px_45px_rgba(3,8,18,.4)]' : 'border-white/10'}`}
@@ -67,7 +72,7 @@ function NoteCard({
     >
       <button
         type="button"
-        aria-label={`Move ${note.title}`}
+        aria-label={t('moveNote', { name: note.title })}
         className="flex h-[38px] w-full cursor-grab touch-none items-center justify-center border-b border-white/8 bg-white/[.025] text-white/38 active:cursor-grabbing"
         onPointerDown={onDragStart}
         onPointerMove={onDragMove}
@@ -85,7 +90,7 @@ function NoteCard({
           {note.title}
         </h3>
         <p className="mt-[10px] line-clamp-4 whitespace-pre-wrap text-[14px] leading-[1.55] text-white/70">
-          {note.content || 'Empty note'}
+          {note.content || t('emptyNote')}
         </p>
       </div>
       {scale < 0.65 ? <div className="pointer-events-none absolute inset-0 bg-[#253249]/10" /> : null}
@@ -104,6 +109,7 @@ function DeleteDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const t = useTranslations('StudioMaster');
   return (
     <div
       className="absolute inset-0 z-50 flex items-center justify-center bg-black/75"
@@ -120,17 +126,17 @@ function DeleteDialog({
         onPointerDown={(event) => event.stopPropagation()}
       >
         <h2 id="delete-world-note-title" className="font-montserrat-alt text-[18px] font-extrabold text-white">
-          Delete {note.title || 'this note'}?
+          {t('deleteNoteTitle', { name: note.title || t('thisNote') })}
         </h2>
         <p className="mt-[8px] font-montserrat text-[12px] text-white/65">
-          This note will be permanently removed.
+          {t('deleteNoteDescription')}
         </p>
         <div className="mt-[15px] flex justify-end gap-[8px]">
           <button type="button" onClick={onCancel} disabled={busy} className="px-[12px] py-[7px] text-[11px] text-white disabled:opacity-50">
-            Cancel
+            {t('cancel')}
           </button>
           <button type="button" onClick={onConfirm} disabled={busy} className="rounded-[5px] bg-red-500 px-[14px] py-[7px] text-[11px] font-bold text-white disabled:opacity-50">
-            {busy ? 'Deleting…' : 'Delete note'}
+            {busy ? t('deleting') : t('deleteNote')}
           </button>
         </div>
       </div>
@@ -138,7 +144,8 @@ function DeleteDialog({
   );
 }
 
-export default function StudioNotesEditor({ worldId, data, reload, setError }: Props) {
+export default function StudioNotesEditor({ worldId, data, reload, setError, createRow, updateRow, deleteRow }: Props) {
+  const t = useTranslations('StudioMaster');
   const viewportRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState | null>(null);
   const movedRef = useRef(false);
@@ -261,7 +268,7 @@ export default function StudioNotesEditor({ worldId, data, reload, setError }: P
       const position_y = Math.round(drag.originY + (event.clientY - drag.startY) / camera.scale);
       setOptimisticPositions((positions) => ({ ...positions, [drag.id]: { position_x, position_y } }));
       try {
-        await updateWorldRow(worldId, 'notes', drag.id, { position_x, position_y });
+        await updateRow(worldId, 'notes', drag.id, { position_x, position_y });
       } catch (error) {
         setOptimisticPositions((positions) => {
           const next = { ...positions };
@@ -309,10 +316,10 @@ export default function StudioNotesEditor({ worldId, data, reload, setError }: P
     setError(null);
     try {
       if (selected) {
-        await updateWorldRow(worldId, 'notes', selected.id, draft);
+        await updateRow(worldId, 'notes', selected.id, draft);
       } else {
         const bounds = viewportRef.current?.getBoundingClientRect();
-        await createWorldRow(worldId, 'notes', {
+        await createRow(worldId, 'notes', {
           ...draft,
           position_x: Math.round(((bounds?.width ?? 800) / 2 - camera.x) / camera.scale - CARD_WIDTH / 2),
           position_y: Math.round(((bounds?.height ?? 600) / 2 - camera.y) / camera.scale - CARD_HEIGHT / 2),
@@ -332,7 +339,7 @@ export default function StudioNotesEditor({ worldId, data, reload, setError }: P
     setBusy(true);
     setError(null);
     try {
-      await deleteWorldRow(worldId, 'notes', pendingDelete.id);
+      await deleteRow(worldId, 'notes', pendingDelete.id);
       setPendingDelete(null);
       beginNew();
       await reload();
@@ -382,17 +389,17 @@ export default function StudioNotesEditor({ worldId, data, reload, setError }: P
         </div>
 
         <div className="pointer-events-none absolute left-[18px] top-[18px]">
-          <h2 className="font-montserrat-alt text-[28px] font-extrabold text-white/90">Notes</h2>
-          <p className="mt-[3px] text-[13px] text-white/45">Drag the board · Scroll to zoom</p>
+          <h2 className="font-montserrat-alt text-[28px] font-extrabold text-white/90">{t('notes')}</h2>
+          <p className="mt-[3px] text-[13px] text-white/45">{t('dragZoom')}</p>
         </div>
         <div className="absolute bottom-[18px] left-[18px] flex overflow-hidden rounded-[14px] border border-white/10 bg-[#1A2332]/95 shadow-xl">
-          <button type="button" className="h-[42px] w-[44px] text-[22px] text-white/75 hover:bg-white/8" onClick={() => zoom(0.82)} aria-label="Zoom out">−</button>
+          <button type="button" className="h-[42px] w-[44px] text-[22px] text-white/75 hover:bg-white/8" onClick={() => zoom(0.82)} aria-label={t('zoomOut')}>−</button>
           <button type="button" className="w-[60px] border-x border-white/8 text-[12px] font-semibold text-white/60" onClick={() => setCamera(DEFAULT_CAMERA)}>{Math.round(camera.scale * 100)}%</button>
-          <button type="button" className="h-[42px] w-[44px] text-[20px] text-white/75 hover:bg-white/8" onClick={() => zoom(1.22)} aria-label="Zoom in">+</button>
+          <button type="button" className="h-[42px] w-[44px] text-[20px] text-white/75 hover:bg-white/8" onClick={() => zoom(1.22)} aria-label={t('zoomIn')}>+</button>
         </div>
         {!data.notes.length ? (
           <div className="pointer-events-none absolute inset-0 grid place-items-center text-center">
-            <div><p className="font-montserrat-alt text-[20px] font-bold text-white/60">Your board is empty</p><p className="mt-2 text-[13px] text-white/35">Create a note, then arrange it anywhere.</p></div>
+            <div><p className="font-montserrat-alt text-[20px] font-bold text-white/60">{t('emptyBoard')}</p><p className="mt-2 text-[13px] text-white/35">{t('emptyBoardHelp')}</p></div>
           </div>
         ) : null}
       </section>
@@ -400,18 +407,18 @@ export default function StudioNotesEditor({ worldId, data, reload, setError }: P
       <aside className="flex min-h-0 flex-col rounded-[24px] border border-white/8 bg-[#1A2332] p-[20px]">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-[11px] font-bold uppercase tracking-[.18em] text-white/35">{selected ? 'Editing' : 'New note'}</p>
-            <h3 className="mt-1 font-montserrat-alt text-[22px] font-bold text-white/90">{selected?.title || 'Write it down'}</h3>
+            <p className="text-[11px] font-bold uppercase tracking-[.18em] text-white/35">{selected ? t('editing') : t('newNote')}</p>
+            <h3 className="mt-1 font-montserrat-alt text-[22px] font-bold text-white/90">{selected?.title || t('writeItDown')}</h3>
           </div>
-          <button type="button" onClick={beginNew} className="grid h-[38px] w-[38px] place-items-center rounded-[12px] border border-white/12 bg-white/8 text-[22px] font-semibold text-white/80 hover:bg-white/12" aria-label="New note">+</button>
+          <button type="button" onClick={beginNew} className="grid h-[38px] w-[38px] place-items-center rounded-[12px] border border-white/12 bg-white/8 text-[22px] font-semibold text-white/80 hover:bg-white/12" aria-label={t('newNote')}>+</button>
         </div>
-        <label className="mt-[24px] text-[12px] font-semibold text-white/50">Title</label>
-        <input value={draft.title} maxLength={80} onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} placeholder="Note title" className="mt-[7px] h-[48px] rounded-[14px] border border-white/8 bg-[#111927] px-[14px] text-[14px] text-white outline-none placeholder:text-white/25 focus:border-white/30" />
-        <label className="mt-[16px] text-[12px] font-semibold text-white/50">Note</label>
-        <textarea value={draft.content} maxLength={2000} onChange={(event) => setDraft((value) => ({ ...value, content: event.target.value }))} placeholder="Add details, ideas, clues…" className="mt-[7px] min-h-0 flex-1 resize-none rounded-[14px] border border-white/8 bg-[#111927] p-[14px] text-[14px] leading-[1.55] text-white outline-none placeholder:text-white/25 focus:border-white/30" />
+        <label className="mt-[24px] text-[12px] font-semibold text-white/50">{t('title')}</label>
+        <input value={draft.title} maxLength={80} onChange={(event) => setDraft((value) => ({ ...value, title: event.target.value }))} placeholder={t('noteTitle')} className="mt-[7px] h-[48px] rounded-[14px] border border-white/8 bg-[#111927] px-[14px] text-[14px] text-white outline-none placeholder:text-white/25 focus:border-white/30" />
+        <label className="mt-[16px] text-[12px] font-semibold text-white/50">{t('note')}</label>
+        <textarea value={draft.content} maxLength={2000} onChange={(event) => setDraft((value) => ({ ...value, content: event.target.value }))} placeholder={t('notePlaceholder')} className="mt-[7px] min-h-0 flex-1 resize-none rounded-[14px] border border-white/8 bg-[#111927] p-[14px] text-[14px] leading-[1.55] text-white outline-none placeholder:text-white/25 focus:border-white/30" />
         <div className="mt-[16px] flex gap-[10px]">
-          {selected ? <button type="button" onClick={() => setPendingDelete(selected)} disabled={busy} className="h-[48px] rounded-[14px] border border-[#E07373]/25 px-[16px] text-[13px] font-bold text-[#E88A8A] disabled:opacity-50">Delete</button> : null}
-          <button type="button" onClick={() => void save()} disabled={!canSave} className="h-[48px] flex-1 rounded-[14px] bg-white px-[18px] text-[14px] font-extrabold text-[#172033] transition-opacity disabled:cursor-not-allowed disabled:opacity-25">{busy ? 'Saving…' : selected ? 'Save changes' : 'Create note'}</button>
+          {selected ? <button type="button" onClick={() => setPendingDelete(selected)} disabled={busy} className="h-[48px] rounded-[14px] border border-[#E07373]/25 px-[16px] text-[13px] font-bold text-[#E88A8A] disabled:opacity-50">{t('delete')}</button> : null}
+          <button type="button" onClick={() => void save()} disabled={!canSave} className="h-[48px] flex-1 rounded-[14px] bg-white px-[18px] text-[14px] font-extrabold text-[#172033] transition-opacity disabled:cursor-not-allowed disabled:opacity-25">{busy ? t('saving') : selected ? t('saveChanges') : t('createNote')}</button>
         </div>
       </aside>
 

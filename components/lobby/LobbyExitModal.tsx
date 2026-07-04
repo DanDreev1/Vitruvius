@@ -1,4 +1,5 @@
 'use client';
+import { useTranslations } from 'next-intl';
 
 type LobbyExitModalProps = {
     isOpen: boolean;
@@ -13,6 +14,8 @@ export function LobbyExitModal({
     onClose,
     onConfirm
 }: LobbyExitModalProps) {
+    const t = useTranslations('Lobby');
+    const common = useTranslations('Common');
     if (!isOpen) return null;
 
     return (
@@ -35,11 +38,11 @@ export function LobbyExitModal({
                     id="lobby-exit-modal-title"
                     className="font-montserrat-alt text-[28px] font-extrabold leading-none text-white min-[640px]:text-[34px]"
                 >
-                    Leave lobby?
+                    {t('leaveTitle')}
                 </h2>
 
                 <p className="font-montserrat mt-5 text-[16px] font-semibold leading-[1.55] text-[#E7E7E7] min-[640px]:text-[18px]">
-                    Are you sure you want to leave the lobby? Your current changes will not be saved.
+                    {t('leaveDescription')}
                 </p>
 
                 <div className="mt-8 flex flex-col-reverse gap-3 min-[480px]:flex-row min-[480px]:justify-end">
@@ -49,7 +52,7 @@ export function LobbyExitModal({
                         onClick={onClose}
                         disabled={isSubmitting}
                     >
-                        Cancel
+                        {common('cancel')}
                     </button>
 
                     <button
@@ -58,7 +61,7 @@ export function LobbyExitModal({
                         onClick={onConfirm}
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? 'Leaving...' : 'Leave lobby'}
+                        {isSubmitting ? t('leaving') : t('leaveLobby')}
                     </button>
                 </div>
             </div>

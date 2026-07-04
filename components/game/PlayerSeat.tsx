@@ -3,6 +3,7 @@ import { DensityPreset, HoverCardData, SeatedPlayer } from "@/lib/game/types";
 import ParticipantAvatar from "./ParticipantAvatar";
 import OfflinePill from "./OfflinePill";
 import Image from "next/image";
+import { useTranslations } from 'next-intl';
 
 type PlayerSeatProps = {
   seatedPlayer: SeatedPlayer;
@@ -17,6 +18,7 @@ export default function PlayerSeat({
   onHoverChange,
   onTabletClick,
 }: PlayerSeatProps) {
+  const t = useTranslations('Game');
   const { participant, seat } = seatedPlayer;
   const visual = getSeatVisualConfig(seat.seatFacing, density);
 
@@ -61,7 +63,7 @@ export default function PlayerSeat({
         >
           <Image
             src="/dice-table.png"
-            alt="Dice"
+            alt={t('dice')}
             fill
             className="pointer-events-none select-none object-contain"
             sizes={`${density.diceWidth}px`}

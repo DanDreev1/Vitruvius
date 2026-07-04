@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 import TabletUserPage from '@/components/tablet/pages/player/TabletUserPage';
 import {
@@ -53,6 +54,7 @@ type Props = {
 };
 
 export default function StudioCharacterPage({ draft, status, onChange, onNameChange, onPortraitSelect }: Props) {
+  const t = useTranslations('StudioEditor');
   const changeAttribute = (attributeId: string, delta: number) => {
     const attributes = draft.attributes.map((attribute) => attribute.id === attributeId
       ? { ...attribute, value: clamp(attribute.value + delta, PLAYER_TABLET_ATTRIBUTE_MIN_VALUE, PLAYER_TABLET_ATTRIBUTE_MAX_VALUE) }
@@ -85,8 +87,8 @@ export default function StudioCharacterPage({ draft, status, onChange, onNameCha
           value={draft.name}
           onChange={(event) => onNameChange(event.target.value)}
           maxLength={32}
-          placeholder="Character name"
-          aria-label="Character name"
+          placeholder={t('characterName')}
+          aria-label={t('characterName')}
           className="h-[54px] w-[360px] rounded-[14px] border border-white/35 bg-white/8 px-[16px] font-montserrat-alt text-[30px] font-extrabold leading-none text-white outline-none placeholder:text-white/35 focus:border-white"
         />
 
@@ -96,8 +98,8 @@ export default function StudioCharacterPage({ draft, status, onChange, onNameCha
               <Image src={attributeIcons[attribute.key] ?? attributeIcons[attribute.iconKey] ?? attributeIcons.constitution} alt="" width={38} height={38} />
               <span className="font-montserrat-alt text-[25px] font-extrabold leading-none">{attribute.value}</span>
               <div className="flex flex-col gap-[3px]">
-                <button type="button" onClick={() => changeAttribute(attribute.id, 1)} disabled={attribute.value >= PLAYER_TABLET_ATTRIBUTE_MAX_VALUE} className="flex h-[17px] w-[21px] items-center justify-center rounded-[6px] border border-white/55 text-[14px] font-black leading-none disabled:opacity-35" aria-label={`Increase ${attribute.label}`}>+</button>
-                <button type="button" onClick={() => changeAttribute(attribute.id, -1)} disabled={attribute.value <= PLAYER_TABLET_ATTRIBUTE_MIN_VALUE} className="flex h-[17px] w-[21px] items-center justify-center rounded-[6px] border border-white/55 text-[14px] font-black leading-none disabled:opacity-35" aria-label={`Decrease ${attribute.label}`}>-</button>
+                <button type="button" onClick={() => changeAttribute(attribute.id, 1)} disabled={attribute.value >= PLAYER_TABLET_ATTRIBUTE_MAX_VALUE} className="flex h-[17px] w-[21px] items-center justify-center rounded-[6px] border border-white/55 text-[14px] font-black leading-none disabled:opacity-35" aria-label={t('increase', {name: attribute.label})}>+</button>
+                <button type="button" onClick={() => changeAttribute(attribute.id, -1)} disabled={attribute.value <= PLAYER_TABLET_ATTRIBUTE_MIN_VALUE} className="flex h-[17px] w-[21px] items-center justify-center rounded-[6px] border border-white/55 text-[14px] font-black leading-none disabled:opacity-35" aria-label={t('decrease', {name: attribute.label})}>-</button>
               </div>
             </div>
           ))}
@@ -125,9 +127,9 @@ export default function StudioCharacterPage({ draft, status, onChange, onNameCha
           return <div key={parameter.id} className="flex flex-col items-center">
             <Image src={parameterIcons[parameter.key] ?? parameterIcons[parameter.iconKey] ?? parameterIcons.health} alt="" width={48} height={48} />
             <div className="mt-[10px] flex items-center justify-center font-montserrat-alt text-[23px] font-extrabold leading-none">
-              <button type="button" onClick={() => changeParameter(parameter.id, -1)} disabled={parameter.currentValue <= PLAYER_TABLET_PARAMETER_MIN_VALUE} className="flex h-[34px] w-[24px] items-center justify-center disabled:opacity-35" aria-label={`Decrease ${parameter.label}`}>-</button>
+              <button type="button" onClick={() => changeParameter(parameter.id, -1)} disabled={parameter.currentValue <= PLAYER_TABLET_PARAMETER_MIN_VALUE} className="flex h-[34px] w-[24px] items-center justify-center disabled:opacity-35" aria-label={t('decrease', {name: parameter.label})}>-</button>
               <span className="min-w-[24px] text-center">{parameter.currentValue}</span>
-              <button type="button" onClick={() => changeParameter(parameter.id, 1)} disabled={max !== null && parameter.currentValue >= max} className="flex h-[34px] w-[24px] items-center justify-center disabled:opacity-35" aria-label={`Increase ${parameter.label}`}>+</button>
+              <button type="button" onClick={() => changeParameter(parameter.id, 1)} disabled={max !== null && parameter.currentValue >= max} className="flex h-[34px] w-[24px] items-center justify-center disabled:opacity-35" aria-label={t('increase', {name: parameter.label})}>+</button>
             </div>
           </div>;
         })}

@@ -1,15 +1,18 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import type { InventoryCategory } from '@/features/tablet/inventory/types';
 import { INVENTORY_CATEGORIES } from '@/features/tablet/inventory/constants';
 
 export function CategoryTabs({ value, onChange }: { value: 'all' | InventoryCategory; onChange: (value: 'all' | InventoryCategory) => void }) {
+  const t = useTranslations('StudioMaster');
   return (
     <div className="grid grid-cols-4 gap-[9px]">
       {INVENTORY_CATEGORIES.map((category) => (
         <button key={category.key} type="button" onClick={() => onChange(category.key)}
           className={['h-[84px] rounded-[8px] border-[2px] font-montserrat-alt text-[17px] font-extrabold transition', value === category.key ? 'border-white bg-white text-black' : 'border-white/65 bg-transparent text-white hover:bg-white/5'].join(' ')}>
-          {category.label}
+          {t(category.key === 'all' ? 'all' : category.key)}
         </button>
       ))}
     </div>

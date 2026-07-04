@@ -1,0 +1,19 @@
+{
+  "Game": {
+    "loading": "Загрузка игры…", "offline": "Не в сети", "master": "Мастер", "player": "Игрок", "dice": "Кубики",
+    "rotateTitle": "Поверните устройство", "rotateDescription": "Игровой стол доступен только на широких экранах.", "openImage": "Открыть изображение «{title}»",
+    "stack": "Стопка", "fit": "Вписать", "images": "Изображения", "mode": "Режим: {mode}", "loadingImages": "Загрузка изображений…", "noImages": "Нет доступных изображений", "previous": "Назад", "next": "Далее",
+    "successes": "{count, plural, one {# успех} few {# успеха} many {# успехов} other {# успеха}}", "rollProgress": "Бросок {current}/{total}", "rollPartyDice": "Бросить кубики проверки",
+    "inspiration": "Вдохновение", "freeBonus": "Свободный бонус", "reset": "Сбросить", "rollDice": "Бросок кубиков", "close": "Закрыть", "loadingAttributes": "Загрузка характеристик…", "attributesError": "Не удалось загрузить характеристики.",
+    "manual": "Вручную", "diceAmount": "{count, plural, one {# кубик} few {# кубика} many {# кубиков} other {# кубика}}", "diceCount": "Количество кубиков", "rolling": "Бросаем…", "rollDiceCount": "Бросить {count, plural, one {# кубик} few {# кубика} many {# кубиков} other {# кубика}}",
+    "groupTotal": "Общий результат: {count}", "wins": "Побеждает {name}", "accept": "Принять", "reject": "Отклонить", "reroll": "Перебросить", "confirmAction": "Подтвердите действие", "confirmDecision": "Вы уверены, что хотите выполнить действие «{action}» для этой проверки?", "dontShowAgain": "Больше не показывать в этой сессии", "no": "Нет", "yes": "Да", "saving": "Сохранение…",
+    "messageRoll": "{name}: бросок — {count, plural, one {# кубик} few {# кубика} many {# кубиков} other {# кубика}}, характеристика «{attribute}».", "messageResetBonus": "{name} сбрасывает успехи от бонуса «{bonus}» для этой проверки.", "messageUseBonus": "{name} использует «{bonus}» и добавляет 1 успех.", "messageResetAll": "{name} сбрасывает все успехи от Вдохновения и Свободного бонуса для этой проверки.",
+    "actions": {"accept":"принять","reject":"отклонить","reroll":"перебросить"}
+  },
+  "SessionExit": {
+    "endSessionTitle": "Завершить сессию?", "exitGameTitle": "Выйти из игры?", "endSessionDescription": "Комната закроется для всех. После этого каждый участник выберет, что сделать со своими игровыми данными.", "exitGameDescription": "Вы покинете стол, а затем выберете, что сделать со своим персонажем.",
+    "cancel": "Отмена", "processing": "Обработка…", "endSession": "Завершить сессию", "exitGame": "Выйти из игры", "sessionEnded": "Сессия завершена", "keepEntity": "Сохранить {entity}?", "temporaryUntil": "Временные данные доступны до", "world": "мир", "character": "персонажа",
+    "anonymousHelp": "Войдите или создайте аккаунт, чтобы сохранить {entity}. Иначе временные данные будут удалены.", "email": "Электронная почта", "password": "Пароль", "login": "Войти", "createAccount": "Создать аккаунт", "saveAsNew": "Сохранить как новый", "saveAsNewHelp": "Создать отдельную копию", "updateCurrent": "Обновить текущий", "updateCurrentHelp": "Заменить существующую версию", "dontSave": "Не сохранять {entity}",
+    "exitError": "Не удалось выйти из игры.", "processError": "Не удалось обработать данные сессии.", "handoffError": "Не удалось подготовить перенос данных сессии.", "confirmEmail": "Подтвердите электронную почту, затем войдите, чтобы сохранить данные сессии.", "authError": "Ошибка авторизации."
+  }
+}

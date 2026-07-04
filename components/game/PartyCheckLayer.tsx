@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import {
   acceptPartyCheck,
@@ -321,6 +322,7 @@ function TargetResultCard({
   displayedSuccesses: SuccessBreakdown;
   revealOutcome: 'success' | 'failure' | null;
 }) {
+  const t = useTranslations('Game');
   const visual = getSeatVisualConfig(seat.seatFacing, density);
   const forward = getForwardVector(seat.seatFacing);
   const totalRolls = getTotalRolls(target);
@@ -351,10 +353,10 @@ function TargetResultCard({
             revealOutcome={revealOutcome}
           />
           <p className="mt-[5px] text-center font-montserrat text-[10px] font-extrabold text-white">
-            {displayedSuccessTotal} success{displayedSuccessTotal === 1 ? '' : 'es'}
+            {t('successes', { count: displayedSuccessTotal })}
           </p>
           <p className="mt-[2px] text-center font-montserrat text-[9px] font-bold text-white/65">
-            Roll {completedRolls}/{totalRolls}
+            {t('rollProgress', { current: completedRolls, total: totalRolls })}
           </p>
         </div>
       </div>
@@ -371,7 +373,7 @@ function TargetResultCard({
             top: `calc(50% + ${visual.diceY}px)`,
             transform: `translate(-50%, -50%) rotate(${visual.diceRotation}deg)`,
           }}
-          aria-label="Roll party dice"
+          aria-label={t('rollPartyDice')}
         />
       ) : null}
 
@@ -393,6 +395,7 @@ function BonusControls({
   ) => void;
   onResetBonuses: () => void;
 }) {
+  const t = useTranslations('Game');
   return (
     <div className="absolute right-[70px] top-[92px] z-30 flex items-start justify-end gap-[14px]">
       <button
@@ -412,7 +415,7 @@ function BonusControls({
               : Math.max(0, inspirationAvailable - target.roll.inspirationSuccesses)}
           </span>
         </span>
-        <span>Inspiration</span>
+        <span>{t('inspiration')}</span>
       </button>
       <button
         type="button"
@@ -425,7 +428,7 @@ function BonusControls({
             +{target.roll.freeBonusSuccesses}
           </span>
         </span>
-        <span>Free bonus</span>
+        <span>{t('freeBonus')}</span>
       </button>
       <button
         type="button"
@@ -435,7 +438,7 @@ function BonusControls({
         <span className="flex h-[34px] w-[34px] items-center justify-center rounded-full bg-black/75 font-montserrat-alt text-[17px] text-white shadow-lg ring-1 ring-white/25 transition-transform group-hover:scale-105">
           &#8634;
         </span>
-        <span>Reset</span>
+        <span>{t('reset')}</span>
       </button>
     </div>
   );
@@ -455,6 +458,7 @@ function RollOverlay({
     diceCount: number
   ) => Promise<void>;
 }) {
+  const t = useTranslations('Game');
   const [attributes, setAttributes] = useState<PartyAttribute[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [manualDiceCount, setManualDiceCount] = useState(1);
@@ -483,7 +487,7 @@ function RollOverlay({
         setError(
           loadError instanceof Error
             ? loadError.message
-            : 'Failed to load attributes.'
+            : t('attributesError')
         );
       } finally {
         if (isMounted) {
@@ -497,7 +501,7 @@ function RollOverlay({
     return () => {
       isMounted = false;
     };
-  }, [sessionId, target.inGameCharacterId]);
+  }, [sessionId, t, target.inGameCharacterId]);
 
   const selectedAttribute =
     attributes.find((attribute) => attribute.key === selectedKey) ?? null;
@@ -511,7 +515,7 @@ function RollOverlay({
         <div className="mb-[16px] flex items-start justify-between gap-[16px]">
           <div>
             <p className="font-montserrat-alt text-[24px] font-extrabold text-white">
-              Roll dice
+              {t('rollDice')}
             </p>
             <p className="mt-[4px] font-montserrat text-[14px] text-white/60">
               {target.displayName}
@@ -522,7 +526,7 @@ function RollOverlay({
             onClick={onClose}
             className="rounded-full bg-white/10 px-[12px] py-[7px] font-montserrat text-[12px] font-bold text-white"
           >
-            Close
+            {t('close')}
           </button>
         </div>
 
@@ -534,7 +538,7 @@ function RollOverlay({
 
         {isLoading ? (
           <p className="font-montserrat text-[14px] text-white/65">
-            Loading attributes...
+            {t('loadingAttributes')}
           </p>
         ) : (
           <div className="space-y-[10px]">
@@ -567,7 +571,7 @@ function RollOverlay({
                   </span>
                 </span>
                 <span className="font-montserrat text-[13px] font-bold text-white/65">
-                  {target.role === 'master' ? 'Manual' : `${attribute.value} dice`}
+                  {target.role === 'master' ? t('manual') : t('diceAmount', { count: attribute.value })}
                 </span>
               </button>
             ))}
@@ -577,7 +581,7 @@ function RollOverlay({
         {target.role === 'master' ? (
           <div className="mt-[14px] flex items-center justify-between rounded-[16px] bg-white/5 px-[14px] py-[12px]">
             <span className="font-montserrat text-[13px] font-bold text-white/70">
-              Dice count
+              {t('diceCount')}
             </span>
             <input
               type="number"
@@ -609,7 +613,7 @@ function RollOverlay({
           }}
           className="mt-[16px] w-full rounded-[16px] bg-[#D6B25E] px-[18px] py-[13px] font-montserrat text-[15px] font-extrabold text-black disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {isRolling ? 'Rolling...' : `Roll ${diceCount || 0} dice`}
+          {isRolling ? t('rolling') : t('rollDiceCount', { count: diceCount || 0 })}
         </button>
       </div>
     </div>
@@ -628,6 +632,7 @@ export default function PartyCheckLayer({
   onCheckChange,
   onMessage,
 }: PartyCheckLayerProps) {
+  const t = useTranslations('Game');
   const [rollOverlay, setRollOverlay] = useState<RollOverlayState>(null);
   const [confirmation, setConfirmation] = useState<ConfirmationState>(null);
   const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -760,7 +765,7 @@ export default function PartyCheckLayer({
       type: 'roll',
       participantId: target.participantId,
       displayName: target.displayName,
-      text: `${target.displayName} rolled ${diceCount} dice using ${attribute.label}.`,
+      text: t('messageRoll', { name: target.displayName, count: diceCount, attribute: attribute.label }),
     });
   };
 
@@ -801,7 +806,7 @@ export default function PartyCheckLayer({
         type: type === 'inspiration' ? 'reset_inspiration' : 'reset_free_bonus',
         participantId: target.participantId,
         displayName: target.displayName,
-        text: `${target.displayName} reset ${type === 'inspiration' ? 'Inspiration' : 'Free Bonus'} successes for this check.`,
+        text: t('messageResetBonus', { name: target.displayName, bonus: type === 'inspiration' ? t('inspiration') : t('freeBonus') }),
       });
       return;
     }
@@ -811,7 +816,7 @@ export default function PartyCheckLayer({
       type: type === 'inspiration' ? 'inspiration' : 'free_bonus',
       participantId: target.participantId,
       displayName: target.displayName,
-      text: `${target.displayName} used ${type === 'inspiration' ? 'Inspiration' : 'Free Bonus'} to add 1 success.`,
+      text: t('messageUseBonus', { name: target.displayName, bonus: type === 'inspiration' ? t('inspiration') : t('freeBonus') }),
     });
   };
 
@@ -830,7 +835,7 @@ export default function PartyCheckLayer({
       type: 'reset_inspiration',
       participantId: target.participantId,
       displayName: target.displayName,
-      text: `${target.displayName} reset all Inspiration and Free Bonus successes for this check.`,
+      text: t('messageResetAll', { name: target.displayName }),
     });
   };
 
@@ -1025,7 +1030,7 @@ export default function PartyCheckLayer({
       {check.mode === 'group' ? (
         <div className="absolute bottom-[52px] right-[70px] rounded-[18px] border border-white/15 bg-black/75 px-[16px] py-[14px] shadow-2xl backdrop-blur">
           <p className="mb-[9px] font-montserrat-alt text-[17px] font-extrabold text-white">
-            Group total: {groupTotal}
+            {t('groupTotal', { count: groupTotal })}
           </p>
           <ThresholdTrack
             max={12}
@@ -1051,7 +1056,7 @@ export default function PartyCheckLayer({
                 }
                 className="rounded-full bg-[#D6B25E] px-[14px] py-[9px] font-montserrat text-[12px] font-extrabold text-black"
               >
-                {target.displayName} wins
+                {t('wins', { name: target.displayName })}
               </button>
             ))
           ) : (
@@ -1060,7 +1065,7 @@ export default function PartyCheckLayer({
               onClick={() => requestDecision({ action: 'accept' })}
               className="rounded-full bg-[#D6B25E] px-[18px] py-[9px] font-montserrat text-[13px] font-extrabold text-black"
             >
-              Accept
+              {t('accept')}
             </button>
           )}
           <button
@@ -1068,14 +1073,14 @@ export default function PartyCheckLayer({
             onClick={() => requestDecision({ action: 'reject' })}
             className="rounded-full bg-white px-[18px] py-[9px] font-montserrat text-[13px] font-extrabold text-black"
           >
-            Reject
+            {t('reject')}
           </button>
           <button
             type="button"
             onClick={() => requestDecision({ action: 'reroll' })}
             className="rounded-full bg-white/15 px-[18px] py-[9px] font-montserrat text-[13px] font-extrabold text-white"
           >
-            Reroll
+            {t('reroll')}
           </button>
         </div>
       ) : null}
@@ -1095,10 +1100,10 @@ export default function PartyCheckLayer({
         <div className="fixed inset-0 z-[96] flex items-center justify-center bg-black/70 px-4">
           <div className="w-full max-w-[420px] rounded-[24px] border border-white/15 bg-[#111A2D] p-[22px] shadow-2xl">
             <p className="font-montserrat-alt text-[22px] font-extrabold text-white">
-              Confirm action
+              {t('confirmAction')}
             </p>
             <p className="mt-[8px] font-montserrat text-[14px] text-white/65">
-              Are you sure you want to {confirmation.action} this check?
+              {t('confirmDecision', { action: confirmation.action === 'accept' ? t('actions.accept') : confirmation.action === 'reject' ? t('actions.reject') : t('actions.reroll') })}
             </p>
             <label className="mt-[16px] flex items-center gap-[10px] font-montserrat text-[13px] font-bold text-white/70">
               <input
@@ -1106,7 +1111,7 @@ export default function PartyCheckLayer({
                 checked={dontShowAgain}
                 onChange={(event) => setDontShowAgain(event.target.checked)}
               />
-              Don&apos;t show again this session
+              {t('dontShowAgain')}
             </label>
             <div className="mt-[18px] flex justify-end gap-[10px]">
               <button
@@ -1114,7 +1119,7 @@ export default function PartyCheckLayer({
                 onClick={() => setConfirmation(null)}
                 className="rounded-full bg-white/10 px-[16px] py-[9px] font-montserrat text-[13px] font-extrabold text-white"
               >
-                No
+                {t('no')}
               </button>
               <button
                 type="button"
@@ -1127,7 +1132,7 @@ export default function PartyCheckLayer({
                 }}
                 className="rounded-full bg-[#D6B25E] px-[16px] py-[9px] font-montserrat text-[13px] font-extrabold text-black disabled:opacity-50"
               >
-                {isDecisionSaving ? 'Saving...' : 'Yes'}
+                {isDecisionSaving ? t('saving') : t('yes')}
               </button>
             </div>
           </div>

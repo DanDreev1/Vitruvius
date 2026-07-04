@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import LanguageSwitcher from '@/components/i18n/LanguageSwitcher';
+
 import {
   LOBBY_AVATAR_ALLOWED_MIME_TYPES,
   LOBBY_AVATAR_MAX_FILE_SIZE_BYTES,
@@ -418,6 +420,8 @@ export default function TabletSettingsContent({
               aria-label="Scene audio volume"
             />
           </div>
+
+          <LanguageSwitcher />
 
           <div className="rounded-[20px] border border-white/10 bg-[#243047] px-[20px] py-[18px]">
             <div className="mb-[14px] flex items-center justify-between gap-[16px]">

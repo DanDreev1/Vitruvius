@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { AnimatePresence, motion } from 'framer-motion';
 
 import { SCENE_PLACEHOLDER_ICON_PATHS } from '@/features/tablet/master/scene/constants';
@@ -31,6 +32,7 @@ export default function SceneImageLightbox({
   onNext,
   showVisibilityStatus = true,
 }: SceneImageLightboxProps) {
+  const t = useTranslations('StudioMaster');
   useEffect(() => {
     if (!isOpen) return;
 
@@ -81,7 +83,7 @@ export default function SceneImageLightbox({
                   </p>
                   {showVisibilityStatus ? (
                     <p className="mt-[6px] font-montserrat text-[14px] text-white/80">
-                      {item.isActive ? 'Visible to selected targets' : 'Hidden from players'}
+                      {item.isActive ? t('visibleTargets') : t('hiddenPlayers')}
                     </p>
                   ) : null}
                 </div>
@@ -93,7 +95,7 @@ export default function SceneImageLightbox({
                   onClick={onPrev}
                   className="absolute left-[24px] top-1/2 z-20 -translate-y-1/2 rounded-full bg-white px-[16px] py-[10px] font-montserrat text-[14px] font-bold text-black"
                 >
-                  Prev
+                  {t('previous')}
                 </button>
               ) : null}
 
@@ -103,7 +105,7 @@ export default function SceneImageLightbox({
                   onClick={onNext}
                   className="absolute right-[24px] top-1/2 z-20 -translate-y-1/2 rounded-full bg-white px-[16px] py-[10px] font-montserrat text-[14px] font-bold text-black"
                 >
-                  Next
+                  {t('next')}
                 </button>
               ) : null}
 
@@ -112,11 +114,11 @@ export default function SceneImageLightbox({
                   <div className="flex h-full w-full flex-col items-center justify-center gap-[16px]">
                     <img
                       src={SCENE_PLACEHOLDER_ICON_PATHS.upload}
-                      alt="Upload"
+                      alt={t('upload')}
                       className="h-[90px] w-[90px] object-contain"
                     />
                     <p className="font-montserrat-alt text-[28px] font-extrabold text-white">
-                      Add image
+                      {t('addImage')}
                     </p>
                   </div>
                 ) : item.imageUrl ? (

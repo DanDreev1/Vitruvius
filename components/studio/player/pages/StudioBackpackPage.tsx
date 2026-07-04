@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import {
   CategoryTabs,
@@ -12,6 +13,7 @@ import type { InventoryCategory } from '@/features/tablet/inventory/types';
 import type { StudioInventoryItem } from '@/features/studio/player/types';
 
 export default function StudioBackpackPage({ items }: { items: StudioInventoryItem[] }) {
+  const t = useTranslations('StudioEditor');
   const [category, setCategory] = useState<'all' | InventoryCategory>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isImageCompact, setIsImageCompact] = useState(false);
@@ -55,12 +57,10 @@ export default function StudioBackpackPage({ items }: { items: StudioInventoryIt
           <div className="grid min-h-0 flex-1 place-items-center rounded-[8px] border-[2px] border-white/65 px-[50px] text-center">
             <div className="max-w-[620px]">
               <h2 className="font-montserrat-alt text-[28px] font-extrabold text-white">
-                Your inventory is empty
+                {t('inventoryEmpty')}
               </h2>
               <p className="mt-[12px] font-montserrat text-[15px] font-semibold leading-[1.55] text-white/60">
-                Your Backpack is managed by the Master during a game. As you explore,
-                the Master can give your character weapons, consumables, quest items,
-                and other useful gear. Those items will appear here automatically.
+                {t('inventoryHelp')}
               </p>
             </div>
           </div>
@@ -70,13 +70,13 @@ export default function StudioBackpackPage({ items }: { items: StudioInventoryIt
       <aside className="flex min-h-0 flex-col rounded-[8px] border-[2px] border-white/70 p-[14px]">
         <ItemPortrait
           imageUrl={selected?.imageUrl ?? null}
-          name={selected?.name ?? 'Name'}
+          name={selected?.name ?? t('itemName')}
           compact={!selected || isImageCompact}
           onCompactChange={selected ? setIsImageCompact : undefined}
         />
         <div className="mt-[8px] flex items-center justify-between gap-[8px]">
           <p className="font-montserrat text-[11px] uppercase text-[#D6B25E]">
-            {selected?.category ?? 'Item'}
+            {selected?.category ?? t('item')}
           </p>
           {selected?.category === 'consumable' ? (
             <span className="rounded-full bg-white px-[8px] py-[4px] font-montserrat-alt text-[11px] font-bold text-black">
@@ -88,10 +88,10 @@ export default function StudioBackpackPage({ items }: { items: StudioInventoryIt
           'min-h-0 overflow-y-auto font-montserrat text-[13px] leading-[1.5] text-white/75 transition-[opacity,margin] duration-500',
           !selected || isImageCompact ? 'mt-[9px] flex-1 opacity-100' : 'h-0 opacity-0',
         ].join(' ')}>
-          {selected?.description ?? 'Select an item to view its description.'}
+          {selected?.description ?? t('selectItem')}
         </p>
         <div className="mt-auto rounded-[8px] border border-white/10 bg-white/[.03] px-[12px] py-[10px] text-center font-montserrat text-[10px] leading-relaxed text-white/40">
-          Item actions become available during a game.
+          {t('actionsInGame')}
         </div>
       </aside>
     </div>

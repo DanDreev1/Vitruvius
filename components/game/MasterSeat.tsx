@@ -8,6 +8,7 @@ import {
   ResolvedSeatPosition,
 } from "@/lib/game/types";
 import Image from "next/image";
+import { useTranslations } from 'next-intl';
 
 type MasterSeatProps = {
   participant: GameParticipant;
@@ -24,6 +25,7 @@ export default function MasterSeat({
   onHoverChange,
   onTabletClick,
 }: MasterSeatProps) {
+  const t = useTranslations('Game');
   const visual = getSeatVisualConfig(seat.seatFacing, density);
   const avatarSize = density.avatarSize + 10;
 
@@ -70,7 +72,7 @@ export default function MasterSeat({
         >
           <Image
             src="/dice-table.png"
-            alt="Dice"
+            alt={t('dice')}
             fill
             className="pointer-events-none select-none object-contain"
             sizes={`${density.diceWidth}px`}

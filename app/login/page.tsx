@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
 import Header from '@/components/ui/Header';
@@ -8,6 +9,7 @@ import ScaledPageViewport from '@/components/layout/ScaledPageViewport';
 import { signInWithEmail } from '@/features/auth/signInWithEmail';
 
 export default function LoginPage() {
+  const t = useTranslations('Auth');
   const router = useRouter();
 
   const [email, setEmail] = useState('');
@@ -22,10 +24,8 @@ export default function LoginPage() {
 
       await signInWithEmail({ email, password });
       router.push('/');
-    } catch (error) {
-      setErrorMessage(
-        error instanceof Error ? error.message : 'Failed to sign in.'
-      );
+    } catch {
+      setErrorMessage(t('loginError'));
     } finally {
       setIsSigningIn(false);
     }
@@ -39,14 +39,14 @@ export default function LoginPage() {
         <section className="w-full max-w-[620px] rounded-[28px] bg-[#182135] p-8">
           <div className="flex flex-col gap-4">
               <h1 className="font-montserrat-alt text-center text-[44px] font-extrabold text-[#D6B25E]">
-              Login
+              {t('loginTitle')}
             </h1>
 
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              placeholder="Email"
+              placeholder={t('email')}
               className="w-full rounded-[18px] border border-white/10 bg-[#0B1020] px-6 py-[25px] text-[20px] font-bold leading-none text-white outline-none placeholder:text-[#8E929B] focus:border-[#D6B25E]"
             />
 
@@ -54,7 +54,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              placeholder="Password"
+              placeholder={t('password')}
               className="w-full rounded-[18px] border border-white/10 bg-[#0B1020] px-6 py-[25px] text-[20px] font-bold leading-none text-white outline-none placeholder:text-[#8E929B] focus:border-[#D6B25E]"
             />
 
@@ -64,7 +64,7 @@ export default function LoginPage() {
               disabled={isSigningIn}
               className="btn-primary"
             >
-              {isSigningIn ? 'Signing in...' : 'Login'}
+              {isSigningIn ? t('signingIn') : t('login')}
             </button>
 
             <button
@@ -73,7 +73,7 @@ export default function LoginPage() {
               disabled={isSigningIn}
               className="btn-secondary"
             >
-              Create account
+              {t('createAccount')}
             </button>
 
             {errorMessage ? (

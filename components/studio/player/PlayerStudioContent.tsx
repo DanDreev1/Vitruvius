@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import TabletSkillsPage from '@/components/tablet/pages/player/SkillsPage';
 import StudioCharacterPage from './pages/StudioCharacterPage';
@@ -31,8 +32,10 @@ function toTabletDraft(draft: StudioCharacterDraft): TabletPlayerCharacterDraft 
 }
 
 export default function PlayerStudioContent({ tab, entity, onEntityChange, registerDraftExitActions }: Props) {
+  const t = useTranslations('StudioEditor');
   const [draft, setDraft] = useState<StudioCharacterDraft>(() => createStudioCharacterDraft());
   const [status, setStatus] = useState<string | null>(null);
+  const [statusIsSuccess, setStatusIsSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(!entity.isDraft);
   const [isDirty, setIsDirty] = useState(Boolean(entity.isDraft));
@@ -43,31 +46,31 @@ export default function PlayerStudioContent({ tab, entity, onEntityChange, regis
     void loadStudioCharacter(entity.id).then(({ character }) => {
       if (!cancelled) { setDraft(character); setIsDirty(false); }
     }).catch((error) => {
-      if (!cancelled) setStatus(error instanceof Error ? error.message : 'Could not load character.');
+      if (!cancelled) { setStatusIsSuccess(false); setStatus(error instanceof Error ? error.message : t('loadCharacterError')); }
     }).finally(() => {
       if (!cancelled) setIsLoading(false);
     });
     return () => { cancelled = true; };
-  }, [entity.id, entity.isDraft]);
+  }, [entity.id, entity.isDraft, t]);
 
   useEffect(() => () => { if (draft.portraitPreviewUrl) URL.revokeObjectURL(draft.portraitPreviewUrl); }, [draft.portraitPreviewUrl]);
 
-  const update = (recipe: (current: StudioCharacterDraft) => StudioCharacterDraft) => { setDraft(recipe); setIsDirty(true); setStatus(null); };
+  const update = (recipe: (current: StudioCharacterDraft) => StudioCharacterDraft) => { setDraft(recipe); setIsDirty(true); setStatus(null); setStatusIsSuccess(false); };
   const updateDomain = (domainId: string, recipe: (domain: TabletPlayerDomain) => TabletPlayerDomain) => update((current) => ({ ...current, domains: current.domains.map((domain) => domain.id === domainId ? recipe(domain) : domain) }));
   const validation = useMemo(() => {
     const missing: string[] = [];
-    if (!draft.name.trim()) missing.push('character name');
-    if (!draft.description.trim()) missing.push('description');
-    if (!draft.domains.length || draft.domains.some((domain) => !domain.name.trim() || domain.skills.some((skill) => !skill.name.trim()))) missing.push('domain and skill names');
-    if (draft.inventoryItems.some((item) => !item.name.trim() || !item.description.trim())) missing.push('backpack item names and descriptions');
-    if (draft.experiences.some((item) => !item.headline.trim() || !item.description?.trim())) missing.push('library headlines and descriptions');
-    if (draft.notes.some((note) => !note.title.trim() || !note.content.trim())) missing.push('note titles and content');
+    if (!draft.name.trim()) missing.push(t('validationName'));
+    if (!draft.description.trim()) missing.push(t('validationDescription'));
+    if (!draft.domains.length || draft.domains.some((domain) => !domain.name.trim() || domain.skills.some((skill) => !skill.name.trim()))) missing.push(t('validationDomains'));
+    if (draft.inventoryItems.some((item) => !item.name.trim() || !item.description.trim())) missing.push(t('validationBackpack'));
+    if (draft.experiences.some((item) => !item.headline.trim() || !item.description?.trim())) missing.push(t('validationLibrary'));
+    if (draft.notes.some((note) => !note.title.trim() || !note.content.trim())) missing.push(t('validationNotes'));
     return missing;
-  }, [draft]);
+  }, [draft, t]);
 
   const selectPortrait = (file: File | null) => {
     if (!file) return;
-    if (!PLAYER_TABLET_PORTRAIT_ALLOWED_MIME_TYPES.includes(file.type) || file.size > PLAYER_TABLET_PORTRAIT_MAX_FILE_SIZE_BYTES) { setStatus('Portrait must be JPG, PNG, WEBP, or GIF and no larger than 5 MB.'); return; }
+    if (!PLAYER_TABLET_PORTRAIT_ALLOWED_MIME_TYPES.includes(file.type) || file.size > PLAYER_TABLET_PORTRAIT_MAX_FILE_SIZE_BYTES) { setStatusIsSuccess(false); setStatus(t('portraitError')); return; }
     const preview = URL.createObjectURL(file);
     update((current) => { if (current.portraitPreviewUrl) URL.revokeObjectURL(current.portraitPreviewUrl); return { ...current, portraitFile: file, portraitPreviewUrl: preview }; });
   };
@@ -79,12 +82,13 @@ export default function PlayerStudioContent({ tab, entity, onEntityChange, regis
       const result = await saveStudioCharacter(draft, entity.isDraft ? undefined : entity.id);
       onEntityChange({ id: result.character.id, name: result.character.name, avatarUrl: result.character.avatar_url, isDraft: false });
       setIsDirty(false);
-      setStatus(entity.isDraft ? 'Character saved. All draft data is now permanent.' : 'Character changes saved.');
+      setStatusIsSuccess(true);
+      setStatus(entity.isDraft ? t('characterSaved') : t('characterChangesSaved'));
       return true;
-    } catch (error) { setStatus(error instanceof Error ? error.message : 'Could not save character.'); }
+    } catch (error) { setStatusIsSuccess(false); setStatus(error instanceof Error ? error.message : t('saveCharacterError')); }
     finally { setIsSaving(false); }
     return false;
-  }, [draft, entity.id, entity.isDraft, isDirty, isSaving, onEntityChange]);
+  }, [draft, entity.id, entity.isDraft, isDirty, isSaving, onEntityChange, t]);
 
   const canSaveCore = Boolean(draft.name.trim() && draft.description.trim());
 
@@ -97,14 +101,14 @@ export default function PlayerStudioContent({ tab, entity, onEntityChange, regis
     return () => registerDraftExitActions(null);
   }, [canSaveCore, isDirty, registerDraftExitActions, save]);
 
-  if (isLoading) return <div className="grid h-full place-items-center font-montserrat text-[13px] font-semibold text-white/45">Loading character…</div>;
-  if (status && !draft.name && !entity.isDraft) return <div className="grid h-full place-items-center text-center"><div><h2 className="font-montserrat-alt text-[26px] font-extrabold text-white">Could not load character</h2><p className="mt-3 max-w-[520px] text-[13px] leading-relaxed text-red-200/70">{status}</p></div></div>;
+  if (isLoading) return <div className="grid h-full place-items-center font-montserrat text-[13px] font-semibold text-white/45">{t('loadingCharacter')}</div>;
+  if (status && !draft.name && !entity.isDraft) return <div className="grid h-full place-items-center text-center"><div><h2 className="font-montserrat-alt text-[26px] font-extrabold text-white">{t('loadCharacterError')}</h2><p className="mt-3 max-w-[520px] text-[13px] leading-relaxed text-red-200/70">{status}</p></div></div>;
 
   if (tab === 'character') return <StudioCharacterPage
     draft={toTabletDraft(draft)}
     status={status}
     onChange={(nextDraft) => update((current) => ({ ...current, ...nextDraft }))}
-    onNameChange={(name) => { update((current) => ({ ...current, name })); if (entity.isDraft) onEntityChange({ name: name || 'New character' }); }}
+    onNameChange={(name) => { update((current) => ({ ...current, name })); if (entity.isDraft) onEntityChange({ name: name || t('newCharacter') }); }}
     onPortraitSelect={selectPortrait}
   />;
 
@@ -114,7 +118,7 @@ export default function PlayerStudioContent({ tab, entity, onEntityChange, regis
     onDomainNameChange={(domainId, name) => updateDomain(domainId, (domain) => ({ ...domain, name }))}
     onDomainIconChange={(domainId, iconKey) => updateDomain(domainId, (domain) => ({ ...domain, iconKey }))}
     onDomainLevelChange={(domainId, level) => updateDomain(domainId, (domain) => ({ ...domain, level, skills: domain.skills.map((skill) => skill.isPrimary ? { ...skill, level } : skill) }))}
-    onDomainSkillAdd={(domainId) => { const skillId = id('skill'); updateDomain(domainId, (domain) => ({ ...domain, skills: [...domain.skills, { id: skillId, key: `${domain.key}-${crypto.randomUUID()}`, name: 'Skill name', description: 'Skill description.', iconKey: 'book', isPrimary: false, level: 1, sortOrder: domain.skills.length, metadata: { icon_key: 'book' }, isDraft: true }] })); return skillId; }}
+    onDomainSkillAdd={(domainId) => { const skillId = id('skill'); updateDomain(domainId, (domain) => ({ ...domain, skills: [...domain.skills, { id: skillId, key: `${domain.key}-${crypto.randomUUID()}`, name: t('skillName'), description: t('skillDescription'), iconKey: 'book', isPrimary: false, level: 1, sortOrder: domain.skills.length, metadata: { icon_key: 'book' }, isDraft: true }] })); return skillId; }}
     onDomainSkillDelete={(domainId, skillId) => updateDomain(domainId, (domain) => ({ ...domain, skills: domain.skills.filter((skill) => skill.id !== skillId || skill.isPrimary).map((skill, index) => ({ ...skill, sortOrder: index })) }))}
     onDomainSkillNameChange={(domainId, skillId, name) => updateDomain(domainId, (domain) => ({ ...domain, skills: domain.skills.map((skill) => skill.id === skillId ? { ...skill, name } : skill) }))}
     onDomainSkillIconChange={(domainId, skillId, iconKey) => updateDomain(domainId, (domain) => ({ ...domain, skills: domain.skills.map((skill) => skill.id === skillId ? { ...skill, iconKey, metadata: { ...skill.metadata, icon_key: iconKey } } : skill) }))}
@@ -130,5 +134,14 @@ export default function PlayerStudioContent({ tab, entity, onEntityChange, regis
 
   if (tab === 'relationships') return <StudioRelationshipsPage relationships={draft.relationships} />;
 
-  return <div className="grid h-full grid-cols-[1fr_360px] gap-5 text-white"><section className="rounded-[18px] border border-white/10 bg-[#111927] p-6"><p className="text-[10px] font-bold uppercase tracking-[.18em] text-white/35">Final review</p><h2 className="mt-2 font-montserrat-alt text-[28px] font-extrabold">Save character</h2><p className="mt-3 max-w-[620px] text-[13px] leading-relaxed text-white/50">Changes stay in the editor until you press Save character. Only then is the complete character written to the database.</p><div className="mt-6 grid grid-cols-2 gap-3">{[['Name', draft.name || 'Missing'], ['Description', draft.description ? 'Complete' : 'Missing'], ['Domains', String(draft.domains.length)], ['Backpack items', String(draft.inventoryItems.length)], ['Library entries', String(draft.experiences.length)], ['Private notes', String(draft.notes.length)]].map(([label, value]) => <div key={label} className="rounded-[12px] border border-white/10 bg-white/[.03] px-4 py-3"><p className="text-[10px] uppercase tracking-wider text-white/35">{label}</p><p className="mt-1 truncate font-montserrat-alt text-[15px] font-bold">{value}</p></div>)}</div></section><aside className="flex flex-col rounded-[18px] border border-white/15 p-5"><h3 className="font-montserrat-alt text-[20px] font-extrabold">Ready to save?</h3>{validation.length ? <div className="mt-4 rounded-[12px] border border-red-300/15 bg-red-400/5 p-4"><p className="text-[11px] font-bold text-red-200">Complete before saving:</p><ul className="mt-2 list-inside list-disc text-[11px] leading-relaxed text-white/55">{validation.map((item) => <li key={item}>{item}</li>)}</ul></div> : <p className="mt-4 text-[12px] leading-relaxed text-white/50">{isDirty ? 'All required data is ready to save.' : 'There are no unsaved changes.'}</p>}<button type="button" onClick={() => void save()} disabled={Boolean(validation.length) || isSaving || !isDirty} className="mt-auto h-[52px] rounded-[12px] bg-white font-montserrat-alt text-[14px] font-extrabold text-[#172033] disabled:cursor-not-allowed disabled:opacity-30">{isSaving ? 'Saving character…' : entity.isDraft ? 'Save character' : 'Save changes'}</button>{status ? <p className={`mt-3 text-center text-[11px] ${status.includes('saved') ? 'text-emerald-300' : 'text-red-300'}`}>{status}</p> : null}</aside></div>;
+  const review = [
+    [t('name'), draft.name || t('missing')],
+    [t('description'), draft.description ? t('complete') : t('missing')],
+    [t('domains'), String(draft.domains.length)],
+    [t('backpackItems'), String(draft.inventoryItems.length)],
+    [t('libraryEntries'), String(draft.experiences.length)],
+    [t('privateNotes'), String(draft.notes.length)],
+  ];
+
+  return <div className="grid h-full grid-cols-[1fr_360px] gap-5 text-white"><section className="rounded-[18px] border border-white/10 bg-[#111927] p-6"><p className="text-[10px] font-bold uppercase tracking-[.18em] text-white/35">{t('finalReview')}</p><h2 className="mt-2 font-montserrat-alt text-[28px] font-extrabold">{t('saveCharacter')}</h2><p className="mt-3 max-w-[620px] text-[13px] leading-relaxed text-white/50">{t('saveExplanation')}</p><div className="mt-6 grid grid-cols-2 gap-3">{review.map(([label, value]) => <div key={label} className="rounded-[12px] border border-white/10 bg-white/[.03] px-4 py-3"><p className="text-[10px] uppercase tracking-wider text-white/35">{label}</p><p className="mt-1 truncate font-montserrat-alt text-[15px] font-bold">{value}</p></div>)}</div></section><aside className="flex flex-col rounded-[18px] border border-white/15 p-5"><h3 className="font-montserrat-alt text-[20px] font-extrabold">{t('readyToSave')}</h3>{validation.length ? <div className="mt-4 rounded-[12px] border border-red-300/15 bg-red-400/5 p-4"><p className="text-[11px] font-bold text-red-200">{t('completeBeforeSaving')}</p><ul className="mt-2 list-inside list-disc text-[11px] leading-relaxed text-white/55">{validation.map((item) => <li key={item}>{item}</li>)}</ul></div> : <p className="mt-4 text-[12px] leading-relaxed text-white/50">{isDirty ? t('readyMessage') : t('noChanges')}</p>}<button type="button" onClick={() => void save()} disabled={Boolean(validation.length) || isSaving || !isDirty} className="mt-auto h-[52px] rounded-[12px] bg-white font-montserrat-alt text-[14px] font-extrabold text-[#172033] disabled:cursor-not-allowed disabled:opacity-30">{isSaving ? t('savingCharacter') : entity.isDraft ? t('saveCharacter') : t('saveChanges')}</button>{status ? <p className={`mt-3 text-center text-[11px] ${statusIsSuccess ? 'text-emerald-300' : 'text-red-300'}`}>{status}</p> : null}</aside></div>;
 }

@@ -2,6 +2,7 @@
 
 import type { SceneImageItem } from '@/features/tablet/master/scene/types';
 import type { DensityPreset } from '@/lib/game/types';
+import { useTranslations } from 'next-intl';
 
 type TableSceneImageButtonProps = {
   image: SceneImageItem;
@@ -14,6 +15,7 @@ export default function TableSceneImageButton({
   density,
   onClick,
 }: TableSceneImageButtonProps) {
+  const t = useTranslations('Game');
   if (!image.imageUrl) {
     return null;
   }
@@ -27,7 +29,7 @@ export default function TableSceneImageButton({
         width: `${density.tableImageMaxWidth}px`,
         height: `${density.tableImageMaxHeight}px`,
       }}
-      aria-label={`Open image ${image.title}`}
+      aria-label={t('openImage', { title: image.title })}
     >
       <span
         className="relative flex h-full w-full items-center justify-center"

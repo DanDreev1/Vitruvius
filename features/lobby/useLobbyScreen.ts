@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { getOrCreateGuestUser } from '@/features/home/getOrCreateGuestUser';
 import {
   disbandLobby,
@@ -29,11 +30,7 @@ import {
   LOBBY_MIN_PARTICIPANTS,
   LOBBY_NOT_FOUND_MESSAGE,
   LOBBY_TIMEOUT_MESSAGE,
-  START_GAME_MIN_PLAYERS_REQUIRED_MESSAGE,
-  READY_NICKNAME_REQUIRED_MESSAGE,
-  START_GAME_NICKNAME_REQUIRED_MESSAGE,
   START_GAME_PREPARE_CHARACTERS_ERROR_MESSAGE,
-  START_GAME_VALIDATION_MESSAGE
 } from './constants';
 import { useLobbyRealtime } from './useLobbyRealtime';
 import { useLobbySwipe } from './useLobbySwipe';
@@ -81,6 +78,7 @@ function formatStartGameSubmitError(error: unknown) {
 
 export function useLobbyScreen({ code }: LobbyScreenProps) {
   const router = useRouter();
+  const t = useTranslations('Lobby');
 
   const [isLoading, setIsLoading] = useState(true);
   const [session, setSession] = useState<LiveSession | null>(null);
@@ -132,19 +130,19 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
   const canToggleReady = Boolean(currentParticipant);
   const readyFeedbackMessage =
     currentParticipant && !currentParticipantHasNickname && hasAttemptedReadyWithoutNickname
-      ? READY_NICKNAME_REQUIRED_MESSAGE
+      ? t('setNicknameReady')
       : null;
   const startGameMinPlayersFeedbackMessage =
     isMaster && !hasEnoughParticipants && hasAttemptedStartWithoutEnoughPlayers
-      ? START_GAME_MIN_PLAYERS_REQUIRED_MESSAGE
+      ? t('minimumPlayers')
       : null;
   const startGameNicknameFeedbackMessage =
     isMaster && hasParticipantsWithoutNickname && hasAttemptedStartWithoutNicknames
-      ? START_GAME_NICKNAME_REQUIRED_MESSAGE
+      ? t('setAllNicknames')
       : null;
   const startGameReadyFeedbackMessage =
     isMaster && !allParticipantsReady && hasAttemptedStartWithoutAllReady
-      ? START_GAME_VALIDATION_MESSAGE
+      ? t('allReady')
       : null;
   const avatarCooldownRemainingMs = avatarCooldownEndsAt
     ? Math.max(0, avatarCooldownEndsAt - avatarCooldownNow)
@@ -155,7 +153,7 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
   let avatarStatusMessage: string | null = null;
 
   if (isAvatarUploading) {
-    avatarStatusMessage = 'Uploading avatar...';
+    avatarStatusMessage = t('uploadingAvatar');
   } else if (avatarUploadError) {
     avatarStatusMessage = avatarUploadError;
   } else if (showAvatarCooldownNotice && isAvatarCooldownActive) {
@@ -406,7 +404,7 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
     const nextNickname = nicknameDraft.trim();
 
     if (!nextNickname) {
-      setNicknameError('Nickname cannot be empty');
+      setNicknameError(t('nicknameEmpty'));
       return;
     }
 
@@ -426,11 +424,11 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
       setIsNicknameModalOpen(false);
     } catch (error) {
       console.error(error);
-      setNicknameError('Could not save nickname');
+      setNicknameError(t('nicknameSaveError'));
     } finally {
       setIsSavingNickname(false);
     }
-  }, [currentParticipant, isSavingNickname, nicknameDraft]);
+  }, [currentParticipant, isSavingNickname, nicknameDraft, t]);
 
   const handleAvatarChangeRequest = useCallback(() => {
     if (!currentParticipant || isAvatarUploading) return false;
@@ -473,12 +471,12 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
       }
 
       if (!LOBBY_AVATAR_ALLOWED_MIME_TYPES.includes(file.type)) {
-        setAvatarUploadError('Only JPG, PNG, WEBP, or GIF images are allowed');
+        setAvatarUploadError(t('imageTypeError'));
         return;
       }
 
       if (file.size > LOBBY_AVATAR_MAX_FILE_SIZE_BYTES) {
-        setAvatarUploadError('Avatar must be 5 MB or smaller');
+        setAvatarUploadError(t('imageSizeError'));
         return;
       }
 
@@ -504,7 +502,7 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
         setShowAvatarCooldownNotice(false);
       } catch (error) {
         console.error(error);
-        setAvatarUploadError('Could not upload avatar');
+        setAvatarUploadError(t('avatarUploadError'));
       } finally {
         setIsAvatarUploading(false);
       }
@@ -513,7 +511,8 @@ export function useLobbyScreen({ code }: LobbyScreenProps) {
       avatarCooldownEndsAt,
       currentParticipant,
       currentUserId,
-      isAvatarUploading
+      isAvatarUploading,
+      t
     ]
   );
 

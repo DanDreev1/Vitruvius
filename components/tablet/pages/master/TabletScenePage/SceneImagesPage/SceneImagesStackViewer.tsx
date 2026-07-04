@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { motion } from 'framer-motion';
 
 import { SCENE_PLACEHOLDER_ICON_PATHS } from '@/features/tablet/master/scene/constants';
@@ -74,6 +75,7 @@ export default function SceneImagesStackViewer({
   onOpenLightbox,
   showVisibilityStatus = true,
 }: SceneImagesStackViewerProps) {
+  const t = useTranslations('StudioMaster');
   const containerRef = useRef<HTMLDivElement | null>(null);
   const wheelLockRef = useRef(false);
 
@@ -183,11 +185,11 @@ export default function SceneImagesStackViewer({
                 <div className="flex h-full w-full flex-col items-center justify-center gap-[14px] px-[24px]">
                   <img
                     src={SCENE_PLACEHOLDER_ICON_PATHS.upload}
-                    alt="Upload"
+                    alt={t('upload')}
                     className="h-[58px] w-[58px] object-contain"
                   />
                   <p className="text-center font-montserrat-alt text-[18px] font-extrabold text-black/80">
-                    Add image
+                    {t('addImage')}
                   </p>
                 </div>
               ) : (
@@ -213,7 +215,7 @@ export default function SceneImagesStackViewer({
 
                     {isActive && showVisibilityStatus ? (
                       <p className="mt-[4px] font-montserrat text-[11px] text-white/85">
-                        {item.isActive ? 'Visible to selected targets' : 'Hidden from players'}
+                        {item.isActive ? t('visibleTargets') : t('hiddenPlayers')}
                       </p>
                     ) : null}
                   </div>
@@ -231,7 +233,7 @@ export default function SceneImagesStackViewer({
             onClick={handlePrev}
             className="rounded-full bg-white px-[12px] py-[6px] font-montserrat text-[13px] font-bold text-black"
           >
-            Prev
+            {t('previous')}
           </button>
 
           <div className="min-w-[58px] text-center font-montserrat text-[13px] font-semibold text-white">
@@ -243,7 +245,7 @@ export default function SceneImagesStackViewer({
             onClick={handleNext}
             className="rounded-full bg-white px-[12px] py-[6px] font-montserrat text-[13px] font-bold text-black"
           >
-            Next
+            {t('next')}
           </button>
         </div>
       </div>

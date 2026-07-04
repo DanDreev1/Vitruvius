@@ -5,6 +5,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import {
   PLAYER_TABLET_DOMAIN_MAX_LEVEL,
@@ -421,6 +422,7 @@ function SkillCard({
   onSkillLevelChange?: TabletSkillsPageProps['onDomainSkillLevelChange'];
   onSkillDelete?: TabletSkillsPageProps['onDomainSkillDelete'];
 }) {
+  const t = useTranslations('StudioEditor');
   const displayLevel = skill.isPrimary ? domain.level : skill.level;
   const canEdit = isEditable && isEditMode;
   const isIconPickerOpen =
@@ -439,16 +441,16 @@ function SkillCard({
     >
       {skill.isPrimary ? (
         <span className="absolute right-[12px] top-[-13px] rounded-full border border-white/55 bg-[#172033] px-[12px] py-[4px] font-montserrat text-[12px] font-bold uppercase tracking-[0.08em] text-white">
-          Main
+          {t('mainSkill')}
         </span>
       ) : canEdit ? (
         <button
           type="button"
           onClick={() => onSkillDelete?.(domain.id, skill.id)}
           className="absolute right-[10px] top-[-13px] rounded-full border border-white/25 bg-[#172033] px-[10px] py-[4px] font-montserrat text-[12px] font-bold text-white transition-colors hover:border-white"
-          title="Delete skill"
+          title={t('deleteSkill')}
         >
-          Delete
+          {t('delete')}
         </button>
       ) : null}
 
@@ -465,7 +467,7 @@ function SkillCard({
               })
             }
             className="flex h-[36px] w-[36px] items-center justify-center overflow-hidden rounded-full border border-white transition-colors disabled:cursor-default"
-            title={canEdit ? 'Change skill icon' : skill.name}
+            title={canEdit ? t('changeSkillIcon') : skill.name}
           >
             <IconImage
               iconKey={skill.iconKey}
@@ -498,7 +500,7 @@ function SkillCard({
               onSkillNameChange?.(domain.id, skill.id, event.target.value)
             }
             className="h-[36px] min-w-0 flex-1 rounded-[12px] border border-white/25 bg-white/8 px-[10px] font-montserrat-alt text-[20px] font-extrabold leading-none text-white outline-none focus:border-white"
-            aria-label="Skill name"
+            aria-label={t('skillNameLabel')}
           />
         ) : (
           <h3 className="min-w-0 flex-1 truncate font-montserrat-alt text-[23px] font-extrabold leading-none">
@@ -521,12 +523,12 @@ function SkillCard({
             onSkillDescriptionChange?.(domain.id, skill.id, event.target.value)
           }
           className="mt-[12px] h-[158px] w-full resize-none rounded-[14px] border border-white/20 bg-white/8 px-[12px] py-[10px] font-montserrat text-[17px] font-medium leading-[1.2] text-white outline-none placeholder:text-white/40 focus:border-white"
-          aria-label={`${skill.name} description`}
-          placeholder="Skill description"
+          aria-label={t('skillDescriptionLabel', { name: skill.name })}
+          placeholder={t('skillDescriptionPlaceholder')}
         />
       ) : (
         <p className="mt-[12px] font-montserrat text-[18px] font-medium leading-[1.18] text-white/85">
-          {skill.description || 'No skill description yet.'}
+          {skill.description || t('noSkillDescription')}
         </p>
       )}
     </article>
@@ -554,6 +556,7 @@ export default function TabletSkillsPage({
   onDomainSkillDescriptionChange,
   onDomainSkillLevelChange,
 }: TabletSkillsPageProps) {
+  const t = useTranslations('StudioEditor');
   const domains = useMemo(() => {
     const sourceDomains = isEditMode
       ? draft?.domains ?? []
@@ -618,7 +621,7 @@ export default function TabletSkillsPage({
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center font-montserrat-alt text-[24px] font-extrabold text-white/70">
-        Loading skills...
+        {t('loadingSkills')}
       </div>
     );
   }
@@ -626,7 +629,7 @@ export default function TabletSkillsPage({
   if (error) {
     return (
       <div className="flex h-full items-center justify-center font-montserrat-alt text-[24px] font-extrabold text-white/70">
-        Character skills are unavailable right now.
+        {t('skillsUnavailable')}
       </div>
     );
   }
@@ -634,7 +637,7 @@ export default function TabletSkillsPage({
   if (!activeDomain) {
     return (
       <div className="flex h-full items-center justify-center font-montserrat-alt text-[24px] font-extrabold text-white/70">
-        No domains yet.
+        {t('noDomains')}
       </div>
     );
   }
@@ -735,7 +738,7 @@ export default function TabletSkillsPage({
               type="button"
               onClick={handleAddDomain}
               className="flex h-[42px] w-[42px] items-center justify-center rounded-full border border-white/45 font-montserrat-alt text-[26px] font-extrabold leading-none text-white transition-colors hover:border-white"
-              title="Add domain"
+              title={t('addDomain')}
             >
               +
             </button>
@@ -780,7 +783,7 @@ export default function TabletSkillsPage({
                       )
                     }
                     className="flex h-[44px] w-[44px] items-center justify-center overflow-hidden rounded-full border border-white/60 transition-colors hover:border-white disabled:cursor-default"
-                    title={canEdit ? 'Change domain icon' : activeDomain.name}
+                    title={canEdit ? t('changeDomainIcon') : activeDomain.name}
                   >
                     <IconImage
                       iconKey={activeDomain.iconKey}
@@ -813,7 +816,7 @@ export default function TabletSkillsPage({
                       onDomainNameChange?.(activeDomain.id, event.target.value)
                     }
                     className="h-[46px] w-[360px] rounded-[14px] border border-white/25 bg-white/8 px-[14px] text-center font-montserrat-alt text-[30px] font-extrabold leading-none text-white outline-none focus:border-white"
-                    aria-label="Domain name"
+                    aria-label={t('domainName')}
                   />
                 ) : (
                   <h2 className="max-w-[390px] truncate text-center font-montserrat-alt text-[34px] font-extrabold leading-none">
@@ -835,9 +838,9 @@ export default function TabletSkillsPage({
                     type="button"
                     onClick={handleDeleteDomain}
                     className="rounded-full border border-white/25 px-[14px] py-[7px] font-montserrat text-[13px] font-bold text-white transition-colors hover:border-white"
-                    title="Delete domain"
+                    title={t('deleteDomain')}
                   >
-                    Delete
+                    {t('delete')}
                   </button>
                 ) : null}
               </div>
@@ -848,7 +851,7 @@ export default function TabletSkillsPage({
                   onClick={() => setSkillPage((page) => Math.max(0, page - 1))}
                   disabled={currentSkillPage <= 0}
                   className="absolute left-[18px] top-[110px] flex h-[56px] w-[56px] items-center justify-center rounded-full border-[4px] border-white/65 font-montserrat-alt text-[34px] font-extrabold leading-none text-white transition-opacity hover:opacity-80 disabled:opacity-35"
-                  title="Previous skills"
+                  title={t('previousSkills')}
                 >
                   {'<'}
                 </button>
@@ -893,7 +896,7 @@ export default function TabletSkillsPage({
                   }
                   disabled={currentSkillPage >= skillPages.length - 1}
                   className="absolute right-[18px] top-[110px] flex h-[56px] w-[56px] items-center justify-center rounded-full border-[4px] border-white/80 font-montserrat-alt text-[34px] font-extrabold leading-none text-white transition-opacity hover:opacity-80 disabled:opacity-35"
-                  title="Next skills"
+                  title={t('nextSkills')}
                 >
                   {'>'}
                 </button>
@@ -906,7 +909,7 @@ export default function TabletSkillsPage({
                     onClick={handleAddSkill}
                     className="rounded-full border border-white/30 px-[16px] py-[8px] font-montserrat text-[13px] font-bold text-white transition-colors hover:border-white"
                   >
-                    Add skill
+                    {t('addSkill')}
                   </button>
                 ) : null}
 

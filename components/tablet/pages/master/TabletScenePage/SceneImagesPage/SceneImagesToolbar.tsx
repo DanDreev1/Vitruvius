@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import type { SceneImagesViewMode } from '@/features/tablet/master/scene/types';
 
 type SceneImagesToolbarProps = {
@@ -21,6 +23,7 @@ export default function SceneImagesToolbar({
   onToggleImageActive,
   onChangeViewMode,
 }: SceneImagesToolbarProps) {
+  const t = useTranslations('StudioMaster');
   return (
     <div className="flex flex-wrap items-center gap-[12px]">
       <button
@@ -28,7 +31,7 @@ export default function SceneImagesToolbar({
         onClick={onAddImage}
         className="rounded-[14px] bg-white px-[18px] py-[10px] font-montserrat text-[15px] font-bold text-black"
       >
-        Add image
+        {t('addImage')}
       </button>
 
       <button
@@ -42,7 +45,7 @@ export default function SceneImagesToolbar({
             : 'cursor-not-allowed bg-white/30 text-black/50',
         ].join(' ')}
       >
-        Delete
+        {t('delete')}
       </button>
 
       <button
@@ -56,7 +59,7 @@ export default function SceneImagesToolbar({
             : 'cursor-not-allowed bg-white/30 text-black/50',
         ].join(' ')}
       >
-        {isCurrentImageActive ? 'Hide' : 'Show'}
+        {isCurrentImageActive ? t('hide') : t('show')}
       </button>
 
       <div className="ml-auto flex items-center gap-[8px] rounded-full bg-[#5C5C5C] p-[6px]">
@@ -70,7 +73,7 @@ export default function SceneImagesToolbar({
               : 'bg-transparent text-white',
           ].join(' ')}
         >
-          Stack
+          {t('stack')}
         </button>
 
         <button
@@ -83,7 +86,7 @@ export default function SceneImagesToolbar({
               : 'bg-transparent text-white',
           ].join(' ')}
         >
-          Fit
+          {t('fit')}
         </button>
       </div>
     </div>

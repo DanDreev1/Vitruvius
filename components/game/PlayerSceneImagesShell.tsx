@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import type {
   SceneImageItem,
@@ -21,6 +22,7 @@ export default function PlayerSceneImagesShell({
   isLoading,
   error,
 }: PlayerSceneImagesShellProps) {
+  const t = useTranslations('Game');
   const [viewMode, setViewMode] = useState<SceneImagesViewMode>('stack');
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -58,7 +60,7 @@ export default function PlayerSceneImagesShell({
                   : 'bg-transparent text-white',
               ].join(' ')}
             >
-              Stack
+              {t('stack')}
             </button>
 
             <button
@@ -71,7 +73,7 @@ export default function PlayerSceneImagesShell({
                   : 'bg-transparent text-white',
               ].join(' ')}
             >
-              Fit
+              {t('fit')}
             </button>
           </div>
         </div>
@@ -80,10 +82,10 @@ export default function PlayerSceneImagesShell({
           <div className="mb-[14px] flex items-center justify-between">
             <div>
               <p className="font-montserrat-alt text-[28px] font-extrabold text-white">
-                Images
+                {t('images')}
               </p>
               <p className="font-montserrat text-[14px] text-white/70">
-                Mode: {viewMode === 'stack' ? 'Stack' : 'Fit'}
+                {t('mode', { mode: viewMode === 'stack' ? t('stack') : t('fit') })}
               </p>
             </div>
 
@@ -101,13 +103,13 @@ export default function PlayerSceneImagesShell({
           {isLoading ? (
             <div className="flex min-h-0 flex-1 items-center justify-center rounded-[24px] bg-[#0B1327]">
               <p className="font-montserrat text-[16px] text-white/75">
-                Loading images...
+                {t('loadingImages')}
               </p>
             </div>
           ) : !items.length ? (
             <div className="flex min-h-0 flex-1 items-center justify-center rounded-[24px] bg-[#0B1327]">
               <p className="font-montserrat text-[16px] text-white/75">
-                No images available
+                {t('noImages')}
               </p>
             </div>
           ) : viewMode === 'stack' ? (
@@ -144,7 +146,7 @@ export default function PlayerSceneImagesShell({
                       </p>
 
                       <div className="shrink-0 rounded-full bg-white/10 px-[12px] py-[6px] font-montserrat text-[13px] text-white">
-                        Fit
+                        {t('fit')}
                       </div>
                     </div>
                   </div>
@@ -160,7 +162,7 @@ export default function PlayerSceneImagesShell({
                     }
                     className="rounded-full bg-white px-[12px] py-[6px] font-montserrat text-[13px] font-bold text-black"
                   >
-                    Prev
+                    {t('previous')}
                   </button>
 
                   <div className="min-w-[52px] text-center font-montserrat text-[13px] font-semibold text-white">
@@ -176,7 +178,7 @@ export default function PlayerSceneImagesShell({
                     }
                     className="rounded-full bg-white px-[12px] py-[6px] font-montserrat text-[13px] font-bold text-black"
                   >
-                    Next
+                    {t('next')}
                   </button>
                 </div>
               </div>

@@ -8,7 +8,7 @@ type GameSessionData = {
   created_by: string;
 };
 
-export async function getGameSessionByCode(code: string): Promise<{
+export async function getGameSessionByCode(code: string, labels = { master: 'Master', player: 'Player' }): Promise<{
   session: GameSessionData;
   participants: GameParticipant[];
 }> {
@@ -51,7 +51,7 @@ export async function getGameSessionByCode(code: string): Promise<{
     role: participant.role,
     displayName:
       participant.display_name ??
-      (participant.role === 'master' ? 'Master' : 'Player'),
+      (participant.role === 'master' ? labels.master : labels.player),
     avatarUrl: participant.avatar_url ?? null,
     joinedAt: participant.joined_at,
     connectionStatus:

@@ -1,4 +1,5 @@
 'use client';
+import { useTranslations } from 'next-intl';
 
 type NicknameModalProps = {
     isOpen: boolean;
@@ -19,6 +20,8 @@ export function NicknameModal({
     onClose,
     onSave
 }: NicknameModalProps) {
+    const t = useTranslations('Lobby');
+    const common = useTranslations('Common');
     if (!isOpen) return null;
 
     const isSaveDisabled = isSaving || value.trim().length === 0;
@@ -47,14 +50,14 @@ export function NicknameModal({
                     id="nickname-modal-title"
                     className="font-montserrat-alt text-[28px] font-extrabold leading-none text-white min-[640px]:text-[34px]"
                 >
-                    Edit nickname
+                    {t('editNickname')}
                 </h2>
 
                 <label
                     htmlFor="nickname-input"
                     className="font-montserrat mt-7 block text-[14px] font-bold text-[#D6B25E] min-[640px]:text-[16px]"
                 >
-                    Nickname
+                    {t('nickname')}
                 </label>
 
                 <input
@@ -62,7 +65,7 @@ export function NicknameModal({
                     value={value}
                     onChange={(event) => onChange(event.currentTarget.value)}
                     className="font-montserrat mt-3 h-[58px] w-full rounded-full border border-white/15 bg-[#0B1020] px-6 text-[18px] font-bold text-white outline-none transition-colors placeholder:text-white/35 focus:border-[#D6B25E] min-[640px]:h-[66px] min-[640px]:text-[20px]"
-                    placeholder="Nickname"
+                    placeholder={t('nickname')}
                     autoFocus
                     maxLength={36}
                     disabled={isSaving}
@@ -79,7 +82,7 @@ export function NicknameModal({
                         onClick={onClose}
                         disabled={isSaving}
                     >
-                        Cancel
+                        {common('cancel')}
                     </button>
 
                     <button
@@ -87,7 +90,7 @@ export function NicknameModal({
                         className="font-montserrat-alt flex min-h-[54px] items-center justify-center rounded-full bg-white px-8 text-[18px] font-bold text-black transition-colors disabled:cursor-not-allowed disabled:opacity-50"
                         disabled={isSaveDisabled}
                     >
-                        {isSaving ? 'Saving...' : 'Save'}
+                        {isSaving ? t('saving') : common('save')}
                     </button>
                 </div>
             </form>

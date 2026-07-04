@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import Header from "@/components/ui/Header";
@@ -11,12 +12,22 @@ import { joinRoomByCode } from "@/features/home/joinRoomByCode";
 import { useResumeActiveGame } from "@/features/home/useResumeActiveGame";
 
 export default function HomePage() {
+  const t = useTranslations('Home');
   const router = useRouter();
 
   const [roomCode, setRoomCode] = useState("");
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isJoiningRoom, setIsJoiningRoom] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+
+  const getJoinErrorMessage = (error: unknown) => {
+    const message = error instanceof Error ? error.message : '';
+    if (message === 'Room not found') return t('roomNotFound');
+    if (message === 'This room is no longer available') return t('roomUnavailable');
+    if (message === 'This game has already started') return t('gameStarted');
+    if (message.startsWith('Room code must contain')) return t('invalidCode');
+    return t('joinError');
+  };
 
   const {
     isChecking,
@@ -35,7 +46,7 @@ export default function HomePage() {
     } catch (error) {
       console.error(error);
       setErrorMessage(
-        error instanceof Error ? error.message : "Failed to create room.",
+        t('createError'),
       );
     } finally {
       setIsCreatingRoom(false);
@@ -47,7 +58,7 @@ export default function HomePage() {
       setErrorMessage("");
 
       if (roomCode.length !== 6) {
-        setErrorMessage("Room code must contain exactly 6 digits.");
+        setErrorMessage(t('invalidCode'));
         return;
       }
 
@@ -57,9 +68,7 @@ export default function HomePage() {
       router.push(`/lobby/${result.code}`);
     } catch (error) {
       console.error(error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "Failed to join room.",
-      );
+      setErrorMessage(getJoinErrorMessage(error));
     } finally {
       setIsJoiningRoom(false);
     }
@@ -75,7 +84,7 @@ export default function HomePage() {
       <main className="flex min-h-[calc(100dvh-86px)] items-center justify-center px-6">
         <div className="text-center">
           <h1 className="font-montserrat-alt text-[28px] font-extrabold text-[#D6B25E]">
-            Checking active session...
+            {t('checking')}
           </h1>
         </div>
       </main>
@@ -87,11 +96,11 @@ export default function HomePage() {
       <main className="flex min-h-[calc(100dvh-86px)] items-center justify-center px-6">
         <div className="max-w-[460px] text-center">
           <h1 className="font-montserrat-alt text-[28px] font-extrabold text-[#D6B25E]">
-            Resuming your active game...
+            {t('resuming')}
           </h1>
 
           <p className="font-montserrat mt-4 text-white/80">
-            You are already participating in an active session.
+            {t('alreadyActive')}
           </p>
 
           {showManualContinue ? (
@@ -100,7 +109,7 @@ export default function HomePage() {
               onClick={handleContinueToGame}
               className="btn-primary mt-6"
             >
-              Continue to game
+              {t('continue')}
             </button>
           ) : null}
         </div>
@@ -128,9 +137,9 @@ export default function HomePage() {
           </h1>
 
           <p className="font-montserrat-alt mt-3 text-center text-[20px] font-extrabold leading-[1.12] text-white">
-            Gather your party around one digital
+            {t('taglineFirst')}
             <br />
-            table
+            {t('taglineSecond')}
           </p>
 
           <div className="mt-6 flex w-full max-w-[560px] flex-col gap-[14px]">
@@ -140,7 +149,7 @@ export default function HomePage() {
               disabled={isCreatingRoom || isJoiningRoom}
               className="btn-primary home-compact-button"
             >
-              {isCreatingRoom ? "Creating Room..." : "Create Room"}
+              {isCreatingRoom ? t('creating') : t('createRoom')}
             </button>
 
             <div className="grid grid-cols-[1fr_150px] gap-4">
@@ -155,7 +164,7 @@ export default function HomePage() {
                     void handleJoinRoom();
                   }
                 }}
-                placeholder="Enter the code"
+                placeholder={t('codePlaceholder')}
                 maxLength={6}
                 className="font-montserrat h-[60px] rounded-full bg-white px-7 text-[20px] font-medium text-black outline-none placeholder:text-[#9A9A9A]"
               />
@@ -166,20 +175,20 @@ export default function HomePage() {
                 disabled={isJoiningRoom || isCreatingRoom}
                 className="btn-primary home-compact-button"
               >
-                {isJoiningRoom ? "Joining..." : "Join"}
+                {isJoiningRoom ? t('joining') : t('join')}
               </button>
             </div>
 
             <div className="flex items-center gap-3 md:gap-4">
               <div className="h-px flex-1 bg-white/60" />
               <span className="font-montserrat-alt text-[22px] font-extrabold text-white">
-                Or
+                {t('or')}
               </span>
               <div className="h-px flex-1 bg-white/60" />
             </div>
 
             <p className="font-montserrat-alt text-center text-[26px] font-extrabold leading-[1.15] text-white">
-              Prepare for the game in advance
+              {t('prepare')}
             </p>
 
             <button
@@ -188,7 +197,7 @@ export default function HomePage() {
               disabled={isCreatingRoom || isJoiningRoom}
               className="btn-primary home-compact-button"
             >
-              Vitruvian Studio
+              Vitruvius Studio
             </button>
 
             {errorMessage ? (

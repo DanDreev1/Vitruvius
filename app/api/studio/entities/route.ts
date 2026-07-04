@@ -8,10 +8,11 @@ export async function POST(request: Request) {
   try {
     const { admin, user } = await authenticateSessionExitRequest(request);
     if (user.is_anonymous) return Response.json({ error: 'A permanent account is required.' }, { status: 403 });
-    const body = (await request.json()) as { kind?: EntityKind };
+    const body = (await request.json()) as { kind?: EntityKind; data?: { name?: string } };
     if (body.kind === 'character') return Response.json({ error: 'Characters must be completed before they are created.' }, { status: 400 });
     if (body.kind !== 'world') return Response.json({ error: 'Invalid entity type.' }, { status: 400 });
-    const { data, error } = await admin.from('worlds').insert({ owner_user_id: user.id, name: 'New world', avatar_url: null }).select('id, name, avatar_url').single();
+    const name = body.data?.name?.trim() || 'New world';
+    const { data, error } = await admin.from('worlds').insert({ owner_user_id: user.id, name, avatar_url: null }).select('id, name, avatar_url').single();
     if (error) throw error;
     return Response.json({ entity: data });
   } catch (error) {

@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 
 import { getUserProfile, PROFILE_UPDATED_EVENT } from '@/features/profile/api';
@@ -26,6 +27,7 @@ export default function Header({
   avatarPlaceholderSrc = '/Profile_Placeholder.png',
   fixedLayout = false,
 }: HeaderProps) {
+  const t = useTranslations('Header');
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
   const [hasSession, setHasSession] = useState(isAuthenticated);
 
@@ -58,12 +60,12 @@ export default function Header({
       <div className={fixedLayout ? 'flex h-[120px] items-center justify-between px-20' : 'flex h-[56px] items-center justify-between px-3 min-[480px]:h-[90px] min-[480px]:px-10 min-[768px]:h-[120px] min-[768px]:px-20'}>
         <Link
           href="/"
-          aria-label="Go to home page"
+          aria-label={t('homeAria')}
           className="flex items-center gap-2 min-[480px]:gap-3"
         >
           <Image
             src={logoSrc}
-            alt="Vitruvius logo"
+            alt={t('logoAlt')}
             priority
             width={160}
             height={90}
@@ -80,17 +82,17 @@ export default function Header({
             href={creatorsHref}
             className={`font-montserrat-alt font-extrabold leading-none text-[#8D8D8D] transition-colors duration-200 hover:text-white ${fixedLayout ? 'text-[22px]' : 'text-[12px] min-[480px]:text-[18px] min-[768px]:text-[22px]'}`}
           >
-            Creators
+            {t('creators')}
           </Link>
 
           <Link
             href={profileHref}
-            aria-label="Open profile page"
+            aria-label={t('profileAria')}
             className={`flex items-center justify-center overflow-hidden rounded-full border border-white bg-black transition-colors duration-200 hover:border-[#D6B25E] ${fixedLayout ? 'h-[48px] w-[48px]' : 'h-[30px] w-[30px] min-[480px]:h-[40px] min-[480px]:w-[40px] min-[768px]:h-[48px] min-[768px]:w-[48px]'}`}
           >
             <Image
               src={currentAvatar}
-              alt="Profile avatar"
+              alt={t('avatarAlt')}
               width={48}
               height={48}
               unoptimized

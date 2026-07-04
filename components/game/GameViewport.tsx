@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from 'next-intl';
 
 import { getAnchoredSeatPosition } from "@/lib/game/getAnchoredSeatPosition";
 import { getDensityPreset } from "@/lib/game/getDensityPreset";
@@ -53,6 +54,7 @@ export default function GameViewport({
   onTabletClick,
   onTableImageClick,
 }: GameViewportProps) {
+  const t = useTranslations('Game');
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
@@ -292,7 +294,7 @@ export default function GameViewport({
               top={hoverCardPosition.top}
               name={hoveredCard.participant.displayName}
               role={
-                hoveredCard.participant.role === "master" ? "Master" : "Player"
+                hoveredCard.participant.role === "master" ? t('master') : t('player')
               }
               avatarUrl={hoveredCard.participant.avatarUrl}
               width={hoverCardMetrics.cardWidth}

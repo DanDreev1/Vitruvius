@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { useLobbyScreen } from '@/features/lobby/useLobbyScreen';
 import type { LobbyScreenProps } from '@/features/lobby/types';
 import BackHomeButton from '@/components/ui/BackHomeButton';
@@ -9,6 +10,7 @@ import { LobbyExitModal } from './LobbyExitModal';
 import { NicknameModal } from './NicknameModal';
 
 export default function LobbyScreen({ code }: LobbyScreenProps) {
+    const t = useTranslations('Lobby');
     const {
         isLoading,
         session,
@@ -77,18 +79,18 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                             <BackHomeButton
                                 onClick={handleRequestLobbyExit}
                                 disabled={isLoading || isLobbyExitSubmitting}
-                                label="Leave game"
+                                label={t('leaveGame')}
                             />
                         </div>
 
                         <div className="mt-24 mb-10 flex w-full flex-col items-center text-center md:mb-12">
                             <h1 className="font-montserrat-alt mb-6 text-[60px] font-bold leading-none">
-                                Waiting for the players
+                                {t('waiting')}
                             </h1>
 
                             <div className="flex flex-row items-center gap-5">
                                 <p className="font-montserrat text-[32px] font-bold leading-none">
-                                    Code: {session?.code ?? code}
+                                    {t('code', {code: session?.code ?? code})}
                                 </p>
 
                                 <button
@@ -96,7 +98,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                     onClick={handleCopyCode}
                                     className="btn-primary w-full max-w-[150px] sm:w-auto"
                                 >
-                                    {copied ? 'Copied' : 'Copy'}
+                                    {copied ? t('copied') : t('copy')}
                                 </button>
                             </div>
 
@@ -145,7 +147,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                             <div className="w-1/2 px-2 lg:px-16">
                                                 <div className="mx-auto flex w-full max-w-[560px] flex-col items-center text-center">
                                                     <h2 className="font-montserrat-alt mb-8 text-[32px] font-bold leading-none md:text-[40px]">
-                                                        Edit profile
+                                                        {t('editProfile')}
                                                     </h2>
 
                                                     <div className="mb-8 flex w-full items-center justify-center gap-5">
@@ -159,8 +161,8 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                                                     }
                                                                 }}
                                                                 disabled={isAvatarUploadDisabled}
-                                                                aria-label="Change avatar"
-                                                                title="Change avatar"
+                                                                aria-label={t('changeAvatar')}
+                                                                title={t('changeAvatar')}
                                                             >
                                                                 <span
                                                                     className="block h-[100px] w-[100px] overflow-hidden rounded-full border-2 border-white/10 bg-[#8B8B8B] transition-colors group-hover:border-[#D6B25E] group-focus-visible:border-[#D6B25E]"
@@ -169,7 +171,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                                                     {currentParticipant?.avatar_url ? (
                                                                         <img
                                                                             src={currentParticipant.avatar_url}
-                                                                            alt="Profile avatar"
+                                                                            alt={t('profileAvatar')}
                                                                             className="h-full w-full object-cover"
                                                                         />
                                                                     ) : null}
@@ -206,10 +208,10 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
 
                                                         <div className="min-w-0 text-left">
                                                             <p className="font-montserrat text-[22px] font-bold leading-none md:text-[30px]">
-                                                                {currentParticipant?.display_name ?? 'Nickname'}
+                                                                {currentParticipant?.display_name ?? t('nickname')}
                                                             </p>
                                                             <p className="font-montserrat mt-2 text-[18px] leading-none text-[#E7E7E7] md:text-[22px]">
-                                                                Role: {currentParticipant?.role === 'master' ? 'Master' : 'Player'}
+                                                                {t('role', {role: currentParticipant?.role === 'master' ? t('master') : t('player')})}
                                                             </p>
                                                         </div>
 
@@ -224,7 +226,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                                         onClick={handleChangeNickname}
                                                         className="btn-primary max-w-[560px]"
                                                     >
-                                                        Change nickname
+                                                        {t('changeNickname')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -233,7 +235,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                             <div className="w-1/2 px-2 lg:px-16">
                                                 <div className="mx-auto flex w-full max-w-[560px] flex-col items-center text-center">
                                                     <h2 className="font-montserrat-alt mb-8 text-[28px] font-bold leading-none md:text-[36px]">
-                                                        {isMaster ? 'Choose world' : 'Choose character'}
+                                                        {isMaster ? t('chooseWorld') : t('chooseCharacter')}
                                                     </h2>
 
                                                     <div className="w-full rounded-[28px] border border-white/15 bg-white/5 p-4 text-left">
@@ -273,12 +275,12 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                                                                         {world.name}
                                                                                     </p>
                                                                                     <p className="font-montserrat mt-2 line-clamp-2 text-[15px] text-[#E7E7E7]">
-                                                                                        Saved world
+                                                                                        {t('savedWorld')}
                                                                                     </p>
                                                                                 </div>
 
                                                                                 <div className="font-montserrat text-[14px] font-bold">
-                                                                                    {isSelected ? 'Selected' : 'Choose'}
+                                                                                    {isSelected ? t('selected') : t('choose')}
                                                                                 </div>
                                                                             </button>
                                                                         );
@@ -325,7 +327,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                                                             </div>
 
                                                                             <div className="text-[14px] font-bold">
-                                                                                {isSelected ? 'Selected' : 'Choose'}
+                                                                                {isSelected ? t('selected') : t('choose')}
                                                                             </div>
                                                                         </button>
                                                                     );
@@ -364,7 +366,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                     <aside className="w-full border-l-2 border-[#7C5CFF] px-5 py-10">
                         <div className="flex h-full min-h-[620px] flex-col">
                             <h2 className="font-montserrat-alt mb-7 text-[27px] font-bold leading-none">
-                                Players in lobby: {participants.length}
+                                {t('players', {count: participants.length})}
                             </h2>
 
                             <div className="flex-1 space-y-5 overflow-y-auto pr-2">
@@ -382,10 +384,10 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
 
                                         <div className="min-w-0 flex-1">
                                             <p className="font-montserrat text-[20px] font-bold leading-none">
-                                                {participant.display_name || 'Nickname'}
+                                                {participant.display_name || t('nickname')}
                                             </p>
                                             <p className="font-montserrat mt-2 text-[16px] leading-none text-[#E7E7E7]">
-                                                Role: {participant.role === 'master' ? 'Master' : 'Player'}
+                                                {t('role', {role: participant.role === 'master' ? t('master') : t('player')})}
                                             </p>
                                         </div>
 
@@ -404,7 +406,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                     className="btn-primary"
                                     disabled={isLoading || !canToggleReady}
                                 >
-                                    {currentParticipant?.is_ready ? 'Not Ready' : 'Ready'}
+                                    {currentParticipant?.is_ready ? t('notReady') : t('ready')}
                                 </button>
 
                                 {isMaster && (
@@ -414,7 +416,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                         className="btn-primary"
                                         disabled={isLoading || !currentParticipant || isStartingGame}
                                     >
-                                        {isStartingGame ? 'Starting...' : 'Start Game'}
+                                        {isStartingGame ? t('starting') : t('startGame')}
                                     </button>
                                 )}
                             </div>
@@ -422,7 +424,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                             {lobbyActionFeedbackMessages.length > 0 ? (
                                 <div className="mt-4 rounded-[18px] border border-[#D6B25E]/30 bg-[#D6B25E]/10 px-4 py-3 text-left shadow-[0_12px_28px_rgba(0,0,0,0.18)]">
                                     <p className="font-montserrat-alt text-[15px] font-bold leading-none text-[#D6B25E]">
-                                        Action needed
+                                        {t('actionNeeded')}
                                     </p>
                                     <div className="mt-2 space-y-1">
                                         {lobbyActionFeedbackMessages.map((message) => (
@@ -438,7 +440,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                             ) : null}
 
                             <p className="font-montserrat mt-4 text-center text-[14px] text-white/60">
-                                Ready: {readyCount}/{participants.length}
+                                {t('readyCount', {ready: readyCount, total: participants.length})}
                             </p>
                         </div>
                     </aside>

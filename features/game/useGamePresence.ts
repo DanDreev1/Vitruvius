@@ -16,6 +16,7 @@ type UseGamePresenceProps = {
   sessionId: string | null;
   currentUserId: string | null;
   onParticipantsSync: (participants: GameParticipant[]) => void;
+  roleLabels: { master: string; player: string };
 };
 
 function getEffectiveConnectionStatus(
@@ -43,7 +44,7 @@ function mapParticipantRow(row: {
   joined_at: string;
   connection_status: 'online' | 'offline' | null;
   last_seen_at: string | null;
-}): GameParticipant {
+}, roleLabels: { master: string; player: string }): GameParticipant {
   const dbStatus = row.connection_status === 'offline' ? 'offline' : 'online';
 
   return {
@@ -51,7 +52,7 @@ function mapParticipantRow(row: {
     userId: row.user_id,
     role: row.role,
     displayName:
-      row.display_name ?? (row.role === 'master' ? 'Master' : 'Player'),
+      row.display_name ?? (row.role === 'master' ? roleLabels.master : roleLabels.player),
     avatarUrl: row.avatar_url ?? null,
     joinedAt: row.joined_at,
     lastSeenAt: row.last_seen_at,
@@ -90,6 +91,7 @@ export function useGamePresence({
   sessionId,
   currentUserId,
   onParticipantsSync,
+  roleLabels,
 }: UseGamePresenceProps) {
   const heartbeatInFlightRef = useRef(false);
   const syncInFlightRef = useRef(false);
@@ -162,7 +164,7 @@ export function useGamePresence({
           return;
         }
 
-        const mappedParticipants = data.map(mapParticipantRow);
+        const mappedParticipants = data.map((row) => mapParticipantRow(row, roleLabels));
 
         if (
           areParticipantsVisuallyEqual(
@@ -239,5 +241,5 @@ export function useGamePresence({
 
       void markOffline();
     };
-  }, [sessionId, currentUserId]);
+  }, [sessionId, currentUserId, roleLabels]);
 }

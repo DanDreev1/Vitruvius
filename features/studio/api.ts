@@ -26,8 +26,8 @@ async function entityRequest<T>(method: 'POST' | 'DELETE', body: object) {
   return payload as T;
 }
 
-export async function createStudioEntity(role: StudioRole) {
-  const result = await entityRequest<{ entity: { id: string; name: string; avatar_url: string | null } }>('POST', { kind: role === 'master' ? 'world' : 'character' });
+export async function createStudioEntity(role: StudioRole, data?: { name?: string }) {
+  const result = await entityRequest<{ entity: { id: string; name: string; avatar_url: string | null } }>('POST', { kind: role === 'master' ? 'world' : 'character', data });
   return { id: result.entity.id, name: result.entity.name, avatarUrl: result.entity.avatar_url } satisfies StudioEntity;
 }
 

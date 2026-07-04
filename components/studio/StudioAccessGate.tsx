@@ -2,9 +2,11 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function StudioAccessGate({ children }: { children: React.ReactNode }) {
+  const t = useTranslations('Studio');
   const router = useRouter();
   const [allowed, setAllowed] = useState(false);
 
@@ -21,6 +23,6 @@ export default function StudioAccessGate({ children }: { children: React.ReactNo
     return () => { active = false; };
   }, [router]);
 
-  if (!allowed) return <div className="grid min-h-screen place-items-center bg-[#0B1020] font-montserrat text-sm text-white/45">Checking Studio access…</div>;
+  if (!allowed) return <div className="grid min-h-screen place-items-center bg-[#0B1020] font-montserrat text-sm text-white/45">{t('checkingAccess')}</div>;
   return children;
 }

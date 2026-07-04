@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 type LobbyCountdownProps = {
     cleanupAt: string | null;
@@ -25,6 +26,7 @@ function formatTimeRemaining(timeRemainingMs: number) {
 }
 
 export function LobbyCountdown({ cleanupAt, onExpire }: LobbyCountdownProps) {
+    const t = useTranslations('Lobby');
     const [timeRemainingMs, setTimeRemainingMs] = useState(() =>
         getTimeRemainingMs(cleanupAt)
     );
@@ -75,7 +77,7 @@ export function LobbyCountdown({ cleanupAt, onExpire }: LobbyCountdownProps) {
 
     return (
         <p className="font-montserrat mt-4 text-[18px] font-bold leading-none text-[#D6B25E] md:text-[24px]">
-            Lobby closes in: {timeRemainingLabel}
+            {t('closesIn', {time: timeRemainingLabel})}
         </p>
     );
 }

@@ -4,6 +4,7 @@ import { useGamePresence } from "@/features/game/useGamePresence";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from 'next-intl';
 
 import { supabase } from "@/lib/supabaseClient";
 import GameViewport from "@/components/game/GameViewport";
@@ -40,6 +41,7 @@ type LoadedGameData = {
 };
 
 export default function GameClient({ code }: GameClientProps) {
+  const t = useTranslations('Game');
   const router = useRouter();
 
   const [gameData, setGameData] = useState<LoadedGameData | null>(null);
@@ -70,7 +72,7 @@ export default function GameClient({ code }: GameClientProps) {
 
         const currentUserId = authSession.user.id;
 
-        const { session, participants } = await getGameSessionByCode(code);
+        const { session, participants } = await getGameSessionByCode(code, { master: t('master'), player: t('player') });
 
         if (session.phase === "lobby") {
           router.replace(`/lobby/${code}`);
@@ -114,7 +116,7 @@ export default function GameClient({ code }: GameClientProps) {
     return () => {
       isMounted = false;
     };
-  }, [code, router]);
+  }, [code, router, t]);
 
   const currentParticipant = useMemo(() => {
     if (!gameData) return null;
@@ -151,10 +153,12 @@ export default function GameClient({ code }: GameClientProps) {
       (participant) => participant.role === "player",
     );
   }, [gameData]);
+  const roleLabels = useMemo(() => ({ master: t('master'), player: t('player') }), [t]);
 
   useGamePresence({
     sessionId: gameData?.session.id ?? null,
     currentUserId: gameData?.currentUserId ?? null,
+    roleLabels,
     onParticipantsSync: (participants) => {
       setGameData((prev) => {
         if (!prev) {
@@ -235,7 +239,7 @@ export default function GameClient({ code }: GameClientProps) {
   }, [gameData]);
 
   if (loading) {
-    return <div className="p-6 text-white">Loading game...</div>;
+    return <div className="p-6 text-white">{t('loading')}</div>;
   }
 
   if (!gameData || !master || !currentParticipant) {
