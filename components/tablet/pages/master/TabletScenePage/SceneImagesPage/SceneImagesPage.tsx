@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 
 import { SCENE_PLACEHOLDER_ICON_PATHS } from "@/features/tablet/master/scene/constants";
 import type {
@@ -35,6 +36,8 @@ export default function SceneImagesPage({
   inGameWorldId,
   onAudienceStateChange,
 }: SceneImagesPageProps) {
+  const t = useTranslations('TabletMaster.scene.images');
+  const common = useTranslations('TabletMaster.common');
   const [viewMode, setViewMode] = useState<SceneImagesViewMode>("stack");
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
@@ -184,10 +187,10 @@ export default function SceneImagesPage({
         <div className="mb-[14px] flex items-center justify-between">
           <div>
             <p className="font-montserrat-alt text-[28px] font-extrabold text-white">
-              Images
+              {t('images')}
             </p>
             <p className="font-montserrat text-[14px] text-white/70">
-              Mode: {viewMode === "stack" ? "Stack" : "Fit"}
+              {t('mode', { mode: viewMode === "stack" ? t('stack') : t('fit') })}
             </p>
           </div>
 
@@ -205,7 +208,7 @@ export default function SceneImagesPage({
         {isLoading ? (
           <div className="flex min-h-0 flex-1 items-center justify-center rounded-[24px] bg-[#0B1327]">
             <p className="font-montserrat text-[16px] text-white/75">
-              Loading images...
+              {t('loading')}
             </p>
           </div>
         ) : viewMode === "stack" ? (
@@ -227,11 +230,11 @@ export default function SceneImagesPage({
                 >
                   <img
                     src={SCENE_PLACEHOLDER_ICON_PATHS.upload}
-                    alt="Upload"
+                    alt={common('upload')}
                     className="h-[82px] w-[82px] object-contain"
                   />
                   <p className="font-montserrat-alt text-[24px] font-extrabold text-white">
-                    {isUploading ? "Uploading..." : "Add image"}
+                    {isUploading ? t('uploading') : t('addImage')}
                   </p>
                 </button>
               ) : (
@@ -257,7 +260,7 @@ export default function SceneImagesPage({
                         {activeItem.title}
                       </p>
                       <p className="font-montserrat text-[14px] text-white/60">
-                        No preview image yet
+                        {t('noPreview')}
                       </p>
                     </div>
                   )}
@@ -273,13 +276,13 @@ export default function SceneImagesPage({
                       </p>
                       <p className="font-montserrat text-[13px] text-white/75">
                         {activeItem.isActive
-                          ? "Visible to selected targets"
-                          : "Hidden from players"}
+                          ? t('visibleTargets')
+                          : t('hiddenPlayers')}
                       </p>
                     </div>
 
                     <div className="shrink-0 rounded-full bg-white/10 px-[12px] py-[6px] font-montserrat text-[13px] text-white">
-                      Fit
+                      {t('fit')}
                     </div>
                   </div>
                 </div>
@@ -295,7 +298,7 @@ export default function SceneImagesPage({
                   }
                   className="rounded-full bg-white px-[12px] py-[6px] font-montserrat text-[13px] font-bold text-black"
                 >
-                  Prev
+                  {common('previous')}
                 </button>
 
                 <div className="min-w-[52px] text-center font-montserrat text-[13px] font-semibold text-white">
@@ -311,7 +314,7 @@ export default function SceneImagesPage({
                   }
                   className="rounded-full bg-white px-[12px] py-[6px] font-montserrat text-[13px] font-bold text-black"
                 >
-                  Next
+                  {common('next')}
                 </button>
               </div>
             </div>

@@ -32,7 +32,8 @@ export default function SceneImageLightbox({
   onNext,
   showVisibilityStatus = true,
 }: SceneImageLightboxProps) {
-  const t = useTranslations('StudioMaster');
+  const t = useTranslations('TabletMaster.scene.images');
+  const common = useTranslations('TabletMaster.common');
   useEffect(() => {
     if (!isOpen) return;
 
@@ -65,7 +66,7 @@ export default function SceneImageLightbox({
               }}
               className="absolute right-[60px] top-[60px] z-20 rounded-full bg-white px-[14px] py-[8px] font-montserrat text-[14px] font-bold text-black shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
             >
-              Close
+              {common('close')}
             </button>
 
             <div
@@ -95,7 +96,7 @@ export default function SceneImageLightbox({
                   onClick={onPrev}
                   className="absolute left-[24px] top-1/2 z-20 -translate-y-1/2 rounded-full bg-white px-[16px] py-[10px] font-montserrat text-[14px] font-bold text-black"
                 >
-                  {t('previous')}
+                  {common('previous')}
                 </button>
               ) : null}
 
@@ -105,7 +106,7 @@ export default function SceneImageLightbox({
                   onClick={onNext}
                   className="absolute right-[24px] top-1/2 z-20 -translate-y-1/2 rounded-full bg-white px-[16px] py-[10px] font-montserrat text-[14px] font-bold text-black"
                 >
-                  {t('next')}
+                  {common('next')}
                 </button>
               ) : null}
 
@@ -114,7 +115,7 @@ export default function SceneImageLightbox({
                   <div className="flex h-full w-full flex-col items-center justify-center gap-[16px]">
                     <img
                       src={SCENE_PLACEHOLDER_ICON_PATHS.upload}
-                      alt={t('upload')}
+                      alt={common('upload')}
                       className="h-[90px] w-[90px] object-contain"
                     />
                     <p className="font-montserrat-alt text-[28px] font-extrabold text-white">
@@ -138,7 +139,7 @@ export default function SceneImageLightbox({
                       {item.title}
                     </p>
                     <p className="font-montserrat text-[15px] text-white/60">
-                      No preview image yet
+                      {t('noPreview')}
                     </p>
                   </div>
                 )}

@@ -31,6 +31,7 @@ import type {
   SeatedPlayer,
 } from '@/lib/game/types';
 import { getSeatVisualConfig } from '@/lib/game/getSeatVisualConfig';
+import { translateSystemLabel } from '@/components/tablet/systemLabels';
 
 type PartyCheckLayerProps = {
   sessionId: string;
@@ -459,6 +460,7 @@ function RollOverlay({
   ) => Promise<void>;
 }) {
   const t = useTranslations('Game');
+  const systemLabelsT = useTranslations('TabletPlayer.systemLabels');
   const [attributes, setAttributes] = useState<PartyAttribute[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [manualDiceCount, setManualDiceCount] = useState(1);
@@ -567,7 +569,12 @@ function RollOverlay({
                     </span>
                   ) : null}
                   <span className="truncate font-montserrat-alt text-[16px] font-extrabold text-white">
-                    {attribute.label}
+                    {translateSystemLabel(
+                      'attributes',
+                      attribute.key,
+                      attribute.label,
+                      systemLabelsT
+                    )}
                   </span>
                 </span>
                 <span className="font-montserrat text-[13px] font-bold text-white/65">
@@ -633,6 +640,7 @@ export default function PartyCheckLayer({
   onMessage,
 }: PartyCheckLayerProps) {
   const t = useTranslations('Game');
+  const systemLabelsT = useTranslations('TabletPlayer.systemLabels');
   const [rollOverlay, setRollOverlay] = useState<RollOverlayState>(null);
   const [confirmation, setConfirmation] = useState<ConfirmationState>(null);
   const [dontShowAgain, setDontShowAgain] = useState(false);
@@ -760,12 +768,23 @@ export default function PartyCheckLayer({
     }
 
     await updateTarget(target.participantId, () => nextTarget);
+    const translatedAttributeLabel = translateSystemLabel(
+      'attributes',
+      attribute.key,
+      attribute.label,
+      systemLabelsT
+    );
+
     onMessage({
       checkId: check.id,
       type: 'roll',
       participantId: target.participantId,
       displayName: target.displayName,
-      text: t('messageRoll', { name: target.displayName, count: diceCount, attribute: attribute.label }),
+      text: t('messageRoll', {
+        name: target.displayName,
+        count: diceCount,
+        attribute: translatedAttributeLabel,
+      }),
     });
   };
 

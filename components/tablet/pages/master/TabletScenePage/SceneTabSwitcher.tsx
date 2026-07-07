@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useTranslations } from 'next-intl';
 
 import { SCENE_TAB_ICON_PATHS } from '@/features/tablet/master/scene/constants';
 import type { SceneTab } from '@/features/tablet/master/scene/types';
@@ -10,27 +11,26 @@ type SceneTabSwitcherProps = {
   onTabChange: (tab: SceneTab) => void;
 };
 
-const tabs: Array<{ key: SceneTab; label: string }> = [
-  { key: 'images', label: 'Images' },
-  { key: 'music', label: 'Music' },
-];
+const tabs: SceneTab[] = ['images', 'music'];
 
 export default function SceneTabSwitcher({
   activeTab,
   onTabChange,
 }: SceneTabSwitcherProps) {
+  const t = useTranslations('TabletMaster.scene.tabs');
   return (
     <div className="flex items-center justify-around">
       <div className="flex h-[72px] items-center gap-[30px] rounded-full bg-[#5C5C5C] px-[45px]">
         {tabs.map((tab) => {
-          const isActive = activeTab === tab.key;
+          const isActive = activeTab === tab;
+          const label = t(tab);
 
           return (
             <button
-              key={tab.key}
+              key={tab}
               type="button"
-              onClick={() => onTabChange(tab.key)}
-              aria-label={tab.label}
+              onClick={() => onTabChange(tab)}
+              aria-label={label}
               aria-pressed={isActive}
               className="relative flex h-[60px] w-[60px] items-center justify-center"
             >
@@ -53,8 +53,8 @@ export default function SceneTabSwitcher({
               ) : null}
 
               <img
-                src={SCENE_TAB_ICON_PATHS[tab.key]}
-                alt={tab.label}
+                src={SCENE_TAB_ICON_PATHS[tab]}
+                alt={label}
                 className="relative z-10 h-[35px] w-[35px] object-contain"
               />
             </button>

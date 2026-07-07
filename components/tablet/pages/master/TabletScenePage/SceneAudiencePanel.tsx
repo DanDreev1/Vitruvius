@@ -1,5 +1,7 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
+
 import type { SceneAudienceTarget } from '@/features/tablet/master/scene/types';
 
 type SceneAudiencePanelProps = {
@@ -17,6 +19,8 @@ export default function SceneAudiencePanel({
   onToggleAll,
   onToggleParticipant,
 }: SceneAudiencePanelProps) {
+  const common = useTranslations('TabletMaster.common');
+  const t = useTranslations('TabletMaster.scene.audience');
   const isAllSelected =
     participants.length > 0 &&
     participants.every((participant) =>
@@ -49,10 +53,10 @@ export default function SceneAudiencePanel({
 
         <div className="min-w-0">
           <p className="truncate font-montserrat-alt text-[18px] font-extrabold text-white">
-            All
+            {common('all')}
           </p>
           <p className="font-montserrat text-[14px] text-white/85">
-            Role: Scene
+            {t('roleScene')}
           </p>
         </div>
       </button>
@@ -95,7 +99,7 @@ export default function SceneAudiencePanel({
                 {participant.displayName}
               </p>
               <p className="font-montserrat text-[14px] text-white/85">
-                Role: Player
+                {t('rolePlayer')}
               </p>
             </div>
           </button>

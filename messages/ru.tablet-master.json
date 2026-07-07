@@ -1,0 +1,188 @@
+{
+  "TabletMaster": {
+    "common": {
+      "all": "Все",
+      "role": "Роль: {role}",
+      "master": "Мастер",
+      "player": "Игрок",
+      "party": "Партия",
+      "scene": "Сцена",
+      "character": "Персонаж",
+      "save": "Сохранить",
+      "saving": "Сохраняем…",
+      "saved": "Сохранено",
+      "edit": "Правка",
+      "add": "Добавить",
+      "delete": "Удалить",
+      "deleting": "Удаляем…",
+      "cancel": "Отмена",
+      "close": "Закрыть",
+      "previous": "Назад",
+      "next": "Дальше",
+      "upload": "Загрузить",
+      "uploading": "Загружаем…",
+      "selected": "{count, plural, one {# выбран} few {# выбрано} many {# выбрано} other {# выбрано}}",
+      "chooseImage": "Выбрать картинку",
+      "name": "Имя",
+      "description": "Описание",
+      "saveChanges": "Сохранить"
+    },
+    "navigation": {
+      "scene": "Сцена",
+      "party": "Партия",
+      "relationship": "Связи",
+      "assets": "Ассеты",
+      "notes": "Заметки",
+      "settings": "Настройки"
+    },
+    "systemLabels": {
+      "attributes": {
+        "constitution": "Телосложение",
+        "awareness": "Внимательность",
+        "agility": "Ловкость",
+        "thinking": "Мышление",
+        "charisma": "Харизма",
+        "will": "Воля"
+      },
+      "parameters": {
+        "health": "Здоровье",
+        "inspiration": "Вдохновение",
+        "stress": "Стресс"
+      }
+    },
+    "scene": {
+      "tabs": {
+        "images": "Картинки",
+        "music": "Музыка"
+      },
+      "audience": {
+        "roleScene": "Роль: Сцена",
+        "rolePlayer": "Роль: Игрок"
+      },
+      "images": {
+        "addImage": "Добавить картинку",
+        "delete": "Удалить",
+        "hide": "Скрыть",
+        "show": "Показать",
+        "stack": "Карточки",
+        "fit": "Полный",
+        "images": "Картинки",
+        "mode": "Режим: {mode}",
+        "loading": "Загружаем картинки…",
+        "uploading": "Загружаем…",
+        "noPreview": "Картинки пока нет",
+        "visibleTargets": "Видно выбранным целям",
+        "hiddenPlayers": "Скрыто от игроков"
+      },
+      "music": {
+        "playlist": "Плейлист",
+        "selectedTrack": "Выбрано: {title}",
+        "noSelectedTrack": "Трек не выбран",
+        "addMusic": "Добавить музыку",
+        "uploading": "Загружаем…",
+        "playing": "Играет",
+        "paused": "Пауза",
+        "previousTrack": "Предыдущий трек",
+        "nextTrack": "Следующий трек",
+        "pause": "Пауза",
+        "play": "Играть",
+        "repeatTrack": "Повторять трек",
+        "autoNextTrack": "Следующий автоматически",
+        "sceneMusicTime": "Время музыки сцены",
+        "loading": "Загружаем музыку…",
+        "empty": "Музыка не загружена",
+        "selected": "Выбрано",
+        "addCover": "Добавить обложку",
+        "replaceCover": "Заменить обложку",
+        "globalVolume": "Общая громкость",
+        "delete": "Удалить"
+      }
+    },
+    "party": {
+      "modes": {
+        "individual": "Один",
+        "group": "Группа",
+        "conflict": "Конфликт"
+      },
+      "threshold": {
+        "add": "Добавить сложность {value}",
+        "remove": "Убрать сложность {value}",
+        "title": "Сложность {value}"
+      },
+      "statusTitle": "Статус игрока",
+      "statusSubtitle": "Выберите одного игрока, чтобы менять параметры.",
+      "statusUnavailable": "Параметры доступны, только если выбран ровно один игрок.",
+      "loadingParameters": "Загружаем параметры…",
+      "difficultyTitle": "Сложность",
+      "difficultySubtitle": "Соберите активную проверку для стола.",
+      "activeCheck": "На столе уже есть активная проверка. Завершите или отмените её перед созданием новой.",
+      "cancelling": "Отменяем…",
+      "groupThresholds": "Сложности группы",
+      "thresholds": "Сложности",
+      "advantage": "Преимущество",
+      "disadvantage": "Помеха",
+      "remove": "Убрать",
+      "creating": "Создаём…",
+      "sendCheck": "Отправить проверку",
+      "selectUserFirst": "Сначала выберите пользователя.",
+      "targets": "Цели",
+      "loadingTargets": "Загружаем цели…"
+    },
+    "assets": {
+      "weapon": "Оружие",
+      "consumable": "Расходник",
+      "quest": "Квест",
+      "other": "Другое",
+      "createItem": "Создать предмет",
+      "empty": "Добавьте предмет в библиотеку ассетов.",
+      "giveItem": "Выдать предмет",
+      "recipients": "Получатели",
+      "selectCharacters": "Выберите одного или нескольких персонажей",
+      "quantity": "Количество",
+      "deleteTitle": "Удалить {name}?",
+      "fallbackItem": "этот предмет",
+      "deleteDescription": "Уже выданные копии останутся в рюкзаках игроков."
+    },
+    "relationships": {
+      "player": "Игрок",
+      "rolePlayer": "Роль: Игрок",
+      "noPlayers": "Доступных персонажей игроков нет.",
+      "dragToReorder": "Перетащить для сортировки",
+      "deleteNpc": "Удалить NPC",
+      "imageRequired": "Нужна картинка",
+      "characterName": "Имя персонажа",
+      "characterDescription": "Описание персонажа",
+      "relationship": "Отношения",
+      "decreaseRelationship": "Уменьшить отношения",
+      "increaseRelationship": "Увеличить отношения",
+      "shownToPlayer": "Показано игроку",
+      "hiddenFromPlayer": "Скрыто от игрока",
+      "addNpc": "Добавить NPC",
+      "cancelChanges": "Отменить изменения",
+      "saveRelationships": "Сохранить отношения",
+      "editRelationships": "Редактировать отношения",
+      "loading": "Загружаем отношения…",
+      "emptyTitle": "NPC пока нет",
+      "emptyDescription": "Войдите в режим правки и добавьте первого персонажа на карту отношений.",
+      "previousNpcs": "Предыдущие NPC",
+      "nextNpcs": "Следующие NPC",
+      "npcPage": "Страница NPC {page}",
+      "deleteTitle": "Удалить {name}?",
+      "fallbackNpc": "этого NPC",
+      "deleteDescription": "NPC, картинка и все отношения с персонажами будут удалены сразу.",
+      "levels": {
+        "-5": "Ненависть",
+        "-4": "Вражда",
+        "-3": "Напряжение",
+        "-2": "Недоверие",
+        "-1": "Подозрение",
+        "0": "Безразличие",
+        "1": "Интерес",
+        "2": "Доверие",
+        "3": "Близость",
+        "4": "Дружба",
+        "5": "Верность"
+      }
+    }
+  }
+}

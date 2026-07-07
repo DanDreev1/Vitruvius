@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import { supabase } from '@/lib/supabaseClient';
 
@@ -18,6 +19,8 @@ import {
 import type { InventoryAudienceMember, InventoryItem } from './types';
 
 export function useBackpack({ sessionId, characterId, silent }: { sessionId: string; characterId: string | null; silent: boolean }) {
+  const t = useTranslations('TabletPlayer.backpack');
+  const commonT = useTranslations('TabletPlayer.common');
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [audience, setAudience] = useState<InventoryAudienceMember[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -28,7 +31,7 @@ export function useBackpack({ sessionId, characterId, silent }: { sessionId: str
     try {
       const [nextItems, players] = await Promise.all([getInventoryItems(characterId), getInventoryAudience(sessionId)]);
       setItems(nextItems); setAudience(players);
-    } catch (loadError) { setError(loadError instanceof Error ? loadError.message : 'Failed to load Backpack.'); }
+    } catch (loadError) { setError(loadError instanceof Error ? loadError.message : t('loadError')); }
     finally { setIsLoading(false); }
   }, [characterId, sessionId]);
   useEffect(() => { const id = window.setTimeout(() => void load(), 0); return () => window.clearTimeout(id); }, [load]);
@@ -43,23 +46,23 @@ export function useBackpack({ sessionId, characterId, silent }: { sessionId: str
     try {
       if (kind === 'use') {
         await executeUseItem(item.id, sessionId);
-        if (!silent) await publishInventoryMessage(sessionId, `${audience.find((member) => member.inGameCharacterId === item.inGameCharacterId)?.displayName ?? 'Player'} used ${item.name}.`);
+        if (!silent) await publishInventoryMessage(sessionId, t('messageUse', { name: audience.find((member) => member.inGameCharacterId === item.inGameCharacterId)?.displayName ?? commonT('player'), item: item.name }));
       } else if (kind === 'discard') {
         const result = await discardItem(item.id, quantity, sessionId);
-        if (!silent) await publishInventoryMessage(sessionId, `${audience.find((member) => member.inGameCharacterId === item.inGameCharacterId)?.displayName ?? 'Player'} threw away ${result.quantity} ${item.name}.`);
+        if (!silent) await publishInventoryMessage(sessionId, t('messageDiscard', { name: audience.find((member) => member.inGameCharacterId === item.inGameCharacterId)?.displayName ?? commonT('player'), quantity: result.quantity, item: item.name }));
       } else if (recipient) {
         const result = await transferItem(item.id, recipient.inGameCharacterId, quantity, sessionId);
-        if (!silent && result.quantity > 0) await publishInventoryMessage(sessionId, `${audience.find((member) => member.inGameCharacterId === item.inGameCharacterId)?.displayName ?? 'Player'} gave ${result.quantity} ${item.name} to ${recipient.displayName}.`);
+        if (!silent && result.quantity > 0) await publishInventoryMessage(sessionId, t('messageTransfer', { name: audience.find((member) => member.inGameCharacterId === item.inGameCharacterId)?.displayName ?? commonT('player'), quantity: result.quantity, item: item.name, recipient: recipient.displayName }));
       }
       await load();
-    } catch (actionError) { setError(actionError instanceof Error ? actionError.message : 'Item action failed.'); }
-  }, [audience, load, sessionId, silent]);
+    } catch (actionError) { setError(actionError instanceof Error ? actionError.message : t('actionError')); }
+  }, [audience, commonT, load, sessionId, silent, t]);
 
   const saveVisibility = useCallback(async (itemId: string, ids: string[]) => {
     if (!characterId) return;
     try { await setItemVisibility(itemId, ids, sessionId, characterId); await load(); }
-    catch (visibilityError) { setError(visibilityError instanceof Error ? visibilityError.message : 'Failed to update visibility.'); }
-  }, [characterId, load, sessionId]);
+    catch (visibilityError) { setError(visibilityError instanceof Error ? visibilityError.message : t('visibilityError')); }
+  }, [characterId, load, sessionId, t]);
 
   return { items, audience, isLoading, error, act, saveVisibility };
 }

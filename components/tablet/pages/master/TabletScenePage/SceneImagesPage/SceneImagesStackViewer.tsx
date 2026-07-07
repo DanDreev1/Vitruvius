@@ -75,7 +75,8 @@ export default function SceneImagesStackViewer({
   onOpenLightbox,
   showVisibilityStatus = true,
 }: SceneImagesStackViewerProps) {
-  const t = useTranslations('StudioMaster');
+  const t = useTranslations('TabletMaster.scene.images');
+  const common = useTranslations('TabletMaster.common');
   const containerRef = useRef<HTMLDivElement | null>(null);
   const wheelLockRef = useRef(false);
 
@@ -185,7 +186,7 @@ export default function SceneImagesStackViewer({
                 <div className="flex h-full w-full flex-col items-center justify-center gap-[14px] px-[24px]">
                   <img
                     src={SCENE_PLACEHOLDER_ICON_PATHS.upload}
-                    alt={t('upload')}
+                    alt={common('upload')}
                     className="h-[58px] w-[58px] object-contain"
                   />
                   <p className="text-center font-montserrat-alt text-[18px] font-extrabold text-black/80">
@@ -233,7 +234,7 @@ export default function SceneImagesStackViewer({
             onClick={handlePrev}
             className="rounded-full bg-white px-[12px] py-[6px] font-montserrat text-[13px] font-bold text-black"
           >
-            {t('previous')}
+            {common('previous')}
           </button>
 
           <div className="min-w-[58px] text-center font-montserrat text-[13px] font-semibold text-white">
@@ -245,7 +246,7 @@ export default function SceneImagesStackViewer({
             onClick={handleNext}
             className="rounded-full bg-white px-[12px] py-[6px] font-montserrat text-[13px] font-bold text-black"
           >
-            {t('next')}
+            {common('next')}
           </button>
         </div>
       </div>

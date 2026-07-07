@@ -21,7 +21,7 @@ import type {
 
 type IconPreset = {
   key: string;
-  label: string;
+  labelKey: 'iconBaseDomain' | 'iconLore' | 'iconCraft' | 'iconGear' | 'iconVitality' | 'iconBaseSkill' | 'iconDomain';
   src: string;
 };
 
@@ -82,27 +82,27 @@ type TabletSkillsPageProps = {
 const domainIconOptions: IconPreset[] = [
   {
     key: 'skills',
-    label: 'Base domain',
+    labelKey: 'iconBaseDomain',
     src: '/navigation-imgs/player/Skills.png',
   },
   {
     key: 'book',
-    label: 'Lore',
+    labelKey: 'iconLore',
     src: '/navigation-imgs/player/Diary.png',
   },
   {
     key: 'flask',
-    label: 'Craft',
+    labelKey: 'iconCraft',
     src: '/attributes-imgs/Thinking.png',
   },
   {
     key: 'backpack',
-    label: 'Gear',
+    labelKey: 'iconGear',
     src: '/navigation-imgs/player/Backpack.png',
   },
   {
     key: 'heart',
-    label: 'Vitality',
+    labelKey: 'iconVitality',
     src: '/parameters/Health.png',
   },
 ];
@@ -110,27 +110,27 @@ const domainIconOptions: IconPreset[] = [
 const skillIconOptions: IconPreset[] = [
   {
     key: 'book',
-    label: 'Base skill',
+    labelKey: 'iconBaseSkill',
     src: '/navigation-imgs/player/Diary.png',
   },
   {
     key: 'skills',
-    label: 'Domain',
+    labelKey: 'iconDomain',
     src: '/navigation-imgs/player/Skills.png',
   },
   {
     key: 'flask',
-    label: 'Craft',
+    labelKey: 'iconCraft',
     src: '/attributes-imgs/Thinking.png',
   },
   {
     key: 'backpack',
-    label: 'Gear',
+    labelKey: 'iconGear',
     src: '/navigation-imgs/player/Backpack.png',
   },
   {
     key: 'heart',
-    label: 'Vitality',
+    labelKey: 'iconVitality',
     src: '/parameters/Health.png',
   },
 ];
@@ -285,6 +285,7 @@ function LevelDots({
   isEditable: boolean;
   onChange?: (level: number) => void;
 }) {
+  const t = useTranslations('TabletPlayer.skills');
   const [hoveredLevel, setHoveredLevel] = useState<number | null>(null);
   const previewLevel = hoveredLevel ?? value;
 
@@ -311,8 +312,8 @@ function LevelDots({
             }}
             title={
               isEditable
-                ? `Set ${label} level ${level}`
-                : `${label} level ${value}`
+                ? t('setLevel', { label, level })
+                : t('currentLevel', { label, level: value })
             }
             className="group flex h-[18px] w-[18px] items-center justify-center rounded-full disabled:cursor-default"
           >
@@ -346,6 +347,7 @@ function IconPicker({
   onPresetSelect: (iconKey: string) => void;
   onFileSelect: (file: File | null) => void;
 }) {
+  const t = useTranslations('TabletPlayer.skills');
   const customIconUrl = getCustomIconUrl(metadata, iconKey);
 
   return (
@@ -359,7 +361,7 @@ function IconPicker({
             'flex h-[48px] w-[54px] items-center justify-center rounded-[12px] border transition-colors hover:border-white',
             iconKey === option.key ? 'border-white' : 'border-white/15',
           ].join(' ')}
-          title={option.label}
+          title={t(option.labelKey)}
         >
           <IconImage iconKey={option.key} options={options} size={30} />
         </button>
@@ -372,7 +374,7 @@ function IconPicker({
             ? 'border-white'
             : 'border-white/25',
         ].join(' ')}
-        title={customIconUrl ? 'Replace custom icon' : 'Upload custom icon'}
+        title={customIconUrl ? t('replaceCustomIcon') : t('uploadCustomIcon')}
       >
         {customIconUrl ? (
           <IconImage iconKey={customIconUrl} options={options} size={48} />
@@ -422,7 +424,7 @@ function SkillCard({
   onSkillLevelChange?: TabletSkillsPageProps['onDomainSkillLevelChange'];
   onSkillDelete?: TabletSkillsPageProps['onDomainSkillDelete'];
 }) {
-  const t = useTranslations('StudioEditor');
+  const t = useTranslations('TabletPlayer.skills');
   const displayLevel = skill.isPrimary ? domain.level : skill.level;
   const canEdit = isEditable && isEditMode;
   const isIconPickerOpen =
@@ -556,7 +558,7 @@ export default function TabletSkillsPage({
   onDomainSkillDescriptionChange,
   onDomainSkillLevelChange,
 }: TabletSkillsPageProps) {
-  const t = useTranslations('StudioEditor');
+  const t = useTranslations('TabletPlayer.skills');
   const domains = useMemo(() => {
     const sourceDomains = isEditMode
       ? draft?.domains ?? []
@@ -925,7 +927,7 @@ export default function TabletSkillsPage({
                           ? 'bg-white'
                           : 'bg-transparent',
                       ].join(' ')}
-                      title={`Skill page ${index + 1}`}
+                      title={t('skillPage', { page: index + 1 })}
                     />
                   ))}
                 </div>

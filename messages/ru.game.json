@@ -1,6 +1,6 @@
 {
   "Game": {
-    "loading": "Загрузка игры…", "offline": "Не в сети", "master": "Мастер", "player": "Игрок", "dice": "Кубики",
+    "loading": "Загрузка игры…", "offline": "Офлайн", "master": "Мастер", "player": "Игрок", "dice": "Кубики",
     "rotateTitle": "Поверните устройство", "rotateDescription": "Игровой стол доступен только на широких экранах.", "openImage": "Открыть изображение «{title}»",
     "stack": "Стопка", "fit": "Вписать", "images": "Изображения", "mode": "Режим: {mode}", "loadingImages": "Загрузка изображений…", "noImages": "Нет доступных изображений", "previous": "Назад", "next": "Далее",
     "successes": "{count, plural, one {# успех} few {# успеха} many {# успехов} other {# успеха}}", "rollProgress": "Бросок {current}/{total}", "rollPartyDice": "Бросить кубики проверки",

@@ -6,6 +6,15 @@ const DESIGN_WIDTH = 1440;
 const DESIGN_HEIGHT = 900;
 const MIN_SUPPORTED_WIDTH = 500;
 
+function getViewportSize() {
+  const visualViewport = window.visualViewport;
+
+  return {
+    width: Math.round(visualViewport?.width ?? window.innerWidth),
+    height: Math.round(visualViewport?.height ?? window.innerHeight),
+  };
+}
+
 export default function ScaledPageViewport({
   children,
   headerBackdrop = false,
@@ -18,10 +27,25 @@ export default function ScaledPageViewport({
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    const update = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
+    const update = () => setViewport(getViewportSize());
+    const updateAfterOrientationSettles = () => {
+      update();
+      window.setTimeout(update, 180);
+    };
+
     update();
+
     window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    window.addEventListener('orientationchange', updateAfterOrientationSettles);
+    window.visualViewport?.addEventListener('resize', update);
+    window.visualViewport?.addEventListener('scroll', update);
+
+    return () => {
+      window.removeEventListener('resize', update);
+      window.removeEventListener('orientationchange', updateAfterOrientationSettles);
+      window.visualViewport?.removeEventListener('resize', update);
+      window.visualViewport?.removeEventListener('scroll', update);
+    };
   }, []);
 
   if (!viewport.width) return <div className="fixed inset-0 bg-[#0B1020]" />;
@@ -30,7 +54,7 @@ export default function ScaledPageViewport({
     return (
       <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-[#0B1020] px-8 text-center">
         <div className="max-w-[360px]">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] border border-white/10 bg-white/[.05] text-[28px] text-white/70">↻</div>
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[20px] border border-white/10 bg-white/[.05] text-[28px] text-white/70">↔</div>
           <h1 className="mt-5 font-montserrat-alt text-[27px] font-extrabold text-white">Rotate your device</h1>
           <p className="mt-3 font-montserrat text-[14px] leading-relaxed text-white/55">Vitruvius uses a landscape game interface on smaller devices.</p>
         </div>

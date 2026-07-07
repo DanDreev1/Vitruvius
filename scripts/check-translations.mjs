@@ -25,7 +25,9 @@ const dictionaries = Object.fromEntries(await Promise.all(locales.map(async (loc
   const studioEditor = await readFile(resolve(`messages/${locale}.studio-editor.json`), 'utf8');
   const studioMaster = await readFile(resolve(`messages/${locale}.studio-master.json`), 'utf8');
   const game = await readFile(resolve(`messages/${locale}.game.json`), 'utf8');
-  return [locale, flatten({...JSON.parse(source), ...JSON.parse(studio), ...JSON.parse(studioShell), ...JSON.parse(studioEditor), ...JSON.parse(studioMaster), ...JSON.parse(lobby), ...JSON.parse(game)})];
+  const tabletPlayer = await readFile(resolve(`messages/${locale}.tablet-player.json`), 'utf8');
+  const tabletMaster = await readFile(resolve(`messages/${locale}.tablet-master.json`), 'utf8');
+  return [locale, flatten({...JSON.parse(source), ...JSON.parse(studio), ...JSON.parse(studioShell), ...JSON.parse(studioEditor), ...JSON.parse(studioMaster), ...JSON.parse(lobby), ...JSON.parse(game), ...JSON.parse(tabletPlayer), ...JSON.parse(tabletMaster)})];
 })));
 
 const reference = dictionaries.en;

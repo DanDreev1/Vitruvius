@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 import type {
   TabletPlayerCharacter,
@@ -22,8 +23,6 @@ type TabletUserPageProps = {
   onPortraitFileSelect?: (file: File | null) => void;
 };
 
-const fallbackDescription = 'No character description yet.';
-
 export default function TabletUserPage({
   isEditable,
   character,
@@ -37,6 +36,7 @@ export default function TabletUserPage({
   onPortraitChangeRequest,
   onPortraitFileSelect,
 }: TabletUserPageProps) {
+  const t = useTranslations('TabletPlayer.user');
   const portraitInputRef = useRef<HTMLInputElement | null>(null);
   const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
   const avatarUrl = isEditMode ? draft?.avatarUrl ?? null : character?.avatarUrl ?? null;
@@ -47,8 +47,8 @@ export default function TabletUserPage({
       return '';
     }
 
-    return character?.description?.trim() || fallbackDescription;
-  }, [character?.description, isLoading]);
+    return character?.description?.trim() || t('emptyDescription');
+  }, [character?.description, isLoading, t]);
   const descriptionDraft = draft?.description ?? '';
 
   const handlePortraitClick = () => {
@@ -71,12 +71,12 @@ export default function TabletUserPage({
           onClick={handlePortraitClick}
           disabled={!isEditable || !isEditMode || isPortraitSelectionDisabled}
           className="relative flex h-[500px] w-[350px] items-center justify-center overflow-hidden rounded-[26px] bg-[#D9D9D9] disabled:cursor-default"
-          title={isEditMode ? "Upload character portrait" : "Character portrait"}
+          title={isEditMode ? t('uploadPortrait') : t('portrait')}
         >
           {shouldShowAvatar && avatarUrl ? (
             <img
               src={avatarUrl}
-              alt={character?.name ?? "Character image"}
+              alt={character?.name ?? t('characterImage')}
               className="h-full w-full object-cover"
               draggable={false}
               onError={() => setFailedAvatarUrl(avatarUrl)}
@@ -102,20 +102,20 @@ export default function TabletUserPage({
 
       <section className="max-w-[720px] pt-[4px] text-white">
         <h2 className="font-montserrat-alt text-[32px] font-extrabold leading-none">
-          Description
+          {t('description')}
         </h2>
 
         {error ? (
           <p className="mt-[28px] max-w-[520px] font-montserrat text-[20px] font-semibold leading-[1.25] text-white/70">
-            Character data is unavailable right now.
+            {t('dataUnavailable')}
           </p>
         ) : isEditMode ? (
           <textarea
             value={descriptionDraft}
             onChange={(event) => onDescriptionChange?.(event.target.value)}
             className="mt-[24px] h-[444px] w-full resize-none rounded-[14px] border border-white/35 bg-white/8 px-[16px] py-[14px] font-montserrat text-[20px] font-semibold leading-[1.25] text-white outline-none placeholder:text-white/45 focus:border-white"
-            aria-label="Character description"
-            placeholder="Description"
+            aria-label={t('characterDescription')}
+            placeholder={t('descriptionPlaceholder')}
           />
         ) : (
           <p className="mt-[28px] font-montserrat text-[22px] font-semibold leading-[1.2] text-white">

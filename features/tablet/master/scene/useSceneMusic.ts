@@ -14,6 +14,8 @@ import {
   pauseInGameWorldSceneMusic,
   playInGameWorldSceneMusic,
   selectInGameWorldSceneMusic,
+  updateInGameWorldSceneMusicCover,
+  updateInGameWorldSceneMusicVolume,
 } from './api';
 import {
   clearSceneMusicRuntimeState,
@@ -32,6 +34,7 @@ function mapRecordToItem(record: SceneMusicRecord): SceneMusicItem {
     isActive: record.is_active,
     isPlaying: record.is_playing,
     currentTimeSeconds: record.current_time_seconds ?? 0,
+    volume: record.volume ?? 1,
     sortOrder: record.sort_order,
   };
 }
@@ -44,18 +47,28 @@ function isAllowedAudioFile(file: File) {
   return /\.(mp3|wav|ogg|m4a)$/i.test(file.name);
 }
 
+function isAllowedCoverFile(file: File) {
+  if (file.type.startsWith('image/')) {
+    return true;
+  }
+
+  return /\.(jpe?g|png|webp|gif)$/i.test(file.name);
+}
+
 function dispatchLocalMusicChange({
   sessionId,
   trackId,
   currentTimeSeconds,
   isActive,
   isPlaying,
+  volume,
 }: {
   sessionId: string;
   trackId: string;
   currentTimeSeconds: number;
   isActive: boolean;
   isPlaying: boolean;
+  volume?: number;
 }) {
   window.dispatchEvent(
     new CustomEvent(SCENE_MUSIC_LOCAL_CHANGED_EVENT, {
@@ -65,6 +78,7 @@ function dispatchLocalMusicChange({
         currentTimeSeconds,
         isActive,
         isPlaying,
+        volume,
         changedAt: Date.now(),
       },
     })
@@ -88,12 +102,12 @@ export function useSceneMusic(
         currentTimeSeconds?: number;
         isActive?: boolean;
         isPlaying?: boolean;
+        volume?: number;
       }>).detail;
 
       if (
         payload?.sessionId !== sessionId ||
-        !payload.trackId ||
-        typeof payload.currentTimeSeconds !== 'number'
+        !payload.trackId
       ) {
         return;
       }
@@ -114,9 +128,13 @@ export function useSceneMusic(
                 ? false
                 : record.is_playing,
           current_time_seconds:
-            record.id === payload.trackId
+            record.id === payload.trackId && typeof payload.currentTimeSeconds === 'number'
               ? payload.currentTimeSeconds ?? record.current_time_seconds
               : record.current_time_seconds,
+          volume:
+            record.id === payload.trackId && typeof payload.volume === 'number'
+              ? payload.volume
+              : record.volume,
         }))
       );
     };
@@ -203,6 +221,91 @@ export function useSceneMusic(
       }
     },
     [inGameWorldId, loadMusic, sessionId]
+  );
+
+  const uploadCover = useCallback(
+    async (music: SceneMusicItem, file: File) => {
+      if (!inGameWorldId) {
+        throw new Error('In-game world id is missing.');
+      }
+
+      if (!isAllowedCoverFile(file)) {
+        const message = 'Only image files are allowed for music covers.';
+        setError(message);
+        throw new Error(message);
+      }
+
+      setIsUploading(true);
+      setError(null);
+
+      try {
+        const coverUrl = await updateInGameWorldSceneMusicCover(
+          music.id,
+          inGameWorldId,
+          file,
+          sessionId
+        );
+
+        setRecords((prevRecords) =>
+          prevRecords.map((record) =>
+            record.id === music.id
+              ? {
+                  ...record,
+                  cover_url: coverUrl,
+                }
+              : record
+          )
+        );
+      } catch (uploadError) {
+        const message =
+          uploadError instanceof Error
+            ? uploadError.message
+            : 'Failed to upload scene music cover.';
+        setError(message);
+        throw uploadError;
+      } finally {
+        setIsUploading(false);
+      }
+    },
+    [inGameWorldId, sessionId]
+  );
+
+  const setMusicVolume = useCallback(
+    async (music: SceneMusicItem, volume: number) => {
+      const safeVolume = Math.min(1, Math.max(0, volume));
+
+      setError(null);
+      setRecords((prevRecords) =>
+        prevRecords.map((record) =>
+          record.id === music.id
+            ? {
+                ...record,
+                volume: safeVolume,
+              }
+            : record
+        )
+      );
+      dispatchLocalMusicChange({
+        sessionId,
+        trackId: music.id,
+        currentTimeSeconds: music.currentTimeSeconds,
+        isActive: music.isActive,
+        isPlaying: music.isPlaying,
+        volume: safeVolume,
+      });
+
+      try {
+        await updateInGameWorldSceneMusicVolume(music.id, safeVolume, sessionId);
+      } catch (volumeError) {
+        const message =
+          volumeError instanceof Error
+            ? volumeError.message
+            : 'Failed to update scene music volume.';
+        setError(message);
+        void loadMusic();
+      }
+    },
+    [loadMusic, sessionId]
   );
 
   const selectMusic = useCallback(
@@ -489,6 +592,8 @@ export function useSceneMusic(
     error,
     loadMusic,
     uploadMusic,
+    uploadCover,
+    setMusicVolume,
     selectMusic,
     playMusic,
     pauseMusic,

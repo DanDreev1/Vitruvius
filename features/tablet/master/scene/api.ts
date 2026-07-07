@@ -73,6 +73,7 @@ type SceneMusicChangedPayload = {
   currentTimeSeconds?: number;
   isPlaying?: boolean;
   isActive?: boolean;
+  volume?: number;
 };
 
 export async function broadcastSceneMusicChanged(
@@ -374,7 +375,7 @@ export async function getInGameWorldSceneMusic(
 ): Promise<SceneMusicRecord[]> {
   const { data, error } = await supabase
     .from('in_game_worlds_scene_music')
-    .select('id, in_game_world_id, title, audio_url, cover_url, sort_order, is_active, is_playing, current_time_seconds, created_at, updated_at')
+    .select('id, in_game_world_id, title, audio_url, cover_url, volume, sort_order, is_active, is_playing, current_time_seconds, created_at, updated_at')
     .eq('in_game_world_id', inGameWorldId)
     .order('sort_order', { ascending: true });
 
@@ -435,6 +436,7 @@ export async function createInGameWorldSceneMusic(
       is_active: false,
       is_playing: false,
       current_time_seconds: 0,
+      volume: 1,
     });
 
   if (error) {
@@ -442,6 +444,51 @@ export async function createInGameWorldSceneMusic(
   }
 
   await broadcastSceneMusicChanged(sessionId);
+}
+
+export async function updateInGameWorldSceneMusicCover(
+  musicId: string,
+  inGameWorldId: string,
+  file: File,
+  sessionId: string
+) {
+  const { publicUrl } = await uploadSceneImageFile(sessionId, inGameWorldId, file);
+
+  const { error } = await supabase
+    .from('in_game_worlds_scene_music')
+    .update({ cover_url: publicUrl })
+    .eq('id', musicId)
+    .eq('in_game_world_id', inGameWorldId);
+
+  if (error) {
+    throw new Error(`Failed to update scene music cover: ${error.message}`);
+  }
+
+  await broadcastSceneMusicChanged(sessionId);
+
+  return publicUrl;
+}
+
+export async function updateInGameWorldSceneMusicVolume(
+  musicId: string,
+  volume: number,
+  sessionId: string
+) {
+  const safeVolume = Math.min(1, Math.max(0, volume));
+
+  const { error } = await supabase
+    .from('in_game_worlds_scene_music')
+    .update({ volume: safeVolume })
+    .eq('id', musicId);
+
+  if (error) {
+    throw new Error(`Failed to update scene music volume: ${error.message}`);
+  }
+
+  await broadcastSceneMusicChanged(sessionId, {
+    trackId: musicId,
+    volume: safeVolume,
+  });
 }
 
 export async function selectInGameWorldSceneMusic(
@@ -732,7 +779,7 @@ export async function getAvailablePlayerSceneMusic({
 
   const { data, error } = await supabase
     .from('in_game_worlds_scene_music')
-    .select('id, in_game_world_id, title, audio_url, cover_url, sort_order, is_active, is_playing, current_time_seconds, created_at, updated_at')
+    .select('id, in_game_world_id, title, audio_url, cover_url, volume, sort_order, is_active, is_playing, current_time_seconds, created_at, updated_at')
     .eq('in_game_world_id', inGameWorldId)
     .eq('is_active', true)
     .eq('is_playing', true)

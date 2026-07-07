@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
-import { getRelationshipLabel } from '@/features/tablet/master/relationships/constants';
 import type { PlayerRelationshipNpc } from '@/features/tablet/master/relationships/types';
 import { usePlayerRelationships } from '@/features/tablet/master/relationships/usePlayerRelationships';
 
@@ -12,7 +12,22 @@ type TabletRelationshipPageProps = {
   inGameCharacterId: string | null;
 };
 
+function getRelationshipLevelKey(value: number) {
+  if (value <= -5) return 'levels.-5' as const;
+  if (value === -4) return 'levels.-4' as const;
+  if (value === -3) return 'levels.-3' as const;
+  if (value === -2) return 'levels.-2' as const;
+  if (value === -1) return 'levels.-1' as const;
+  if (value === 1) return 'levels.1' as const;
+  if (value === 2) return 'levels.2' as const;
+  if (value === 3) return 'levels.3' as const;
+  if (value === 4) return 'levels.4' as const;
+  if (value >= 5) return 'levels.5' as const;
+  return 'levels.0' as const;
+}
+
 function PlayerNpcCard({ npc }: { npc: PlayerRelationshipNpc }) {
+  const t = useTranslations('TabletPlayer.relationships');
   const [isExpanded, setIsExpanded] = useState(false);
   const pointerStartYRef = useRef<number | null>(null);
 
@@ -72,10 +87,10 @@ function PlayerNpcCard({ npc }: { npc: PlayerRelationshipNpc }) {
 
       <div className="mt-auto border-t border-white/10 bg-[#0D1625] px-[14px] pb-[13px] pt-[10px]">
         <p className="mb-[4px] text-center font-montserrat text-[9px] font-bold uppercase text-white/40">
-          Relationship
+          {t('relationship')}
         </p>
         <p className="select-none truncate text-center font-montserrat-alt text-[15px] font-bold text-[#E8D18A]">
-          {getRelationshipLabel(npc.relationshipValue)}
+          {t(getRelationshipLevelKey(npc.relationshipValue))}
         </p>
       </div>
     </article>
@@ -87,6 +102,7 @@ export default function TabletRelationshipPage({
   inGameWorldId,
   inGameCharacterId,
 }: TabletRelationshipPageProps) {
+  const t = useTranslations('TabletPlayer.relationships');
   const relationships = usePlayerRelationships({
     sessionId,
     inGameWorldId,
@@ -103,7 +119,7 @@ export default function TabletRelationshipPage({
   if (relationships.isLoading) {
     return (
       <div className="flex h-full items-center justify-center font-montserrat text-[14px] text-white/60">
-        Loading relationships...
+        {t('loading')}
       </div>
     );
   }
@@ -119,7 +135,7 @@ export default function TabletRelationshipPage({
   if (!relationships.npcs.length) {
     return (
       <div className="flex h-full items-center justify-center px-[30px] text-center font-montserrat text-[14px] text-white/55">
-        No characters have been revealed yet.
+        {t('empty')}
       </div>
     );
   }
@@ -138,7 +154,7 @@ export default function TabletRelationshipPage({
             type="button"
             disabled={safePageIndex === 0}
             onClick={() => setPageIndex((value) => Math.max(0, value - 1))}
-            title="Previous NPCs"
+            title={t('previous')}
             className="absolute -left-[48px] top-1/2 flex h-[38px] w-[38px] -translate-y-1/2 items-center justify-center rounded-full border border-white text-[30px] text-white disabled:opacity-25"
           >
             {'\u2039'}
@@ -147,7 +163,7 @@ export default function TabletRelationshipPage({
             type="button"
             disabled={safePageIndex >= pageCount - 1}
             onClick={() => setPageIndex((value) => Math.min(pageCount - 1, value + 1))}
-            title="Next NPCs"
+            title={t('next')}
             className="absolute right-0 top-1/2 flex h-[38px] w-[38px] -translate-y-1/2 items-center justify-center rounded-full border border-white text-[30px] text-white disabled:opacity-25"
           >
             {'\u203a'}
@@ -162,7 +178,7 @@ export default function TabletRelationshipPage({
               key={index}
               type="button"
               onClick={() => setPageIndex(index)}
-              title={`NPC page ${index + 1}`}
+              title={t('page', { page: index + 1 })}
               className={[
                 'h-[9px] w-[9px] rounded-full border border-white',
                 index === safePageIndex ? 'bg-white' : 'bg-transparent',

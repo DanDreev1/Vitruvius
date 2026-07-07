@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import {
   deleteTabletPlayerExperience,
@@ -24,6 +25,7 @@ type TabletLibraryEditorProps = TabletLibraryPageProps & {
 };
 
 type LibrarySortMode = 'manual' | 'xp-desc' | 'xp-asc';
+type LibraryTag = (typeof tagOptions)[number];
 
 const tagOptions = [
   'Battle',
@@ -36,7 +38,7 @@ const tagOptions = [
   'Treasure',
   'Boss',
   'Other',
-];
+] as const;
 
 const placeholderEntryContent = {
   headline: 'Headline',
@@ -215,6 +217,15 @@ function normalizeEntry(
   };
 }
 
+function getLibraryTag(value: string | null | undefined): LibraryTag {
+  return tagOptions.includes(value as LibraryTag) ? (value as LibraryTag) : 'Battle';
+}
+
+function getLibraryTagKey(value: string | null | undefined) {
+  const tag = getLibraryTag(value);
+  return `tags.${tag}` as const;
+}
+
 function moveEntryBefore(
   entries: TabletPlayerExperience[],
   sourceEntryId: string,
@@ -263,6 +274,8 @@ function TabletLibraryEditor({
   onExperiencesSaved,
   initialEntries,
 }: TabletLibraryEditorProps) {
+  const t = useTranslations('TabletPlayer.library');
+  const commonT = useTranslations('TabletPlayer.common');
   const [entries, setEntries] =
     useState<TabletPlayerExperience[]>(initialEntries);
   const [selectedEntryId, setSelectedEntryId] = useState<string | null>(
@@ -391,11 +404,11 @@ function TabletLibraryEditor({
       setSelectedEntryId(nextSelectedEntry.id);
       setDraftEntry(nextSelectedEntry);
       setSortMode('manual');
-      setSaveMessage('Saved');
+      setSaveMessage(commonT('saved'));
       onExperiencesSaved?.(savedExperiences);
     } catch (saveError) {
       console.error(saveError);
-      setSaveMessage('Could not save library entry');
+      setSaveMessage(t('saveError'));
     } finally {
       setIsSaving(false);
     }
@@ -441,11 +454,11 @@ function TabletLibraryEditor({
       setSelectedEntryId(nextSelectedEntry.id);
       setDraftEntry(nextSelectedEntry);
       setSortMode('manual');
-      setSaveMessage('Deleted');
+      setSaveMessage(t('deleted'));
       onExperiencesSaved?.(savedExperiences);
     } catch (deleteError) {
       console.error(deleteError);
-      setSaveMessage('Could not delete library entry');
+      setSaveMessage(t('deleteError'));
     } finally {
       setIsDeleting(false);
     }
@@ -457,9 +470,9 @@ function TabletLibraryEditor({
         <div className="mb-[14px] flex h-[44px] items-center justify-between gap-[14px]">
           <div className="flex rounded-[10px] border border-white/45 p-[3px]">
             {[
-              { label: 'Manual', value: 'manual' },
-              { label: 'XP high', value: 'xp-desc' },
-              { label: 'XP low', value: 'xp-asc' },
+              { label: t('manual'), value: 'manual' },
+              { label: t('xpHigh'), value: 'xp-desc' },
+              { label: t('xpLow'), value: 'xp-asc' },
             ].map((option) => (
               <button
                 key={option.value}
@@ -479,7 +492,7 @@ function TabletLibraryEditor({
 
           <div className="flex items-center gap-[10px]">
             <span className="font-montserrat text-[14px] font-semibold text-white/55">
-              {entries.length} entries
+              {t('entries', { count: entries.length })}
             </span>
             <button
               type="button"
@@ -487,7 +500,7 @@ function TabletLibraryEditor({
               disabled={isFormDisabled}
               className="h-[34px] rounded-[8px] border border-white/45 px-[14px] font-montserrat-alt text-[13px] font-extrabold leading-none text-white transition hover:bg-white/10 disabled:opacity-35"
             >
-              Add entry
+              {t('addEntry')}
             </button>
           </div>
         </div>
@@ -495,7 +508,7 @@ function TabletLibraryEditor({
         <div className="min-h-0 flex-1 space-y-[10px] overflow-y-auto pr-[6px]">
           {isLoading ? (
             <div className="rounded-[10px] border border-white/35 px-[16px] py-[18px] font-montserrat text-[16px] font-semibold text-white/65">
-              Loading library...
+              {t('loadingLibrary')}
             </div>
           ) : null}
 
@@ -527,7 +540,7 @@ function TabletLibraryEditor({
                   type="button"
                   onClick={() => handleEntrySelect(entry)}
                   className="flex h-[48px] w-[28px] cursor-grab items-center justify-center rounded-[8px] border border-white/25 text-white/70 active:cursor-grabbing"
-                  aria-label={`Select ${entry.headline}`}
+                  aria-label={t('selectEntry', { headline: entry.headline })}
                 >
                   <span className="grid grid-cols-2 gap-[3px]">
                     {Array.from({ length: 6 }).map((_, dotIndex) => (
@@ -549,16 +562,16 @@ function TabletLibraryEditor({
                   </h2>
                   <div className="mt-[9px] flex flex-wrap items-center gap-x-[14px] gap-y-[4px] font-montserrat text-[15px] leading-none text-white/80">
                     <span>
-                      <strong className="font-montserrat-alt text-white">XP:</strong>{' '}
+                      <strong className="font-montserrat-alt text-white">{t('xp')}</strong>{' '}
                       {entry.xp}
                     </span>
                     <span>
-                      <strong className="font-montserrat-alt text-white">Tag:</strong>{' '}
-                      {entry.tag ?? 'Battle'}
+                      <strong className="font-montserrat-alt text-white">{t('tag')}</strong>{' '}
+                      {t(getLibraryTagKey(entry.tag))}
                     </span>
                     <span>
                       <strong className="font-montserrat-alt text-white">
-                        Session/Date:
+                        {t('sessionDate')}
                       </strong>{' '}
                       {entry.sessionLabel ?? '1'}
                     </span>
@@ -571,7 +584,7 @@ function TabletLibraryEditor({
                     onClick={() => handleEntryMove(entry.id, -1)}
                     disabled={isFormDisabled || index === 0}
                     className="flex h-[34px] w-[34px] items-center justify-center rounded-[8px] border border-white/35 font-montserrat-alt text-[18px] font-extrabold leading-none text-white disabled:opacity-30"
-                    aria-label={`Move ${entry.headline} up`}
+                    aria-label={t('moveUp', { headline: entry.headline })}
                   >
                     ^
                   </button>
@@ -580,7 +593,7 @@ function TabletLibraryEditor({
                     onClick={() => handleEntryMove(entry.id, 1)}
                     disabled={isFormDisabled || index === sortedEntries.length - 1}
                     className="flex h-[34px] w-[34px] items-center justify-center rounded-[8px] border border-white/35 font-montserrat-alt text-[18px] font-extrabold leading-none text-white disabled:opacity-30"
-                    aria-label={`Move ${entry.headline} down`}
+                    aria-label={t('moveDown', { headline: entry.headline })}
                   >
                     v
                   </button>
@@ -604,8 +617,8 @@ function TabletLibraryEditor({
             }}
             disabled={isFormDisabled}
             className="h-[48px] w-full rounded-[8px] border border-white/15 bg-white px-[14px] font-montserrat text-[15px] font-semibold text-[#172033] outline-none placeholder:text-[#172033]/50 focus:border-white"
-            aria-label="Experience headline"
-            placeholder="Headline"
+            aria-label={t('experienceHeadline')}
+            placeholder={t('headline')}
           />
 
           <textarea
@@ -619,8 +632,8 @@ function TabletLibraryEditor({
             }}
             disabled={isFormDisabled}
             className="h-[210px] w-full resize-none rounded-[8px] border border-white/15 bg-white px-[14px] py-[12px] font-montserrat text-[15px] font-semibold leading-[1.25] text-[#172033] outline-none placeholder:text-[#172033]/50 focus:border-white"
-            aria-label="Experience description"
-            placeholder="Description"
+            aria-label={t('experienceDescription')}
+            placeholder={t('description')}
           />
 
           <div className="grid grid-cols-[118px_minmax(0,1fr)] gap-[10px]">
@@ -640,7 +653,7 @@ function TabletLibraryEditor({
                 }}
                 disabled={isFormDisabled}
                 className="h-[44px] min-w-[70px] flex-1 rounded-[8px] border border-white/15 bg-white px-[10px] text-center font-montserrat text-[15px] font-semibold text-[#172033] outline-none focus:border-white"
-                aria-label="Experience XP"
+                aria-label={t('experienceXp')}
               />
             </label>
 
@@ -657,11 +670,11 @@ function TabletLibraryEditor({
                 }}
                 disabled={isFormDisabled}
                 className="h-[44px] min-w-0 flex-1 rounded-[8px] border border-white/15 bg-white px-[10px] font-montserrat text-[15px] font-semibold text-[#172033] outline-none focus:border-white"
-                aria-label="Experience tag"
+                aria-label={t('experienceTag')}
               >
                 {tagOptions.map((tag) => (
                   <option key={tag} value={tag}>
-                    {tag}
+                    {t(getLibraryTagKey(tag))}
                   </option>
                 ))}
               </select>
@@ -679,8 +692,8 @@ function TabletLibraryEditor({
             }}
             disabled={isFormDisabled}
             className="h-[48px] w-full rounded-[8px] border border-white/15 bg-white px-[14px] font-montserrat text-[15px] font-semibold text-[#172033] outline-none placeholder:text-[#172033]/50 focus:border-white"
-            aria-label="Experience session or date"
-            placeholder="Session/Date"
+            aria-label={t('experienceSessionDate')}
+            placeholder={t('sessionDate').replace(':', '')}
           />
         </div>
 
@@ -690,7 +703,7 @@ function TabletLibraryEditor({
           disabled={isSaveDisabled}
           className="mt-[42px] h-[48px] w-full rounded-[8px] bg-white font-montserrat-alt text-[15px] font-extrabold text-black transition hover:bg-white/90 disabled:opacity-45"
         >
-          {isSaving ? 'Saving...' : 'Save'}
+          {isSaving ? commonT('saving') : commonT('save')}
         </button>
 
         <button
@@ -699,7 +712,7 @@ function TabletLibraryEditor({
           disabled={isDeleteDisabled}
           className="mt-[10px] h-[44px] w-full rounded-[8px] border border-[#FF6B6B] bg-transparent font-montserrat-alt text-[14px] font-extrabold text-[#FFB4B4] transition hover:bg-[#FF6B6B]/10 disabled:opacity-35"
         >
-          {isDeleting ? 'Deleting...' : 'Delete'}
+          {isDeleting ? commonT('deleting') : commonT('delete')}
         </button>
 
         {saveMessage ? (

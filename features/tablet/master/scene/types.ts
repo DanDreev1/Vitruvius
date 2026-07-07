@@ -58,6 +58,7 @@ export type SceneMusicItem = {
   isActive: boolean;
   isPlaying: boolean;
   currentTimeSeconds: number;
+  volume: number;
   sortOrder: number;
 };
 
@@ -73,6 +74,7 @@ export type SceneMusicRecord = {
   is_active: boolean;
   is_playing: boolean;
   current_time_seconds: number;
+  volume?: number | null;
   created_at: string;
   updated_at: string;
 };

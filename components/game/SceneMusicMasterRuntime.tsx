@@ -35,13 +35,14 @@ type LocalMusicChangedPayload = MusicTimeRequestPayload & {
   currentTimeSeconds?: number;
   isActive?: boolean;
   isPlaying?: boolean;
+  volume?: number;
 };
 
 function applyMusicPayloadToRecords(
   records: SceneMusicRecord[],
   payload: LocalMusicChangedPayload
 ) {
-  if (!payload.trackId || typeof payload.currentTimeSeconds !== 'number') {
+  if (!payload.trackId) {
     return records;
   }
 
@@ -60,9 +61,13 @@ function applyMusicPayloadToRecords(
           ? false
           : record.is_playing,
     current_time_seconds:
-      record.id === payload.trackId
+      record.id === payload.trackId && typeof payload.currentTimeSeconds === 'number'
         ? payload.currentTimeSeconds ?? record.current_time_seconds
         : record.current_time_seconds,
+    volume:
+      record.id === payload.trackId && typeof payload.volume === 'number'
+        ? payload.volume
+        : record.volume,
   }));
 }
 
@@ -75,6 +80,7 @@ function mapRecordToItem(record: SceneMusicRecord): SceneMusicItem {
     isActive: record.is_active,
     isPlaying: record.is_playing,
     currentTimeSeconds: record.current_time_seconds ?? 0,
+    volume: record.volume ?? 1,
     sortOrder: record.sort_order,
   };
 }
@@ -154,8 +160,7 @@ export default function SceneMusicMasterRuntime({
 
       if (
         payload?.sessionId === sessionId &&
-        payload.trackId &&
-        typeof payload.currentTimeSeconds === 'number'
+        payload.trackId
       ) {
         if (shouldIgnoreLateEndedRestart(payload)) {
           return;
@@ -187,8 +192,7 @@ export default function SceneMusicMasterRuntime({
 
           if (
             change?.sessionId === sessionId &&
-            change.trackId &&
-            typeof change.currentTimeSeconds === 'number'
+            change.trackId
           ) {
             if (shouldIgnoreLateEndedRestart(change)) {
               return;

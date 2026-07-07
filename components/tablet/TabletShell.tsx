@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 
 import { canEditTablet } from "@/features/tablet/navigation";
 import {
@@ -46,6 +47,7 @@ import type { TabletViewMode } from "@/lib/game/types";
 
 import TabletNav from "./TabletNav";
 import TabletPageRenderer from "./TabletPageRenderer";
+import { translateSystemLabel } from "./systemLabels";
 
 type TabletShellProps = {
   activeTab: TabletTab;
@@ -332,13 +334,14 @@ function formatCooldownDuration(remainingMs: number) {
 
 function getDisplayCharacterName(
   rawName: string | null | undefined,
-  isLoading: boolean
+  isLoading: boolean,
+  fallbackName = "Name"
 ) {
   if (isLoading) {
-    return "Name";
+    return fallbackName;
   }
 
-  const trimmedName = rawName?.trim() || "Name";
+  const trimmedName = rawName?.trim() || fallbackName;
 
   if (trimmedName.length <= PLAYER_TABLET_CHARACTER_NAME_MAX_LENGTH) {
     return trimmedName;
@@ -578,6 +581,9 @@ function PlayerTabletShellLayout({
   playerCharacterError,
   onPlayerCharacterSaved,
 }: SharedShellLayoutProps) {
+  const t = useTranslations("TabletPlayer.shell");
+  const commonT = useTranslations("TabletPlayer.common");
+  const systemLabelsT = useTranslations("TabletPlayer.systemLabels");
   const isEditable = canEditTablet(targetRole, mode);
   const showEditButton = isEditable && editablePlayerTabs.includes(activeTab);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -601,10 +607,11 @@ function PlayerTabletShellLayout({
   const fullCharacterName =
     !isPlayerCharacterLoading && playerCharacter?.name?.trim()
       ? playerCharacter.name.trim()
-      : "Name";
+      : commonT("name");
   const characterName = getDisplayCharacterName(
     fullCharacterName,
-    isPlayerCharacterLoading
+    isPlayerCharacterLoading,
+    commonT("name")
   );
   const characterNameFontSize = getCharacterNameFontSize(characterName);
   const isCharacterNameClipped = isCharacterNameOverLimit(fullCharacterName);
@@ -668,7 +675,7 @@ function PlayerTabletShellLayout({
   const isPortraitCooldownActive = portraitCooldownRemainingMs > 0;
   const portraitStatusMessage = useMemo(() => {
     if (isSaving && draft.portraitFile) {
-      return "Uploading portrait...";
+      return t("uploadingPortrait");
     }
 
     if (portraitError) {
@@ -676,9 +683,9 @@ function PlayerTabletShellLayout({
     }
 
     if (showPortraitCooldownNotice && isPortraitCooldownActive) {
-      return `Change portrait in ${formatCooldownDuration(
-        portraitCooldownRemainingMs
-      )}`;
+      return t("portraitCooldown", {
+        time: formatCooldownDuration(portraitCooldownRemainingMs),
+      });
     }
 
     return null;
@@ -689,6 +696,7 @@ function PlayerTabletShellLayout({
     portraitCooldownRemainingMs,
     portraitError,
     showPortraitCooldownNotice,
+    t,
   ]);
 
   useEffect(() => {
@@ -1126,11 +1134,11 @@ function PlayerTabletShellLayout({
 
   const validateCustomIconFile = (file: File) => {
     if (!PLAYER_TABLET_PORTRAIT_ALLOWED_MIME_TYPES.includes(file.type)) {
-      return "Only JPG, PNG, WEBP, or GIF images are allowed";
+      return t("imageTypeError");
     }
 
     if (file.size > PLAYER_TABLET_CUSTOM_ICON_MAX_FILE_SIZE_BYTES) {
-      return "Icon must be 3 MB or smaller";
+      return t("iconSizeError");
     }
 
     return null;
@@ -1176,7 +1184,7 @@ function PlayerTabletShellLayout({
       setSaveError(null);
     } catch (error) {
       console.error(error);
-      setSaveError("Could not upload icon");
+      setSaveError(t("uploadIconError"));
     }
   };
 
@@ -1229,7 +1237,7 @@ function PlayerTabletShellLayout({
       setSaveError(null);
     } catch (error) {
       console.error(error);
-      setSaveError("Could not upload icon");
+      setSaveError(t("uploadIconError"));
     }
   };
 
@@ -1254,12 +1262,12 @@ function PlayerTabletShellLayout({
     if (!file) return;
 
     if (!PLAYER_TABLET_PORTRAIT_ALLOWED_MIME_TYPES.includes(file.type)) {
-      setPortraitError("Only JPG, PNG, WEBP, or GIF images are allowed");
+      setPortraitError(t("imageTypeError"));
       return;
     }
 
     if (file.size > PLAYER_TABLET_PORTRAIT_MAX_FILE_SIZE_BYTES) {
-      setPortraitError("Portrait must be 5 MB or smaller");
+      setPortraitError(t("portraitSizeError"));
       return;
     }
 
@@ -1285,7 +1293,7 @@ function PlayerTabletShellLayout({
     const nextName = draft.name.trim();
 
     if (!nextName) {
-      setSaveError("Character name cannot be empty");
+      setSaveError(t("emptyNameError"));
       return;
     }
 
@@ -1347,7 +1355,7 @@ function PlayerTabletShellLayout({
       setIsEditMode(false);
     } catch (error) {
       console.error(error);
-      setSaveError("Could not save character changes");
+      setSaveError(t("saveCharacterError"));
     } finally {
       setIsSaving(false);
     }
@@ -1385,7 +1393,7 @@ function PlayerTabletShellLayout({
             onChange={(event) => handleNameChange(event.target.value)}
             maxLength={PLAYER_TABLET_CHARACTER_NAME_MAX_LENGTH}
             className="h-[54px] w-[420px] rounded-[14px] border border-white/35 bg-white/8 px-[16px] font-montserrat-alt text-[34px] font-extrabold leading-none text-white outline-none focus:border-white"
-            aria-label="Character name"
+            aria-label={t("characterName")}
           />
         ) : (
           <h1
@@ -1404,13 +1412,19 @@ function PlayerTabletShellLayout({
         )}
 
         <div className="flex flex-1 items-center justify-end gap-[28px]">
-          {visibleAttributes.map((attribute) => {
-            const iconSrc =
-              attributeIconSrcByKey[attribute.key] ??
-              attributeIconSrcByKey[attribute.iconKey] ??
-              attributeIconSrcByKey.constitution;
+        {visibleAttributes.map((attribute) => {
+          const iconSrc =
+            attributeIconSrcByKey[attribute.key] ??
+            attributeIconSrcByKey[attribute.iconKey] ??
+            attributeIconSrcByKey.constitution;
+          const attributeLabel = translateSystemLabel(
+            "attributes",
+            attribute.key,
+            attribute.label,
+            systemLabelsT
+          );
 
-            return (
+          return (
               <div
                 key={attribute.id}
                 className="flex min-w-[76px] items-center justify-center gap-[8px]"
@@ -1428,7 +1442,7 @@ function PlayerTabletShellLayout({
                         attribute.value >= PLAYER_TABLET_ATTRIBUTE_MAX_VALUE
                       }
                       className="flex h-[18px] w-[22px] items-center justify-center rounded-[6px] border border-white/55 bg-transparent text-[15px] font-black leading-none text-white disabled:opacity-35"
-                      aria-label={`Increase ${attribute.label}`}
+                      aria-label={t("increaseAttribute", { label: attributeLabel })}
                     >
                       +
                     </button>
@@ -1439,7 +1453,7 @@ function PlayerTabletShellLayout({
                         attribute.value <= PLAYER_TABLET_ATTRIBUTE_MIN_VALUE
                       }
                       className="flex h-[18px] w-[22px] items-center justify-center rounded-[6px] border border-white/55 bg-transparent text-[15px] font-black leading-none text-white disabled:opacity-35"
-                      aria-label={`Decrease ${attribute.label}`}
+                      aria-label={t("decreaseAttribute", { label: attributeLabel })}
                     >
                       -
                     </button>
@@ -1456,8 +1470,8 @@ function PlayerTabletShellLayout({
           type="button"
           onClick={isEditMode ? handleSave : handleEditToggle}
           disabled={isSaving || (!isEditMode && !playerCharacter)}
-          className="absolute right-[18px] top-[22px] flex w-[78px] flex-col items-center justify-center gap-[4px] rounded-[14px] py-[4px] text-white transition-opacity duration-200 hover:opacity-75 disabled:cursor-not-allowed disabled:opacity-45"
-          title={isEditMode ? "Save character" : "Edit character"}
+          className="absolute right-[28px] top-[38px] flex w-[78px] flex-col items-center justify-center gap-[3px] rounded-[14px] py-[2px] text-white transition-opacity duration-200 hover:opacity-75 disabled:cursor-not-allowed disabled:opacity-45"
+          title={isEditMode ? t("saveCharacter") : t("editCharacter")}
         >
           <Image
             src={isEditMode ? "/save-icon.svg" : "/Edit-icon.png"}
@@ -1466,8 +1480,8 @@ function PlayerTabletShellLayout({
             height={32}
             className={isEditMode ? "invert" : undefined}
           />
-          <span className="font-montserrat text-[16px] font-bold leading-none">
-            {isEditMode ? "Save" : "Edit"}
+          <span className="max-w-full truncate px-[2px] text-center font-montserrat text-[13px] font-bold leading-none">
+            {isEditMode ? t("saveButton") : t("editButton")}
           </span>
         </button>
       ) : null}
@@ -1484,6 +1498,12 @@ function PlayerTabletShellLayout({
             parameterIconSrcByKey[parameter.key] ??
             parameterIconSrcByKey[parameter.iconKey] ??
             parameterIconSrcByKey.health;
+          const parameterLabel = translateSystemLabel(
+            "parameters",
+            parameter.key,
+            parameter.label,
+            systemLabelsT
+          );
           const parameterMaxValue = getParameterMaxValue(
             parameter,
             visibleAttributes,
@@ -1506,7 +1526,7 @@ function PlayerTabletShellLayout({
                       PLAYER_TABLET_PARAMETER_MIN_VALUE
                     }
                     className="flex h-[40px] w-[28px] items-center justify-center leading-none disabled:opacity-35"
-                    aria-label={`Decrease ${parameter.label}`}
+                    aria-label={t("decreaseParameter", { label: parameterLabel })}
                   >
                     -
                   </button>
@@ -1518,7 +1538,7 @@ function PlayerTabletShellLayout({
                     onClick={() => handleParameterDelta(parameter.id, 1)}
                     disabled={isIncreaseDisabled}
                     className="flex h-[40px] w-[28px] items-center justify-center leading-none disabled:opacity-35"
-                    aria-label={`Increase ${parameter.label}`}
+                    aria-label={t("increaseParameter", { label: parameterLabel })}
                   >
                     +
                   </button>

@@ -1,6 +1,6 @@
 {
   "Game": {
-    "loading": "Завантаження гри…", "offline": "Не в мережі", "master": "Майстер", "player": "Гравець", "dice": "Кубики",
+    "loading": "Завантаження гри…", "offline": "Офлайн", "master": "Майстер", "player": "Гравець", "dice": "Кубики",
     "rotateTitle": "Поверніть пристрій", "rotateDescription": "Ігровий стіл доступний лише на широких екранах.", "openImage": "Відкрити зображення «{title}»",
     "stack": "Стос", "fit": "Вписати", "images": "Зображення", "mode": "Режим: {mode}", "loadingImages": "Завантаження зображень…", "noImages": "Немає доступних зображень", "previous": "Назад", "next": "Далі",
     "successes": "{count, plural, one {# успіх} few {# успіхи} many {# успіхів} other {# успіху}}", "rollProgress": "Кидок {current}/{total}", "rollPartyDice": "Кинути кубики перевірки",

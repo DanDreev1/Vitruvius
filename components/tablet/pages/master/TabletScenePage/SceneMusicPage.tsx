@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import type { SceneAudienceState, SceneMusicItem } from '@/features/tablet/master/scene/types';
 import {
@@ -71,23 +72,48 @@ function RepeatIcon() {
   );
 }
 
+function VolumeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-[16px] w-[16px]">
+      <path
+        d="M4 9v6h4l5 4V5L8 9H4Z"
+        fill="currentColor"
+      />
+      <path
+        d="M16 9.5a4 4 0 0 1 0 5M18.5 7a7 7 0 0 1 0 10"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="2"
+      />
+    </svg>
+  );
+}
+
 export default function SceneMusicPage({
   sessionId,
   inGameWorldId,
   onAudienceStateChange,
 }: SceneMusicPageProps) {
+  const t = useTranslations('TabletMaster.scene.music');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const coverInputRef = useRef<HTMLInputElement | null>(null);
+  const coverTargetRef = useRef<SceneMusicItem | null>(null);
   const metadataAudioRef = useRef<HTMLAudioElement | null>(null);
   const lastSeekCommitRef = useRef<{ value: number; committedAt: number } | null>(null);
   const metadataTrackRef = useRef<{ id: string; audioUrl: string | null } | null>(null);
+  const volumeCommitTimeoutRef = useRef<number | null>(null);
   const [activeDuration, setActiveDuration] = useState(0);
   const [activeDisplayTime, setActiveDisplayTime] = useState(0);
+  const [globalVolumeDraft, setGlobalVolumeDraft] = useState(1);
   const {
     music,
     isLoading,
     isUploading,
     error,
     uploadMusic,
+    uploadCover,
+    setMusicVolume,
     selectMusic,
     playMusic,
     pauseMusic,
@@ -219,6 +245,26 @@ export default function SceneMusicPage({
     }
   };
 
+  const handleCoverClick = (item: SceneMusicItem) => {
+    coverTargetRef.current = item;
+    coverInputRef.current?.click();
+  };
+
+  const handleCoverFileChange: React.ChangeEventHandler<HTMLInputElement> = async (
+    event
+  ) => {
+    const file = event.target.files?.[0];
+    const target = coverTargetRef.current;
+    if (!file || !target) return;
+
+    try {
+      await uploadCover(target, file);
+    } finally {
+      event.target.value = '';
+      coverTargetRef.current = null;
+    }
+  };
+
   const handleTrackSelect = (item: SceneMusicItem) => {
     if (item.isActive) return;
     void selectMusic(item.id);
@@ -287,6 +333,33 @@ export default function SceneMusicPage({
 
   const activeProgressMax = activeDuration || Math.max(activeDisplayTime, 1);
 
+  useEffect(() => {
+    setGlobalVolumeDraft(activeMusic?.volume ?? 1);
+  }, [activeMusic?.id, activeMusic?.volume]);
+
+  useEffect(() => {
+    return () => {
+      if (volumeCommitTimeoutRef.current !== null) {
+        window.clearTimeout(volumeCommitTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleGlobalVolumeChange = (value: number) => {
+    if (!activeMusic) return;
+
+    const safeVolume = Math.min(1, Math.max(0, value));
+    setGlobalVolumeDraft(safeVolume);
+
+    if (volumeCommitTimeoutRef.current !== null) {
+      window.clearTimeout(volumeCommitTimeoutRef.current);
+    }
+
+    volumeCommitTimeoutRef.current = window.setTimeout(() => {
+      void setMusicVolume(activeMusic, safeVolume);
+    }, 180);
+  };
+
   return (
     <div className="flex h-full w-full flex-col">
       <audio
@@ -306,14 +379,21 @@ export default function SceneMusicPage({
         onChange={handleFileChange}
         className="hidden"
       />
+      <input
+        ref={coverInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif,image/*"
+        onChange={handleCoverFileChange}
+        className="hidden"
+      />
 
       <div className="mb-[18px] flex items-center gap-[12px]">
         <div>
           <h2 className="font-montserrat-alt text-[34px] font-extrabold text-white">
-            Playlist
+            {t('playlist')}
           </h2>
           <p className="mt-[4px] font-montserrat text-[14px] text-white/65">
-            {activeMusic ? `Selected: ${activeMusic.title}` : 'No selected track'}
+            {activeMusic ? t('selectedTrack', { title: activeMusic.title }) : t('noSelectedTrack')}
           </p>
         </div>
 
@@ -323,7 +403,7 @@ export default function SceneMusicPage({
           disabled={isUploading}
           className="ml-auto rounded-[14px] bg-white px-[22px] py-[11px] font-montserrat text-[15px] font-bold text-black disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isUploading ? 'Uploading...' : 'Add music'}
+          {isUploading ? t('uploading') : t('addMusic')}
         </button>
       </div>
 
@@ -336,13 +416,51 @@ export default function SceneMusicPage({
       {activeMusic ? (
         <div className="mb-[12px] rounded-[22px] border border-white/15 bg-[#0B1327] px-[16px] py-[14px]">
           <div className="mb-[12px] flex items-center gap-[12px]">
+            <button
+              type="button"
+              onClick={() => handleCoverClick(activeMusic)}
+              disabled={isUploading}
+              className="group relative h-[74px] w-[104px] shrink-0 overflow-hidden rounded-[16px] border border-white/15 bg-[#111A2D] bg-cover bg-center transition hover:border-white/45 disabled:cursor-not-allowed disabled:opacity-60"
+              style={
+                activeMusic.coverUrl
+                  ? { backgroundImage: `url(${activeMusic.coverUrl})` }
+                  : undefined
+              }
+            >
+              <span className="absolute inset-0 bg-black/20 transition group-hover:bg-black/45" />
+              <span className="absolute inset-x-[8px] bottom-[8px] rounded-[8px] bg-black/70 px-[8px] py-[5px] text-center font-montserrat text-[9px] font-extrabold text-white">
+                {activeMusic.coverUrl ? t('replaceCover') : t('addCover')}
+              </span>
+            </button>
+
             <div className="min-w-0 flex-1">
               <p className="truncate font-montserrat-alt text-[18px] font-extrabold text-white">
                 {activeMusic.title}
               </p>
-              <p className="mt-[2px] font-montserrat text-[12px] font-semibold text-white/55">
-                {activeMusic.isPlaying ? 'Playing' : 'Paused'}
-              </p>
+              <div className="mt-[7px] flex max-w-[360px] items-center gap-[10px]">
+                <p className="shrink-0 font-montserrat text-[12px] font-semibold text-white/55">
+                  {activeMusic.isPlaying ? t('playing') : t('paused')}
+                </p>
+                <span className="h-[4px] w-[4px] shrink-0 rounded-full bg-white/25" />
+                <div className="flex min-w-[170px] flex-1 items-center gap-[8px] rounded-full border border-white/10 bg-white/[0.04] px-[10px] py-[6px] text-white/75">
+                  <VolumeIcon />
+                  <input
+                    type="range"
+                    min={0}
+                    max={100}
+                    step={1}
+                    value={Math.round(globalVolumeDraft * 100)}
+                    onChange={(event) =>
+                      handleGlobalVolumeChange(Number(event.target.value) / 100)
+                    }
+                    className="h-[4px] min-w-0 flex-1 cursor-pointer accent-white"
+                    aria-label={t('globalVolume')}
+                  />
+                  <span className="w-[34px] text-right font-montserrat text-[10px] font-extrabold text-white/60">
+                    {Math.round(globalVolumeDraft * 100)}%
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div className="flex shrink-0 items-center gap-[8px]">
@@ -351,7 +469,7 @@ export default function SceneMusicPage({
                 onClick={() => handleSwitchMusic(-1)}
                 disabled={!canSwitchMusic}
                 className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-white/15 text-white transition disabled:cursor-not-allowed disabled:opacity-35"
-                aria-label="Previous track"
+                aria-label={t('previousTrack')}
               >
                 <ChevronIcon direction="left" />
               </button>
@@ -359,7 +477,7 @@ export default function SceneMusicPage({
                 type="button"
                 onClick={(event) => handlePlayClick(event, activeMusic)}
                 className="flex h-[44px] w-[44px] items-center justify-center rounded-full bg-white text-black"
-                aria-label={activeMusic.isPlaying ? 'Pause' : 'Play'}
+                aria-label={activeMusic.isPlaying ? t('pause') : t('play')}
               >
                 {activeMusic.isPlaying ? <PauseIcon /> : <PlayIcon />}
               </button>
@@ -368,7 +486,7 @@ export default function SceneMusicPage({
                 onClick={() => handleSwitchMusic(1)}
                 disabled={!canSwitchMusic}
                 className="flex h-[40px] w-[40px] items-center justify-center rounded-full bg-white/15 text-white transition disabled:cursor-not-allowed disabled:opacity-35"
-                aria-label="Next track"
+                aria-label={t('nextTrack')}
               >
                 <ChevronIcon direction="right" />
               </button>
@@ -381,7 +499,7 @@ export default function SceneMusicPage({
                     ? 'bg-[#D6B25E] text-black'
                     : 'bg-white/15 text-white',
                 ].join(' ')}
-                aria-label={endMode === 'repeat' ? 'Repeat track' : 'Auto next track'}
+                aria-label={endMode === 'repeat' ? t('repeatTrack') : t('autoNextTrack')}
               >
                 <RepeatIcon />
                 {endMode === 'repeat' ? (
@@ -418,12 +536,13 @@ export default function SceneMusicPage({
                 handleSeekCommit(Number(event.currentTarget.value));
               }}
               className="h-[6px] flex-1 cursor-pointer accent-white"
-              aria-label="Scene music time"
+              aria-label={t('sceneMusicTime')}
             />
             <span className="w-[44px] text-right font-montserrat text-[12px] font-bold text-white/75">
               {activeDuration ? formatTime(activeDuration) : '--:--'}
             </span>
           </div>
+
         </div>
       ) : null}
 
@@ -431,13 +550,13 @@ export default function SceneMusicPage({
         {isLoading ? (
           <div className="flex h-full items-center justify-center rounded-[24px] bg-[#0B1327]">
             <p className="font-montserrat text-[16px] text-white/75">
-              Loading music...
+              {t('loading')}
             </p>
           </div>
         ) : !sortedMusic.length ? (
           <div className="flex h-full items-center justify-center rounded-[24px] bg-[#0B1327]">
             <p className="font-montserrat text-[16px] text-white/75">
-              No music uploaded
+              {t('empty')}
             </p>
           </div>
         ) : (
@@ -474,8 +593,15 @@ export default function SceneMusicPage({
                   ].join(' ')}
                 >
                   <div className="flex items-center gap-[16px]">
-                    <div className="flex h-[58px] w-[58px] shrink-0 items-center justify-center rounded-full bg-white/90 font-montserrat-alt text-[20px] font-extrabold text-black">
-                      {item.title.trim().charAt(0).toUpperCase() || 'M'}
+                    <div
+                      className="flex h-[58px] w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-[15px] bg-white/90 bg-cover bg-center font-montserrat-alt text-[20px] font-extrabold text-black"
+                      style={
+                        item.coverUrl
+                          ? { backgroundImage: `url(${item.coverUrl})` }
+                          : undefined
+                      }
+                    >
+                      {item.coverUrl ? null : item.title.trim().charAt(0).toUpperCase() || 'M'}
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -485,7 +611,7 @@ export default function SceneMusicPage({
                         </p>
                         {item.isActive ? (
                           <span className="shrink-0 rounded-full bg-[#D6B25E] px-[10px] py-[4px] font-montserrat text-[11px] font-bold text-black">
-                            Selected
+                            {t('selected')}
                           </span>
                         ) : null}
                       </div>
@@ -508,7 +634,7 @@ export default function SceneMusicPage({
                         type="button"
                         onClick={(event) => handlePlayClick(event, item)}
                         className="flex h-[36px] w-[36px] items-center justify-center rounded-full bg-white text-black"
-                        aria-label={item.isActive && item.isPlaying ? 'Pause' : 'Play'}
+                        aria-label={item.isActive && item.isPlaying ? t('pause') : t('play')}
                       >
                         {item.isActive && item.isPlaying ? <PauseIcon /> : <PlayIcon />}
                       </button>
@@ -517,7 +643,7 @@ export default function SceneMusicPage({
                         onClick={(event) => handleDeleteClick(event, item)}
                         className="rounded-full bg-white/15 px-[14px] py-[8px] font-montserrat text-[13px] font-bold text-white"
                       >
-                        Delete
+                        {t('delete')}
                       </button>
                     </div>
                   </div>

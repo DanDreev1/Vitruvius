@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 import LanguageSwitcher from '@/components/i18n/LanguageSwitcher';
 
@@ -44,6 +45,8 @@ export default function TabletSettingsContent({
   viewerUserId,
   inGameWorldId = null,
 }: TabletSettingsContentProps) {
+  const t = useTranslations('TabletPlayer.settings');
+  const commonT = useTranslations('TabletPlayer.common');
   const { volume, setVolume } = useSceneAudioVolume();
   const { requestExit, isBusy: isExitingSession } = useSessionExit();
   const avatarInputRef = useRef<HTMLInputElement | null>(null);
@@ -75,11 +78,11 @@ export default function TabletSettingsContent({
         setWorldAvatarUrl(profile.avatarUrl);
       })
       .catch((error) => {
-        if (isActive) setProfileError(error instanceof Error ? error.message : 'Could not load world.');
+        if (isActive) setProfileError(error instanceof Error ? error.message : t('worldLoadError'));
       });
 
     return () => { isActive = false; };
-  }, [inGameWorldId]);
+  }, [inGameWorldId, t]);
 
   useEffect(() => {
     if (!profileMessage) return;
@@ -109,9 +112,9 @@ export default function TabletSettingsContent({
         displayName: trimmedNickname,
       });
       setIsEditingNickname(false);
-      setProfileMessage('Nickname changed successfully.');
+      setProfileMessage(t('nicknameChanged'));
     } catch (error) {
-      setProfileError(error instanceof Error ? error.message : 'Could not save nickname.');
+      setProfileError(error instanceof Error ? error.message : t('nicknameSaveError'));
     } finally {
       setIsSavingNickname(false);
     }
@@ -121,17 +124,17 @@ export default function TabletSettingsContent({
     if (!file || !participant || isUploadingAvatar) return;
 
     if (avatarCooldownEndsAt && avatarCooldownEndsAt > Date.now()) {
-      setProfileError('Avatar can be changed again in a few minutes.');
+      setProfileError(t('avatarCooldown'));
       return;
     }
 
     if (!LOBBY_AVATAR_ALLOWED_MIME_TYPES.includes(file.type)) {
-      setProfileError('Only JPG, PNG, WEBP, or GIF images are allowed.');
+      setProfileError(commonT('imageTypeError'));
       return;
     }
 
     if (file.size > LOBBY_AVATAR_MAX_FILE_SIZE_BYTES) {
-      setProfileError('Avatar must be 5 MB or smaller.');
+      setProfileError(t('avatarSizeError'));
       return;
     }
 
@@ -148,9 +151,9 @@ export default function TabletSettingsContent({
       });
       setAvatarUrl(nextAvatarUrl);
       setAvatarCooldownEndsAt(Date.now() + LOBBY_AVATAR_UPDATE_COOLDOWN_MS);
-      setProfileMessage('Avatar changed successfully.');
+      setProfileMessage(t('avatarChanged'));
     } catch (error) {
-      setProfileError(error instanceof Error ? error.message : 'Could not upload avatar.');
+      setProfileError(error instanceof Error ? error.message : t('avatarUploadError'));
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -170,9 +173,9 @@ export default function TabletSettingsContent({
       await saveInGameWorldName(inGameWorldId, nextName);
       setWorldName(nextName);
       setSavedWorldName(nextName);
-      setProfileMessage('World name saved.');
+      setProfileMessage(t('worldNameSaved'));
     } catch (error) {
-      setProfileError(error instanceof Error ? error.message : 'Could not save world name.');
+      setProfileError(error instanceof Error ? error.message : t('worldNameSaveError'));
     } finally {
       setIsSavingWorld(false);
     }
@@ -181,11 +184,11 @@ export default function TabletSettingsContent({
   const selectWorldAvatar = async (file: File | null) => {
     if (!file || !inGameWorldId || isSavingWorld) return;
     if (!LOBBY_AVATAR_ALLOWED_MIME_TYPES.includes(file.type)) {
-      setProfileError('Only JPG, PNG, WEBP, or GIF images are allowed.');
+      setProfileError(commonT('imageTypeError'));
       return;
     }
     if (file.size > LOBBY_AVATAR_MAX_FILE_SIZE_BYTES) {
-      setProfileError('World image must be 5 MB or smaller.');
+      setProfileError(t('worldImageSizeError'));
       return;
     }
 
@@ -194,9 +197,9 @@ export default function TabletSettingsContent({
     try {
       const nextUrl = await saveInGameWorldAvatar({ sessionId, worldId: inGameWorldId, file });
       setWorldAvatarUrl(nextUrl);
-      setProfileMessage('World image saved.');
+      setProfileMessage(t('worldImageSaved'));
     } catch (error) {
-      setProfileError(error instanceof Error ? error.message : 'Could not upload world image.');
+      setProfileError(error instanceof Error ? error.message : t('worldImageUploadError'));
     } finally {
       setIsSavingWorld(false);
     }
@@ -209,9 +212,9 @@ export default function TabletSettingsContent({
     try {
       await navigator.clipboard.writeText(value);
       setProfileError(null);
-      setProfileMessage('Nickname copied.');
+      setProfileMessage(t('nicknameCopied'));
     } catch {
-      setProfileError('Could not copy nickname.');
+      setProfileError(t('nicknameCopyError'));
     }
   };
 
@@ -223,7 +226,7 @@ export default function TabletSettingsContent({
         </div>
       ) : null}
 
-      <SectionTitle title="Settings" subtitle="Profile and local preferences" />
+      <SectionTitle title={t('settings')} subtitle={t('subtitle')} />
 
       <div className="grid h-[calc(100%-72px)] grid-cols-[1fr_360px] gap-[18px] pb-[14px]">
         <Panel className="space-y-[18px] overflow-y-auto">
@@ -236,7 +239,7 @@ export default function TabletSettingsContent({
                   disabled={isSavingWorld}
                   className="h-[74px] w-[74px] shrink-0 rounded-[18px] border border-white/20 bg-[#111A2D] bg-cover bg-center transition hover:border-[#D6B25E] disabled:opacity-50"
                   style={worldAvatarUrl ? { backgroundImage: `url(${worldAvatarUrl})` } : undefined}
-                  aria-label="Change world image"
+                  aria-label={t('changeWorldImage')}
                 />
                 <input
                   ref={worldAvatarInputRef}
@@ -249,7 +252,7 @@ export default function TabletSettingsContent({
                   }}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="mb-[8px] font-montserrat-alt text-[18px] font-extrabold text-white">World profile</p>
+                  <p className="mb-[8px] font-montserrat-alt text-[18px] font-extrabold text-white">{t('worldProfile')}</p>
                   <div className="flex gap-[8px]">
                     <input
                       value={worldName}
@@ -258,7 +261,7 @@ export default function TabletSettingsContent({
                       onChange={(event) => setWorldName(event.target.value)}
                       onKeyDown={(event) => { if (event.key === 'Enter') void saveWorldName(); }}
                       className="h-[42px] min-w-0 flex-1 rounded-full border border-white/25 bg-[#111A2D] px-[16px] font-montserrat text-[13px] font-bold text-white outline-none focus:border-[#D6B25E]"
-                      placeholder="World name"
+                      placeholder={t('worldName')}
                     />
                     <button
                       type="button"
@@ -266,10 +269,10 @@ export default function TabletSettingsContent({
                       disabled={!worldName.trim() || worldName.trim() === savedWorldName || isSavingWorld}
                       className="rounded-full bg-white px-[18px] font-montserrat text-[12px] font-extrabold text-black disabled:opacity-35"
                     >
-                      {isSavingWorld ? 'Saving...' : 'Save'}
+                      {isSavingWorld ? commonT('saving') : commonT('save')}
                     </button>
                   </div>
-                  <p className="mt-[7px] font-montserrat text-[11px] text-white/55">Click the image to replace it.</p>
+                  <p className="mt-[7px] font-montserrat text-[11px] text-white/55">{t('replaceWorldImageHelp')}</p>
                 </div>
               </div>
             </div>
@@ -284,15 +287,15 @@ export default function TabletSettingsContent({
                   disabled={!participant || isUploadingAvatar}
                   className="group relative block h-[64px] w-[64px] rounded-full border border-white/15 bg-[#898989] bg-cover bg-center transition hover:border-[#D6B25E] disabled:cursor-not-allowed disabled:opacity-50"
                   style={avatarUrl ? { backgroundImage: `url(${avatarUrl})` } : undefined}
-                  aria-label="Change avatar"
+                  aria-label={t('changeAvatar')}
                 />
                 <button
                   type="button"
                   onClick={() => avatarInputRef.current?.click()}
                   disabled={!participant || isUploadingAvatar}
                   className="absolute -bottom-[3px] -right-[3px] flex h-[25px] w-[25px] items-center justify-center rounded-full border-[2px] border-[#172033] bg-white shadow-md transition hover:scale-105 disabled:opacity-50"
-                  aria-label="Change avatar"
-                  title={isUploadingAvatar ? 'Uploading avatar' : 'Change avatar'}
+                  aria-label={t('changeAvatar')}
+                  title={isUploadingAvatar ? t('uploadingAvatar') : t('changeAvatar')}
                 >
                   <span
                     className="h-[13px] w-[13px] bg-contain bg-center bg-no-repeat"
@@ -313,10 +316,10 @@ export default function TabletSettingsContent({
 
               <div className="min-w-[180px] flex-1">
                 <p className="truncate font-montserrat-alt text-[23px] font-extrabold leading-none text-white">
-                  {participant?.display_name?.trim() || nickname.trim() || 'Nickname'}
+                  {participant?.display_name?.trim() || nickname.trim() || commonT('nickname')}
                 </p>
                 <p className="mt-[6px] font-montserrat text-[17px] leading-none text-white">
-                  Role: {participant?.role === 'master' ? 'Master' : 'Player'}
+                  {commonT('role', { role: participant?.role === 'master' ? commonT('master') : commonT('player') })}
                 </p>
               </div>
 
@@ -336,8 +339,8 @@ export default function TabletSettingsContent({
                     }}
                     autoFocus
                     className="h-[42px] min-w-0 flex-1 rounded-full border border-white/25 bg-[#111A2D] px-[16px] font-montserrat text-[13px] font-bold text-white outline-none focus:border-[#D6B25E] disabled:opacity-50"
-                    placeholder="Nickname"
-                    aria-label="Nickname"
+                    placeholder={commonT('nickname')}
+                    aria-label={commonT('nickname')}
                   />
                   <button
                     type="button"
@@ -345,7 +348,7 @@ export default function TabletSettingsContent({
                     disabled={!canSaveNickname}
                     className="h-[42px] rounded-full bg-white px-[17px] font-montserrat text-[12px] font-extrabold text-black disabled:cursor-not-allowed disabled:opacity-35"
                   >
-                    {isSavingNickname ? 'Saving...' : 'Save'}
+                    {isSavingNickname ? commonT('saving') : commonT('save')}
                   </button>
                   <button
                     type="button"
@@ -357,7 +360,7 @@ export default function TabletSettingsContent({
                     disabled={isSavingNickname}
                     className="h-[42px] rounded-full border border-white/30 px-[15px] font-montserrat text-[12px] font-extrabold text-white disabled:opacity-40"
                   >
-                    Cancel
+                    {commonT('cancel')}
                   </button>
                 </div>
               ) : (
@@ -368,7 +371,7 @@ export default function TabletSettingsContent({
                     disabled={!participant}
                     className="h-[42px] min-w-[150px] rounded-full bg-white px-[20px] font-montserrat text-[12px] font-extrabold text-black transition hover:bg-white/90 disabled:opacity-40"
                   >
-                    Copy nickname
+                    {t('copyNickname')}
                   </button>
                   <button
                     type="button"
@@ -381,7 +384,7 @@ export default function TabletSettingsContent({
                     disabled={!participant}
                     className="h-[42px] min-w-[150px] rounded-full bg-white px-[20px] font-montserrat text-[12px] font-extrabold text-black transition hover:bg-white/90 disabled:opacity-40"
                   >
-                    Change nickname
+                    {t('changeNickname')}
                   </button>
                 </div>
               )}
@@ -389,7 +392,7 @@ export default function TabletSettingsContent({
 
             {(profileError || isUploadingAvatar) ? (
               <p className={`mt-[8px] text-right font-montserrat text-[11px] font-semibold ${profileError ? 'text-red-300' : 'text-[#D6B25E]'}`}>
-                {profileError ?? 'Uploading avatar...'}
+                {profileError ?? t('uploadingAvatar')}
               </p>
             ) : null}
           </div>
@@ -398,10 +401,10 @@ export default function TabletSettingsContent({
             <div className="mb-[14px] flex items-center justify-between gap-[16px]">
               <div>
                 <p className="font-montserrat-alt text-[20px] font-extrabold text-white">
-                  Scene audio
+                  {t('sceneAudio')}
                 </p>
                 <p className="mt-[4px] font-montserrat text-[14px] text-white/65">
-                  Music volume
+                  {t('musicVolume')}
                 </p>
               </div>
 
@@ -417,7 +420,7 @@ export default function TabletSettingsContent({
               value={Math.round(volume * 100)}
               onChange={(event) => setVolume(Number(event.target.value) / 100)}
               className="h-[8px] w-full accent-[#D6B25E]"
-              aria-label="Scene audio volume"
+              aria-label={t('sceneAudioVolume')}
             />
           </div>
 
@@ -427,10 +430,10 @@ export default function TabletSettingsContent({
             <div className="mb-[14px] flex items-center justify-between gap-[16px]">
               <div>
                 <p className="font-montserrat-alt text-[20px] font-extrabold text-white">
-                  Party confirmations
+                  {t('partyConfirmations')}
                 </p>
                 <p className="mt-[4px] font-montserrat text-[14px] text-white/65">
-                  Confirmation popups for check decisions
+                  {t('partyConfirmationsDescription')}
                 </p>
               </div>
 
@@ -440,14 +443,14 @@ export default function TabletSettingsContent({
                 disabled={!arePartyConfirmationsSuppressed}
                 className="rounded-[14px] bg-white px-[16px] py-[9px] font-montserrat text-[13px] font-extrabold text-black disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Restore
+                {t('restore')}
               </button>
             </div>
 
             <p className="font-montserrat text-[14px] leading-[1.5] text-white/65">
               {arePartyConfirmationsSuppressed
-                ? 'Party decision confirmations are hidden for this browser.'
-                : 'Party decision confirmations are currently enabled.'}
+                ? t('confirmationsHidden')
+                : t('confirmationsEnabled')}
             </p>
           </div>
         </Panel>
@@ -456,17 +459,17 @@ export default function TabletSettingsContent({
           <div className="space-y-[14px]">
             <div className="h-[20px] w-[180px] rounded-full bg-white/10" />
             <p className="font-montserrat text-[14px] leading-[1.5] text-white/65">
-              This volume is local to your device and does not affect other players.
+              {t('volumeLocalHelp')}
             </p>
           </div>
           <div className="rounded-[20px] border border-[#E07373]/25 bg-[#E07373]/5 p-[18px]">
             <p className="font-montserrat-alt text-[18px] font-extrabold text-white">
-              {participant?.role === 'master' ? 'End session' : 'Exit the game'}
+              {participant?.role === 'master' ? t('endSession') : t('exitGame')}
             </p>
             <p className="mt-[6px] font-montserrat text-[12px] leading-relaxed text-white/55">
               {participant?.role === 'master'
-                ? 'Close the room for everyone and choose what to do with the world.'
-                : 'Leave the table and choose what to do with your character.'}
+                ? t('endSessionDescription')
+                : t('exitGameDescription')}
             </p>
             <button
               type="button"
@@ -476,7 +479,7 @@ export default function TabletSettingsContent({
               }}
               className="mt-[14px] w-full rounded-[14px] border border-[#E07373]/40 px-[16px] py-[11px] font-montserrat text-[13px] font-extrabold text-[#E88A8A] transition hover:bg-[#E07373]/10 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {participant?.role === 'master' ? 'End session' : 'Exit the game'}
+              {participant?.role === 'master' ? t('endSession') : t('exitGame')}
             </button>
           </div>
         </Panel>

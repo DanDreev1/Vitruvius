@@ -1,13 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 
+import { translateSystemLabel } from '@/components/tablet/systemLabels';
 import type { PartyCheckMode } from '@/features/tablet/master/party/types';
 import { usePartyMaster } from '@/features/tablet/master/party/usePartyMaster';
 
-import {
-  Panel,
-} from '../shared/TabletPagePrimitives';
+import { Panel } from '../shared/TabletPagePrimitives';
 
 type TabletPartyPageProps = {
   sessionId: string;
@@ -15,11 +15,7 @@ type TabletPartyPageProps = {
   onClose?: () => void;
 };
 
-const modeOptions: Array<{ key: PartyCheckMode; label: string }> = [
-  { key: 'individual', label: 'Individual' },
-  { key: 'group', label: 'Group' },
-  { key: 'conflict', label: 'Conflict' },
-];
+const modeOptions: PartyCheckMode[] = ['individual', 'group', 'conflict'];
 
 function clampNumber(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
@@ -28,10 +24,16 @@ function clampNumber(value: number, min: number, max: number) {
 function ThresholdPicker({
   max,
   values,
+  addLabel,
+  removeLabel,
+  titleLabel,
   onChange,
 }: {
   max: number;
   values: number[];
+  addLabel: (value: number) => string;
+  removeLabel: (value: number) => string;
+  titleLabel: (value: number) => string;
   onChange: (values: number[]) => void;
 }) {
   return (
@@ -44,8 +46,8 @@ function ThresholdPicker({
           <button
             key={value}
             type="button"
-            aria-label={`${isSelected ? 'Remove' : 'Add'} difficulty threshold ${value}`}
-            title={`Difficulty ${value}`}
+            aria-label={isSelected ? removeLabel(value) : addLabel(value)}
+            title={titleLabel(value)}
             onClick={() => {
               onChange(
                 isSelected
@@ -130,6 +132,9 @@ export default function TabletPartyPage({
   inGameWorldId,
   onClose,
 }: TabletPartyPageProps) {
+  const t = useTranslations('TabletMaster.party');
+  const common = useTranslations('TabletMaster.common');
+  const systemLabels = useTranslations('TabletMaster.systemLabels');
   const party = usePartyMaster({ sessionId, inGameWorldId });
 
   const hasParameterChanges = useMemo(
@@ -147,6 +152,11 @@ export default function TabletPartyPage({
     party.audience.every((target) =>
       party.selectedParticipantIds.includes(target.participantId)
     );
+  const thresholdLabels = {
+    addLabel: (value: number) => t('threshold.add', { value }),
+    removeLabel: (value: number) => t('threshold.remove', { value }),
+    titleLabel: (value: number) => t('threshold.title', { value }),
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -162,10 +172,10 @@ export default function TabletPartyPage({
             <div className="flex items-center justify-between gap-[12px]">
               <div>
                 <p className="font-montserrat-alt text-[20px] font-extrabold text-white">
-                  Player status
+                  {t('statusTitle')}
                 </p>
                 <p className="mt-[3px] font-montserrat text-[13px] text-white/60">
-                  Select one player to edit status parameters.
+                  {t('statusSubtitle')}
                 </p>
               </div>
 
@@ -175,17 +185,17 @@ export default function TabletPartyPage({
                 disabled={!hasParameterChanges || party.isSavingParameters}
                 className="rounded-[14px] bg-white px-[18px] py-[10px] font-montserrat text-[14px] font-extrabold text-black disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {party.isSavingParameters ? 'Saving...' : 'Save'}
+                {party.isSavingParameters ? common('saving') : common('save')}
               </button>
             </div>
 
             {!party.editableTarget ? (
               <div className="rounded-[18px] border border-white/10 bg-white/[0.03] px-[16px] py-[18px] font-montserrat text-[14px] text-white/60">
-                Status values are available only when exactly one player is selected.
+                {t('statusUnavailable')}
               </div>
             ) : party.isLoadingParameters ? (
               <div className="rounded-[18px] bg-white/[0.03] px-[16px] py-[18px] font-montserrat text-[14px] text-white/60">
-                Loading parameters...
+                {t('loadingParameters')}
               </div>
             ) : (
               <div className="grid grid-cols-3 gap-[12px]">
@@ -200,7 +210,7 @@ export default function TabletPartyPage({
                       className="rounded-[18px] border border-white/10 bg-[#243047] px-[14px] py-[12px]"
                     >
                       <p className="truncate font-montserrat text-[12px] font-bold uppercase text-white/55">
-                        {parameter.label}
+                        {translateSystemLabel('parameters', parameter.key, parameter.label, systemLabels)}
                       </p>
                       <div className="mt-[10px] flex items-center justify-between gap-[8px]">
                         <button
@@ -242,26 +252,26 @@ export default function TabletPartyPage({
             <div className="mb-[14px] flex items-center justify-between gap-[12px]">
               <div>
                 <p className="font-montserrat-alt text-[20px] font-extrabold text-white">
-                  Difficulty
+                  {t('difficultyTitle')}
                 </p>
                 <p className="mt-[3px] font-montserrat text-[13px] text-white/60">
-                  Build the active table check.
+                  {t('difficultySubtitle')}
                 </p>
               </div>
               <div className="flex rounded-full bg-white/10 p-[4px]">
                 {modeOptions.map((option) => (
                   <button
-                    key={option.key}
+                    key={option}
                     type="button"
-                    onClick={() => party.setMode(option.key)}
+                    onClick={() => party.setMode(option)}
                     className={[
                       'rounded-full px-[13px] py-[8px] font-montserrat text-[12px] font-extrabold transition',
-                      party.mode === option.key
+                      party.mode === option
                         ? 'bg-white text-black'
                         : 'text-white/65 hover:text-white',
                     ].join(' ')}
                   >
-                    {option.label}
+                    {t(`modes.${option}`)}
                   </button>
                 ))}
               </div>
@@ -270,7 +280,7 @@ export default function TabletPartyPage({
             {party.activeCheck ? (
               <div className="flex items-center justify-between gap-[12px] rounded-[18px] border border-[#D6B25E]/35 bg-[#D6B25E]/10 px-[16px] py-[14px]">
                 <p className="font-montserrat text-[14px] text-[#F4D982]">
-                  An active check is already on the table. Finish or cancel it before creating a new one.
+                  {t('activeCheck')}
                 </p>
                 <button
                   type="button"
@@ -278,7 +288,7 @@ export default function TabletPartyPage({
                   disabled={party.isCancellingCheck}
                   className="shrink-0 rounded-full bg-white px-[12px] py-[7px] font-montserrat text-[12px] font-extrabold text-black disabled:opacity-50"
                 >
-                  {party.isCancellingCheck ? 'Cancelling...' : 'Cancel'}
+                  {party.isCancellingCheck ? t('cancelling') : common('cancel')}
                 </button>
               </div>
             ) : null}
@@ -287,11 +297,12 @@ export default function TabletPartyPage({
               {party.mode === 'group' ? (
                 <div className="rounded-[18px] border border-white/10 bg-[#243047] p-[14px]">
                   <p className="mb-[10px] font-montserrat text-[13px] font-bold text-white/70">
-                    Group thresholds
+                    {t('groupThresholds')}
                   </p>
                   <ThresholdPicker
                     max={12}
                     values={party.groupThresholds}
+                    {...thresholdLabels}
                     onChange={party.updateGroupThresholds}
                   />
                 </div>
@@ -313,7 +324,7 @@ export default function TabletPartyPage({
                           {target.displayName}
                         </p>
                         <p className="font-montserrat text-[12px] text-white/50">
-                          {target.role === 'master' ? 'Master' : 'Player'}
+                          {target.role === 'master' ? common('master') : common('player')}
                         </p>
                       </div>
                       <button
@@ -321,18 +332,19 @@ export default function TabletPartyPage({
                         onClick={() => party.toggleTarget(target.participantId)}
                         className="rounded-full bg-white/10 px-[12px] py-[7px] font-montserrat text-[12px] font-bold text-white"
                       >
-                        Remove
+                        {t('remove')}
                       </button>
                     </div>
 
                     {party.mode !== 'group' && party.mode !== 'conflict' ? (
                       <div className="mb-[12px]">
                         <p className="mb-[8px] font-montserrat text-[12px] font-bold text-white/65">
-                          Thresholds
+                          {t('thresholds')}
                         </p>
                         <ThresholdPicker
                           max={6}
                           values={draft.thresholds}
+                          {...thresholdLabels}
                           onChange={(values) =>
                             party.updateTargetThresholds(
                               target.participantId,
@@ -345,7 +357,7 @@ export default function TabletPartyPage({
 
                     <div className="grid grid-cols-2 gap-[10px]">
                       <Stepper
-                        label="Advantage"
+                        label={t('advantage')}
                         value={draft.advantage}
                         max={2}
                         disabledIncrement={draft.disadvantage > 0}
@@ -358,7 +370,7 @@ export default function TabletPartyPage({
                         }
                       />
                       <Stepper
-                        label="Disadvantage"
+                        label={t('disadvantage')}
                         value={draft.disadvantage}
                         max={2}
                         disabledIncrement={draft.advantage > 0}
@@ -388,11 +400,11 @@ export default function TabletPartyPage({
                 disabled={Boolean(party.activeCheck) || party.isCreatingCheck}
                 className="mt-[16px] w-full rounded-[16px] bg-[#D6B25E] px-[18px] py-[13px] font-montserrat text-[15px] font-extrabold text-black disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {party.isCreatingCheck ? 'Creating...' : 'Send check to table'}
+                {party.isCreatingCheck ? t('creating') : t('sendCheck')}
               </button>
             ) : (
               <p className="mt-[16px] rounded-[16px] border border-white/10 bg-white/[0.03] px-[18px] py-[13px] text-center font-montserrat text-[13px] font-bold text-white/55">
-                Select a user to get started.
+                {t('selectUserFirst')}
               </p>
             )}
           </Panel>
@@ -402,10 +414,10 @@ export default function TabletPartyPage({
           <div className="mb-[18px]">
             <div>
               <p className="font-montserrat-alt text-[20px] font-extrabold text-white">
-                Targets
+                {t('targets')}
               </p>
               <p className="font-montserrat text-[13px] text-white/55">
-                {selectedCount} selected
+                {common('selected', { count: selectedCount })}
               </p>
             </div>
           </div>
@@ -413,7 +425,7 @@ export default function TabletPartyPage({
           <div className="min-h-0 flex-1 space-y-[18px] overflow-y-auto pr-[4px]">
             {party.isLoadingAudience ? (
               <p className="font-montserrat text-[14px] text-white/60">
-                Loading targets...
+                {t('loadingTargets')}
               </p>
             ) : (
               <>
@@ -427,21 +439,21 @@ export default function TabletPartyPage({
                     isAllSelected ? 'bg-white/10' : 'bg-transparent hover:bg-white/5',
                   ].join(' ')}
                 >
-                    <div className="relative shrink-0">
-                      <div className="h-[48px] w-[48px] rounded-full bg-white/40" />
-                      {isAllSelected ? (
-                        <div className="absolute -bottom-[2px] -right-[2px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white text-[11px] font-bold text-black">
-                          ✓
-                        </div>
-                      ) : null}
-                    </div>
+                  <div className="relative shrink-0">
+                    <div className="h-[48px] w-[48px] rounded-full bg-white/40" />
+                    {isAllSelected ? (
+                      <div className="absolute -bottom-[2px] -right-[2px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white text-[11px] font-bold text-black">
+                        ✓
+                      </div>
+                    ) : null}
+                  </div>
 
                   <div className="min-w-0">
                     <p className="truncate font-montserrat-alt text-[18px] font-extrabold text-white">
-                      All
+                      {common('all')}
                     </p>
                     <p className="font-montserrat text-[14px] text-white/85">
-                      Role: Party
+                      {common('role', { role: common('party') })}
                     </p>
                   </div>
                 </button>
@@ -452,39 +464,39 @@ export default function TabletPartyPage({
                   );
 
                   return (
-                  <button
-                    key={target.participantId}
-                    type="button"
-                    onClick={() => party.toggleTarget(target.participantId)}
-                    className={[
-                      'flex min-h-[72px] w-full items-center gap-[18px] rounded-[22px] border border-white px-[18px] py-[12px] text-left transition-all duration-200',
-                      isSelected ? 'bg-white/10' : 'bg-transparent hover:bg-white/5',
-                    ].join(' ')}
-                  >
-                    <div className="relative shrink-0">
-                      <div
-                        className="flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-full bg-white/40 bg-cover bg-center font-montserrat-alt text-[16px] font-extrabold text-black"
-                        style={{
-                          backgroundImage: `url(${target.avatarUrl ?? '/avatar-placeholder.png'})`,
-                        }}
-                      />
+                    <button
+                      key={target.participantId}
+                      type="button"
+                      onClick={() => party.toggleTarget(target.participantId)}
+                      className={[
+                        'flex min-h-[72px] w-full items-center gap-[18px] rounded-[22px] border border-white px-[18px] py-[12px] text-left transition-all duration-200',
+                        isSelected ? 'bg-white/10' : 'bg-transparent hover:bg-white/5',
+                      ].join(' ')}
+                    >
+                      <div className="relative shrink-0">
+                        <div
+                          className="flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-full bg-white/40 bg-cover bg-center font-montserrat-alt text-[16px] font-extrabold text-black"
+                          style={{
+                            backgroundImage: `url(${target.avatarUrl ?? '/avatar-placeholder.png'})`,
+                          }}
+                        />
 
-                      {isSelected ? (
-                        <div className="absolute -bottom-[2px] -right-[2px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white text-[11px] font-bold text-black">
-                          ✓
-                        </div>
-                      ) : null}
-                    </div>
+                        {isSelected ? (
+                          <div className="absolute -bottom-[2px] -right-[2px] flex h-[20px] w-[20px] items-center justify-center rounded-full bg-white text-[11px] font-bold text-black">
+                            ✓
+                          </div>
+                        ) : null}
+                      </div>
 
-                    <div className="min-w-0">
-                      <p className="truncate font-montserrat-alt text-[18px] font-extrabold text-white">
-                        {target.displayName}
-                      </p>
-                      <p className="font-montserrat text-[14px] text-white/85">
-                        Role: {target.role === 'master' ? 'Master' : 'Player'}
-                      </p>
-                    </div>
-                  </button>
+                      <div className="min-w-0">
+                        <p className="truncate font-montserrat-alt text-[18px] font-extrabold text-white">
+                          {target.displayName}
+                        </p>
+                        <p className="font-montserrat text-[14px] text-white/85">
+                          {common('role', { role: target.role === 'master' ? common('master') : common('player') })}
+                        </p>
+                      </div>
+                    </button>
                   );
                 })}
               </>

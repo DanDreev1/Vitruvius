@@ -1,0 +1,188 @@
+{
+  "TabletMaster": {
+    "common": {
+      "all": "All",
+      "role": "Role: {role}",
+      "master": "Master",
+      "player": "Player",
+      "party": "Party",
+      "scene": "Scene",
+      "character": "Character",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved",
+      "edit": "Edit",
+      "add": "Add",
+      "delete": "Delete",
+      "deleting": "Deleting…",
+      "cancel": "Cancel",
+      "close": "Close",
+      "previous": "Previous",
+      "next": "Next",
+      "upload": "Upload",
+      "uploading": "Uploading…",
+      "selected": "{count, plural, one {# selected} other {# selected}}",
+      "chooseImage": "Choose image",
+      "name": "Name",
+      "description": "Description",
+      "saveChanges": "Save changes"
+    },
+    "navigation": {
+      "scene": "Scene",
+      "party": "Party",
+      "relationship": "Relations",
+      "assets": "Assets",
+      "notes": "Notes",
+      "settings": "Settings"
+    },
+    "systemLabels": {
+      "attributes": {
+        "constitution": "Constitution",
+        "awareness": "Awareness",
+        "agility": "Agility",
+        "thinking": "Thinking",
+        "charisma": "Charisma",
+        "will": "Will"
+      },
+      "parameters": {
+        "health": "Health",
+        "inspiration": "Inspiration",
+        "stress": "Stress"
+      }
+    },
+    "scene": {
+      "tabs": {
+        "images": "Images",
+        "music": "Music"
+      },
+      "audience": {
+        "roleScene": "Role: Scene",
+        "rolePlayer": "Role: Player"
+      },
+      "images": {
+        "addImage": "Add image",
+        "delete": "Delete",
+        "hide": "Hide",
+        "show": "Show",
+        "stack": "Stack",
+        "fit": "Fit",
+        "images": "Images",
+        "mode": "Mode: {mode}",
+        "loading": "Loading images…",
+        "uploading": "Uploading…",
+        "noPreview": "No preview image yet",
+        "visibleTargets": "Visible to selected targets",
+        "hiddenPlayers": "Hidden from players"
+      },
+      "music": {
+        "playlist": "Playlist",
+        "selectedTrack": "Selected: {title}",
+        "noSelectedTrack": "No selected track",
+        "addMusic": "Add music",
+        "uploading": "Uploading…",
+        "playing": "Playing",
+        "paused": "Paused",
+        "previousTrack": "Previous track",
+        "nextTrack": "Next track",
+        "pause": "Pause",
+        "play": "Play",
+        "repeatTrack": "Repeat track",
+        "autoNextTrack": "Auto next track",
+        "sceneMusicTime": "Scene music time",
+        "loading": "Loading music…",
+        "empty": "No music uploaded",
+        "selected": "Selected",
+        "addCover": "Add cover",
+        "replaceCover": "Replace cover",
+        "globalVolume": "Global volume",
+        "delete": "Delete"
+      }
+    },
+    "party": {
+      "modes": {
+        "individual": "Individual",
+        "group": "Group",
+        "conflict": "Conflict"
+      },
+      "threshold": {
+        "add": "Add difficulty threshold {value}",
+        "remove": "Remove difficulty threshold {value}",
+        "title": "Difficulty {value}"
+      },
+      "statusTitle": "Player status",
+      "statusSubtitle": "Select one player to edit status parameters.",
+      "statusUnavailable": "Status values are available only when exactly one player is selected.",
+      "loadingParameters": "Loading parameters…",
+      "difficultyTitle": "Difficulty",
+      "difficultySubtitle": "Build the active table check.",
+      "activeCheck": "An active check is already on the table. Finish or cancel it before creating a new one.",
+      "cancelling": "Cancelling…",
+      "groupThresholds": "Group thresholds",
+      "thresholds": "Thresholds",
+      "advantage": "Advantage",
+      "disadvantage": "Disadvantage",
+      "remove": "Remove",
+      "creating": "Creating…",
+      "sendCheck": "Send check to table",
+      "selectUserFirst": "Select a user to get started.",
+      "targets": "Targets",
+      "loadingTargets": "Loading targets…"
+    },
+    "assets": {
+      "weapon": "Weapon",
+      "consumable": "Consumable",
+      "quest": "Quest",
+      "other": "Other",
+      "createItem": "Create item",
+      "empty": "Add an item to the asset library.",
+      "giveItem": "Give item",
+      "recipients": "Recipients",
+      "selectCharacters": "Select one or more characters",
+      "quantity": "Quantity",
+      "deleteTitle": "Delete {name}?",
+      "fallbackItem": "this item",
+      "deleteDescription": "Already issued copies will remain in player Backpacks."
+    },
+    "relationships": {
+      "player": "Player",
+      "rolePlayer": "Role: Player",
+      "noPlayers": "No player characters are available.",
+      "dragToReorder": "Drag to reorder",
+      "deleteNpc": "Delete NPC",
+      "imageRequired": "Image required",
+      "characterName": "Character's name",
+      "characterDescription": "Character description",
+      "relationship": "Relationship",
+      "decreaseRelationship": "Decrease relationship",
+      "increaseRelationship": "Increase relationship",
+      "shownToPlayer": "Shown to player",
+      "hiddenFromPlayer": "Hidden from player",
+      "addNpc": "Add NPC",
+      "cancelChanges": "Cancel changes",
+      "saveRelationships": "Save relationships",
+      "editRelationships": "Edit relationships",
+      "loading": "Loading relationships…",
+      "emptyTitle": "No NPCs yet",
+      "emptyDescription": "Enter edit mode and add the first character to this relationship map.",
+      "previousNpcs": "Previous NPCs",
+      "nextNpcs": "Next NPCs",
+      "npcPage": "NPC page {page}",
+      "deleteTitle": "Delete {name}?",
+      "fallbackNpc": "this NPC",
+      "deleteDescription": "The NPC, image, and every character relationship will be deleted immediately.",
+      "levels": {
+        "-5": "Hate",
+        "-4": "Hostility",
+        "-3": "Tension",
+        "-2": "Distrust",
+        "-1": "Suspicion",
+        "0": "Indifference",
+        "1": "Curiosity",
+        "2": "Trust",
+        "3": "Closeness",
+        "4": "Friendship",
+        "5": "Loyalty"
+      }
+    }
+  }
+}

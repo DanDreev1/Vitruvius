@@ -6,7 +6,7 @@ import type { InventoryCategory } from '@/features/tablet/inventory/types';
 import { INVENTORY_CATEGORIES } from '@/features/tablet/inventory/constants';
 
 export function CategoryTabs({ value, onChange }: { value: 'all' | InventoryCategory; onChange: (value: 'all' | InventoryCategory) => void }) {
-  const t = useTranslations('StudioMaster');
+  const t = useTranslations('TabletPlayer.backpack');
   return (
     <div className="grid grid-cols-4 gap-[9px]">
       {INVENTORY_CATEGORIES.map((category) => (
@@ -38,8 +38,21 @@ export function ItemTile({ item, selected, draggable, onClick, onDragStart, onDr
   );
 }
 
-export function EmptyItemTile() {
-  return <div aria-hidden="true" className="h-full min-h-[72px] rounded-[8px] border-[2px] border-white/65 bg-transparent" />;
+export function EmptyItemTile({ onClick, label }: { onClick?: () => void; label?: string }) {
+  if (!onClick) {
+    return <div aria-hidden="true" className="h-full min-h-[72px] rounded-[8px] border-[2px] border-white/65 bg-transparent" />;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="group flex h-full min-h-[72px] items-center justify-center rounded-[8px] border-[2px] border-white/65 bg-transparent text-white/40 transition hover:border-white hover:bg-white/[0.03] hover:text-white"
+    >
+      <span className="font-montserrat-alt text-[28px] font-light leading-none transition-transform group-hover:scale-110">+</span>
+    </button>
+  );
 }
 
 export function ItemPortrait({ imageUrl, name, compact = true, onCompactChange }: { imageUrl: string | null; name: string; compact?: boolean; onCompactChange?: (compact: boolean) => void }) {

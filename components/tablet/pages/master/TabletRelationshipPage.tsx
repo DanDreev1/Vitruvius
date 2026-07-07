@@ -2,9 +2,9 @@
 
 import { useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 import {
-  getRelationshipLabel,
   RELATIONSHIP_NPC_DESCRIPTION_MAX_LENGTH,
   RELATIONSHIP_NPC_NAME_MAX_LENGTH,
 } from '@/features/tablet/master/relationships/constants';
@@ -16,15 +16,24 @@ type TabletRelationshipPageProps = {
   inGameWorldId: string | null;
 };
 
+type RelationshipLevelKey = '-5' | '-4' | '-3' | '-2' | '-1' | '0' | '1' | '2' | '3' | '4' | '5';
+
+function getRelationshipLevelKey(value: number): RelationshipLevelKey {
+  if (value <= -5) return '-5';
+  if (value >= 5) return '5';
+  return String(Math.trunc(value)) as RelationshipLevelKey;
+}
+
 function RelationshipAudience({
   relationships,
 }: {
   relationships: ReturnType<typeof useMasterRelationships>;
 }) {
+  const t = useTranslations('TabletMaster.relationships');
   return (
     <div className="flex h-full min-h-0 flex-col">
       <p className="mb-[12px] font-montserrat-alt text-[18px] font-extrabold text-white">
-        Player
+        {t('player')}
       </p>
       <div className="min-h-0 space-y-[12px] overflow-y-auto pr-[5px]">
         {relationships.audience.map((member) => {
@@ -57,7 +66,7 @@ function RelationshipAudience({
                 <p className="truncate font-montserrat-alt text-[16px] font-extrabold text-white">
                   {member.displayName}
                 </p>
-                <p className="font-montserrat text-[12px] text-white/75">Role: Player</p>
+                <p className="font-montserrat text-[12px] text-white/75">{t('rolePlayer')}</p>
               </div>
             </button>
           );
@@ -65,7 +74,7 @@ function RelationshipAudience({
 
         {!relationships.audience.length && !relationships.isLoading ? (
           <p className="px-[8px] py-[16px] font-montserrat text-[13px] text-white/55">
-            No player characters are available.
+            {t('noPlayers')}
           </p>
         ) : null}
       </div>
@@ -98,6 +107,8 @@ function NpcCard({
   onDragStart: () => void;
   onDrop: () => void;
 }) {
+  const t = useTranslations('TabletMaster.relationships');
+  const common = useTranslations('TabletMaster.common');
   const [isExpanded, setIsExpanded] = useState(false);
   const pointerStartYRef = useRef<number | null>(null);
   const relationshipValue = link?.relationshipValue ?? 0;
@@ -137,7 +148,7 @@ function NpcCard({
             type="button"
             draggable
             onDragStart={onDragStart}
-            title="Drag to reorder"
+            title={t('dragToReorder')}
             className="flex h-[30px] w-[30px] cursor-grab items-center justify-center rounded-full bg-black/65 font-montserrat text-[15px] text-white active:cursor-grabbing"
           >
             {'\u2637'}
@@ -145,7 +156,7 @@ function NpcCard({
           <button
             type="button"
             onClick={onDeleteRequest}
-            title="Delete NPC"
+            title={t('deleteNpc')}
             className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-black/65 font-montserrat text-[18px] text-white hover:bg-red-500"
           >
             {'\u00d7'}
@@ -166,13 +177,13 @@ function NpcCard({
       >
         {!imageUrl ? (
           <div className="flex h-full items-center justify-center font-montserrat text-[13px] text-white/50">
-            Image required
+            {t('imageRequired')}
           </div>
         ) : null}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[44%] bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.8))]" />
         {isEditing ? (
           <label className="absolute left-[9px] top-[9px] cursor-pointer rounded-[5px] border border-white/25 bg-black/65 px-[10px] py-[6px] text-center font-montserrat text-[10px] font-bold text-white hover:bg-black/85">
-            Choose image
+            {common('chooseImage')}
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp"
@@ -184,19 +195,19 @@ function NpcCard({
         {isEditing ? (
           <div className="absolute inset-x-[12px] bottom-[10px]">
             <label className="font-montserrat text-[8px] font-bold uppercase text-white/60">
-              Name
+              {common('name')}
             </label>
             <input
               value={npc.name}
               maxLength={RELATIONSHIP_NPC_NAME_MAX_LENGTH}
               onChange={(event) => onUpdate({ name: event.target.value })}
-              placeholder="Character's name"
+              placeholder={t('characterName')}
               className="mt-[1px] w-full border-b border-white/35 bg-transparent pb-[3px] font-montserrat-alt text-[18px] font-extrabold text-white outline-none placeholder:text-white/45 focus:border-[#D6B25E]"
             />
           </div>
         ) : (
           <h3 className="absolute inset-x-[12px] bottom-[10px] select-none truncate font-montserrat-alt text-[19px] font-extrabold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-            {npc.name || "Character's name"}
+            {npc.name || t('characterName')}
           </h3>
         )}
       </div>
@@ -205,7 +216,7 @@ function NpcCard({
         <div className="flex min-h-0 flex-1 flex-col px-[14px] pb-[3px] pt-[9px]">
           <div className="mb-[4px] flex items-center justify-between gap-[8px]">
             <label className="font-montserrat text-[9px] font-bold uppercase text-white/45">
-              Description
+              {common('description')}
             </label>
             <span className="font-montserrat text-[9px] text-white/35">
               {npc.description.length}/{RELATIONSHIP_NPC_DESCRIPTION_MAX_LENGTH}
@@ -215,7 +226,7 @@ function NpcCard({
             value={npc.description}
             maxLength={RELATIONSHIP_NPC_DESCRIPTION_MAX_LENGTH}
             onChange={(event) => onUpdate({ description: event.target.value })}
-            placeholder="Character description"
+            placeholder={t('characterDescription')}
             className="min-h-[70px] w-full flex-1 resize-none overflow-y-auto rounded-[5px] border border-white/15 bg-[#0C1422] p-[8px] font-montserrat text-[11px] leading-[1.45] text-white outline-none placeholder:text-white/25 focus:border-[#D6B25E]"
           />
         </div>
@@ -234,26 +245,26 @@ function NpcCard({
 
       <div className="mt-auto border-t border-white/10 bg-[#0D1625] px-[14px] pb-[11px] pt-[9px]">
         <p className="mb-[2px] text-center font-montserrat text-[9px] font-bold uppercase text-white/40">
-          Relationship
+          {t('relationship')}
         </p>
         <div className="flex items-center justify-between gap-[8px]">
           <button
             type="button"
             disabled={!isEditing || disabled || relationshipValue <= -5}
             onClick={() => onRelationshipChange(Math.max(-5, relationshipValue - 1))}
-            title="Decrease relationship"
+            title={t('decreaseRelationship')}
             className="flex h-[34px] w-[34px] items-center justify-center text-[34px] font-light leading-none text-white disabled:opacity-25"
           >
             {'\u2039'}
           </button>
           <span className="min-w-0 flex-1 truncate text-center font-montserrat-alt text-[14px] font-bold text-[#E8D18A]">
-            {getRelationshipLabel(relationshipValue)}
+            {t(`levels.${getRelationshipLevelKey(relationshipValue)}`)}
           </span>
           <button
             type="button"
             disabled={!isEditing || disabled || relationshipValue >= 5}
             onClick={() => onRelationshipChange(Math.min(5, relationshipValue + 1))}
-            title="Increase relationship"
+            title={t('increaseRelationship')}
             className="flex h-[34px] w-[34px] items-center justify-center text-[34px] font-light leading-none text-white disabled:opacity-25"
           >
             {'\u203a'}
@@ -271,7 +282,7 @@ function NpcCard({
               : 'border-white/35 bg-transparent text-white',
           ].join(' ')}
         >
-          {link?.isVisibleToPlayer ? 'Shown to player' : 'Hidden from player'}
+          {link?.isVisibleToPlayer ? t('shownToPlayer') : t('hiddenFromPlayer')}
         </button>
       </div>
     </article>
@@ -282,6 +293,8 @@ export default function TabletRelationshipPage({
   sessionId,
   inGameWorldId,
 }: TabletRelationshipPageProps) {
+  const t = useTranslations('TabletMaster.relationships');
+  const common = useTranslations('TabletMaster.common');
   const relationships = useMasterRelationships({ sessionId, inGameWorldId });
   const [pageIndex, setPageIndex] = useState(0);
   const [draggedNpcId, setDraggedNpcId] = useState<string | null>(null);
@@ -308,27 +321,27 @@ export default function TabletRelationshipPage({
                   setDraggedNpcId(id);
                 }}
                 className="flex w-[66px] flex-col items-center justify-center gap-[1px] text-white transition-opacity hover:opacity-70"
-                title="Add NPC"
+                title={t('addNpc')}
               >
                 <span className="font-montserrat-alt text-[30px] font-light leading-[28px]">+</span>
-                <span className="font-montserrat text-[11px] font-bold">Add</span>
+                <span className="font-montserrat text-[11px] font-bold">{common('add')}</span>
               </button>
               <button
                 type="button"
                 onClick={relationships.cancelEditing}
                 disabled={relationships.isSaving}
                 className="flex w-[66px] flex-col items-center justify-center gap-[1px] text-white transition-opacity hover:opacity-70 disabled:opacity-40"
-                title="Cancel changes"
+                title={t('cancelChanges')}
               >
                 <span className="font-montserrat text-[29px] font-light leading-[28px]">{'\u00d7'}</span>
-                <span className="font-montserrat text-[11px] font-bold">Cancel</span>
+                <span className="font-montserrat text-[11px] font-bold">{common('cancel')}</span>
               </button>
               <button
                 type="button"
                 onClick={relationships.save}
                 disabled={!relationships.hasChanges || relationships.isSaving}
                 className="flex w-[66px] flex-col items-center justify-center gap-[2px] text-white transition-opacity hover:opacity-70 disabled:opacity-40"
-                title="Save relationships"
+                title={t('saveRelationships')}
               >
                 <Image
                   src="/save-icon.svg"
@@ -338,7 +351,7 @@ export default function TabletRelationshipPage({
                   className="invert"
                 />
                 <span className="font-montserrat text-[11px] font-bold">
-                  {relationships.isSaving ? 'Saving' : 'Save'}
+                  {relationships.isSaving ? common('saving') : common('save')}
                 </span>
               </button>
             </>
@@ -347,10 +360,10 @@ export default function TabletRelationshipPage({
               type="button"
               onClick={relationships.beginEditing}
               className="flex w-[66px] flex-col items-center justify-center gap-[2px] text-white transition-opacity hover:opacity-70"
-              title="Edit relationships"
+              title={t('editRelationships')}
             >
               <Image src="/Edit-icon.png" alt="" width={27} height={27} />
-              <span className="font-montserrat text-[11px] font-bold">Edit</span>
+              <span className="font-montserrat text-[11px] font-bold">{common('edit')}</span>
             </button>
           )}
       </div>
@@ -370,7 +383,7 @@ export default function TabletRelationshipPage({
         <div className="relative min-h-0 pb-[30px] pt-[62px]">
           {relationships.isLoading ? (
             <div className="flex h-full items-center justify-center font-montserrat text-[14px] text-white/60">
-              Loading relationships...
+              {t('loading')}
             </div>
           ) : relationships.npcs.length ? (
             <div className="grid h-full min-h-0 grid-cols-[repeat(2,minmax(0,320px))] justify-start gap-[20px]">
@@ -406,10 +419,10 @@ export default function TabletRelationshipPage({
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-[13px] text-center">
               <p className="font-montserrat-alt text-[20px] font-extrabold text-white">
-                No NPCs yet
+                {t('emptyTitle')}
               </p>
               <p className="max-w-[330px] font-montserrat text-[13px] text-white/55">
-                Enter edit mode and add the first character to this relationship map.
+                {t('emptyDescription')}
               </p>
             </div>
           )}
@@ -420,7 +433,7 @@ export default function TabletRelationshipPage({
                 type="button"
                 disabled={safePageIndex === 0}
                 onClick={() => setPageIndex((value) => Math.max(0, value - 1))}
-                title="Previous NPCs"
+                title={t('previousNpcs')}
                 className="absolute left-0 top-1/2 flex h-[38px] w-[38px] -translate-y-1/2 items-center justify-center rounded-full border border-white text-[30px] text-white disabled:opacity-25"
               >
                 {'\u2039'}
@@ -429,7 +442,7 @@ export default function TabletRelationshipPage({
                 type="button"
                 disabled={safePageIndex >= pageCount - 1}
                 onClick={() => setPageIndex((value) => Math.min(pageCount - 1, value + 1))}
-                title="Next NPCs"
+                title={t('nextNpcs')}
                 className="absolute right-0 top-1/2 flex h-[38px] w-[38px] -translate-y-1/2 items-center justify-center rounded-full border border-white text-[30px] text-white disabled:opacity-25"
               >
                 {'\u203a'}
@@ -444,7 +457,7 @@ export default function TabletRelationshipPage({
                   key={index}
                   type="button"
                   onClick={() => setPageIndex(index)}
-                  title={`NPC page ${index + 1}`}
+                  title={t('npcPage', { page: index + 1 })}
                   className={[
                     'h-[9px] w-[9px] rounded-full border border-white',
                     index === safePageIndex ? 'bg-white' : 'bg-transparent',
@@ -462,10 +475,10 @@ export default function TabletRelationshipPage({
         <div className="absolute inset-0 z-50 flex items-center justify-center rounded-[18px] bg-black/70 p-[24px]">
           <div className="w-full max-w-[390px] rounded-[8px] border border-white/20 bg-[#182235] p-[20px] shadow-2xl">
             <h3 className="font-montserrat-alt text-[20px] font-extrabold text-white">
-              Delete {deletingNpc.name || 'this NPC'}?
+              {t('deleteTitle', { name: deletingNpc.name || t('fallbackNpc') })}
             </h3>
             <p className="mt-[9px] font-montserrat text-[13px] leading-[1.5] text-white/65">
-              The NPC, image, and every character relationship will be deleted immediately.
+              {t('deleteDescription')}
             </p>
             <div className="mt-[18px] flex justify-end gap-[8px]">
               <button
@@ -473,7 +486,7 @@ export default function TabletRelationshipPage({
                 onClick={() => setDeleteNpcId(null)}
                 className="rounded-[6px] border border-white/30 px-[14px] py-[9px] font-montserrat text-[12px] font-bold text-white"
               >
-                Cancel
+                {common('cancel')}
               </button>
               <button
                 type="button"
@@ -484,7 +497,7 @@ export default function TabletRelationshipPage({
                 }}
                 className="rounded-[6px] bg-red-500 px-[14px] py-[9px] font-montserrat text-[12px] font-extrabold text-white disabled:opacity-40"
               >
-                {relationships.isDeleting ? 'Deleting...' : 'Delete'}
+                {relationships.isDeleting ? common('deleting') : common('delete')}
               </button>
             </div>
           </div>

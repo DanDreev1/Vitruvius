@@ -24,6 +24,7 @@ type TimeResponse = {
 
 type MusicChangedPayload = TimeResponse & {
   isActive?: boolean;
+  volume?: number;
 };
 
 type AppliedLiveSync = {
@@ -44,6 +45,7 @@ function mapRecordToItem(record: SceneMusicRecord): SceneMusicItem {
     isActive: record.is_active,
     isPlaying: record.is_playing,
     currentTimeSeconds: record.current_time_seconds ?? 0,
+    volume: record.volume ?? 1,
     sortOrder: record.sort_order,
   };
 }
@@ -262,7 +264,12 @@ export function usePlayerSceneMusic({
                 ...prevRecord,
                 is_active: change.isActive ?? prevRecord.is_active,
                 is_playing: change.isPlaying === true,
-                current_time_seconds: change.currentTimeSeconds ?? prevRecord.current_time_seconds,
+                current_time_seconds:
+                  change.currentTimeSeconds ?? prevRecord.current_time_seconds,
+                volume:
+                  typeof change.volume === 'number'
+                    ? change.volume
+                    : prevRecord.volume,
               };
             });
           }

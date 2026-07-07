@@ -23,7 +23,7 @@ export default function SceneImagesToolbar({
   onToggleImageActive,
   onChangeViewMode,
 }: SceneImagesToolbarProps) {
-  const t = useTranslations('StudioMaster');
+  const t = useTranslations('TabletMaster.scene.images');
   return (
     <div className="flex flex-wrap items-center gap-[12px]">
       <button

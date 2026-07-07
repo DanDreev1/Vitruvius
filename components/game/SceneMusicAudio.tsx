@@ -69,6 +69,10 @@ function fadeAudioTo(
   };
 }
 
+function getFinalVolume(localVolume: number, globalVolume: number | null | undefined) {
+  return Math.min(1, Math.max(0, localVolume * (globalVolume ?? 1)));
+}
+
 export default function SceneMusicAudio({
   music,
   timeSync = null,
@@ -82,11 +86,12 @@ export default function SceneMusicAudio({
   const isUnlockedRef = useRef(false);
   const [needsUnlock, setNeedsUnlock] = useState(false);
   const { volume } = useSceneAudioVolume();
-  const volumeRef = useRef(volume);
+  const finalVolume = getFinalVolume(volume, music?.volume);
+  const volumeRef = useRef(finalVolume);
 
   useEffect(() => {
-    volumeRef.current = volume;
-  }, [volume]);
+    volumeRef.current = finalVolume;
+  }, [finalVolume]);
 
   const cancelFade = useCallback(() => {
     fadeCancelRef.current?.();
@@ -193,8 +198,8 @@ export default function SceneMusicAudio({
     const audio = audioRef.current;
     if (!audio || audio.paused) return;
 
-    audio.volume = Math.min(1, Math.max(0, volume));
-  }, [volume]);
+    audio.volume = finalVolume;
+  }, [finalVolume]);
 
   useEffect(() => {
     if (!needsUnlock || !music?.isPlaying) return;

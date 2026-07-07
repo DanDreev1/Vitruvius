@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 import { getVisibleTabletTabs } from '@/features/tablet/navigation';
 import type { TabletRole, TabletTab } from '@/features/tablet/types';
@@ -16,6 +17,52 @@ type TabletNavProps = {
   activeFrameSide?: 'left' | 'right';
 };
 
+function getPlayerTabTitle(
+  tab: TabletTab,
+  t: ReturnType<typeof useTranslations<'TabletPlayer.navigation'>>
+) {
+  switch (tab) {
+    case 'user':
+      return t('user');
+    case 'skills':
+      return t('skills');
+    case 'backpack':
+      return t('backpack');
+    case 'library':
+      return t('library');
+    case 'relationship':
+      return t('relationship');
+    case 'notes':
+      return t('notes');
+    case 'settings':
+      return t('settings');
+    default:
+      return tab;
+  }
+}
+
+function getMasterTabTitle(
+  tab: TabletTab,
+  t: ReturnType<typeof useTranslations<'TabletMaster.navigation'>>
+) {
+  switch (tab) {
+    case 'scene':
+      return t('scene');
+    case 'party':
+      return t('party');
+    case 'relationship':
+      return t('relationship');
+    case 'assets':
+      return t('assets');
+    case 'notes':
+      return t('notes');
+    case 'settings':
+      return t('settings');
+    default:
+      return tab;
+  }
+}
+
 export default function TabletNav({
   activeTab,
   onTabChange,
@@ -24,6 +71,9 @@ export default function TabletNav({
   onClose,
   activeFrameSide = 'left',
 }: TabletNavProps) {
+  const playerT = useTranslations('TabletPlayer.navigation');
+  const masterT = useTranslations('TabletMaster.navigation');
+  const commonT = useTranslations('TabletPlayer.common');
   const tabs = getVisibleTabletTabs(targetRole, mode);
   const activeFrameSrc =
     activeFrameSide === 'right'
@@ -36,12 +86,12 @@ export default function TabletNav({
         type="button"
         onClick={onClose}
         className="relative flex h-[44px] w-[64px] items-center justify-center rounded-[14px] transition-opacity duration-200 hover:opacity-75"
-        title="Close tablet"
+        title={commonT('closeTablet')}
       >
         <Image src="/Logo_Icon.png" alt="" width={48} height={28} />
       </button>
 
-      <div className="mt-[30px] flex flex-1 flex-col items-center justify-between">
+      <div className="mt-[54px] flex flex-col items-center gap-[30px]">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
 
@@ -51,7 +101,7 @@ export default function TabletNav({
               type="button"
               onClick={() => onTabChange(tab.key)}
               className="group relative flex h-[54px] w-[64px] items-center justify-center"
-              title={tab.label}
+              title={targetRole === 'player' ? getPlayerTabTitle(tab.key, playerT) : getMasterTabTitle(tab.key, masterT)}
             >
               {isActive ? (
                 <motion.span
