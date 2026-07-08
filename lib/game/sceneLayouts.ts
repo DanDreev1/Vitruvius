@@ -1,6 +1,14 @@
 import type { SceneLayout } from './types';
 
 export const sceneLayouts: Record<number, SceneLayout> = {
+  0: {
+    table: { width: 1120, height: 560 },
+    master: { side: 'right', along: 0.5, gap: 0.15, seatFacing: 'left' },
+    density: 'comfortable',
+    scaleMultiplier: 0.86,
+    playerSeats: [],
+  },
+
   1: {
     table: { width: 1120, height: 560 },
     master: { side: 'right', along: 0.5, gap: 0.15, seatFacing: 'left' },

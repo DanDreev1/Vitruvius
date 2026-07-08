@@ -23,9 +23,10 @@ import type {
   RelationshipLinkDraft,
   RelationshipNpcDraft,
 } from './types';
+import { createId } from '@/lib/createId';
 
 function createDraftId() {
-  return `relationship-npc-${crypto.randomUUID()}`;
+  return `relationship-npc-${createId()}`;
 }
 
 function createLinkKey(npcId: string, inGameCharacterId: string) {

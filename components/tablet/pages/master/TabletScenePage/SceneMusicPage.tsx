@@ -332,6 +332,10 @@ export default function SceneMusicPage({
   };
 
   const activeProgressMax = activeDuration || Math.max(activeDisplayTime, 1);
+  const activeProgressPercent = Math.min(
+    100,
+    Math.max(0, (Math.min(activeDisplayTime, activeProgressMax) / activeProgressMax) * 100)
+  );
 
   useEffect(() => {
     setGlobalVolumeDraft(activeMusic?.volume ?? 1);
@@ -513,31 +517,39 @@ export default function SceneMusicPage({
             <span className="w-[44px] font-montserrat text-[12px] font-bold text-white/75">
               {formatTime(activeDisplayTime)}
             </span>
-            <input
-              type="range"
-              min={0}
-              max={activeProgressMax}
-              step={0.1}
-              value={Math.min(activeDisplayTime, activeProgressMax)}
-              onChange={handleSeekChange}
-              onClick={(event) => {
-                handleSeekCommit(Number(event.currentTarget.value));
-              }}
-              onPointerUp={(event) => {
-                handleSeekCommit(Number(event.currentTarget.value));
-              }}
-              onMouseUp={(event) => {
-                handleSeekCommit(Number(event.currentTarget.value));
-              }}
-              onTouchEnd={(event) => {
-                handleSeekCommit(Number(event.currentTarget.value));
-              }}
-              onKeyUp={(event) => {
-                handleSeekCommit(Number(event.currentTarget.value));
-              }}
-              className="h-[6px] flex-1 cursor-pointer accent-white"
-              aria-label={t('sceneMusicTime')}
-            />
+            <div className="relative flex h-[18px] flex-1 items-center">
+              <div className="pointer-events-none h-[6px] w-full overflow-hidden rounded-full bg-white/15">
+                <div
+                  className="h-full rounded-full bg-white"
+                  style={{ width: `${activeProgressPercent}%` }}
+                />
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={activeProgressMax}
+                step={0.1}
+                value={Math.min(activeDisplayTime, activeProgressMax)}
+                onChange={handleSeekChange}
+                onClick={(event) => {
+                  handleSeekCommit(Number(event.currentTarget.value));
+                }}
+                onPointerUp={(event) => {
+                  handleSeekCommit(Number(event.currentTarget.value));
+                }}
+                onMouseUp={(event) => {
+                  handleSeekCommit(Number(event.currentTarget.value));
+                }}
+                onTouchEnd={(event) => {
+                  handleSeekCommit(Number(event.currentTarget.value));
+                }}
+                onKeyUp={(event) => {
+                  handleSeekCommit(Number(event.currentTarget.value));
+                }}
+                className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                aria-label={t('sceneMusicTime')}
+              />
+            </div>
             <span className="w-[44px] text-right font-montserrat text-[12px] font-bold text-white/75">
               {activeDuration ? formatTime(activeDuration) : '--:--'}
             </span>

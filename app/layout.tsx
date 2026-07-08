@@ -1,14 +1,29 @@
 import type { Metadata, Viewport } from 'next';
-import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 
 import { montserrat, montserratAlternates } from './fonts';
-import SessionExitProvider from '@/features/session-exit/SessionExitProvider';
+import PwaServiceWorker from '@/components/layout/PwaServiceWorker';
+import RootClientProviders from '@/components/layout/RootClientProviders';
+import { defaultLocale, isLocale } from '@/i18n/config';
 
 export const metadata: Metadata = {
+  applicationName: 'Vitruvius',
   title: 'Vitruvius',
   description: 'Vitruvius project',
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Vitruvius',
+    statusBarStyle: 'black-translucent',
+  },
+  icons: {
+    icon: [
+      { url: '/pwa-icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/pwa-icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [{ url: '/pwa-icon-192.png', sizes: '192x192', type: 'image/png' }],
+  },
 };
 
 export const viewport: Viewport = {
@@ -22,7 +37,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = await getLocale();
+  const requestedLocale = await getLocale();
+  const locale = isLocale(requestedLocale) ? requestedLocale : defaultLocale;
   const messages = await getMessages();
 
   return (
@@ -30,9 +46,10 @@ export default async function RootLayout({
       <body
         className={`${montserrat.variable} ${montserratAlternates.variable} min-h-screen overflow-x-hidden bg-[#0B1020] text-white`}
       >
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <SessionExitProvider>{children}</SessionExitProvider>
-        </NextIntlClientProvider>
+        <RootClientProviders locale={locale} messages={messages}>
+          {children}
+        </RootClientProviders>
+        <PwaServiceWorker />
       </body>
     </html>
   );

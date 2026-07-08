@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 
 import { useNotes } from '@/features/tablet/notes/useNotes';
 import type { NoteDraft, NotesOwner, TabletNote } from '@/features/tablet/notes/types';
+import { createId } from '@/lib/createId';
 
 const CARD_WIDTH = 250;
 const CARD_HEIGHT = 174;
@@ -175,7 +176,7 @@ export default function TabletNotesPage({ owner = null, draftNotes, onDraftNotes
     if (!isLocalDraft) return remote.save(noteId, noteDraft, position);
     const nextNote: TabletNote = noteId
       ? { ...(notes.find((note) => note.id === noteId) as TabletNote), ...noteDraft }
-      : { id: `draft-note-${crypto.randomUUID()}`, ...noteDraft, ...position };
+      : { id: `draft-note-${createId()}`, ...noteDraft, ...position };
     onDraftNotesChange?.(noteId ? notes.map((note) => note.id === noteId ? nextNote : note) : [...notes, nextNote]);
     return nextNote;
   };

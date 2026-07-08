@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { supabase } from '@/lib/supabaseClient';
+import { createId } from '@/lib/createId';
 
 import {
   PARTY_ROLL_MESSAGE_EVENT,
@@ -96,7 +97,7 @@ export function usePartyRollMessages(sessionId: string | null) {
       if (!sessionId) return;
 
       const message: PartyRollMessage = {
-        id: crypto.randomUUID(),
+        id: createId(),
         sessionId,
         checkId,
         type,

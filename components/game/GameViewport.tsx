@@ -41,6 +41,17 @@ function clampValue(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function getViewportSize() {
+  if (typeof window === 'undefined') {
+    return { width: 0, height: 0 };
+  }
+
+  return {
+    width: Math.round(window.visualViewport?.width ?? window.innerWidth),
+    height: Math.round(window.visualViewport?.height ?? window.innerHeight),
+  };
+}
+
 export default function GameViewport({
   sessionId,
   master,
@@ -58,7 +69,10 @@ export default function GameViewport({
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [hoveredCard, setHoveredCard] = useState<HoverCardData | null>(null);
+
+  const viewportHeight = viewportSize.height ? Math.max(1, viewportSize.height) : null;
 
   useEffect(() => {
     const element = containerRef.current;
@@ -68,10 +82,14 @@ export default function GameViewport({
     }
 
     const updateSize = () => {
+      const nextViewportSize = getViewportSize();
       const rect = element.getBoundingClientRect();
+      const fallbackHeight = Math.max(1, nextViewportSize.height);
+
+      setViewportSize(nextViewportSize);
       setContainerSize({
-        width: rect.width,
-        height: rect.height,
+        width: rect.width || nextViewportSize.width,
+        height: rect.height || fallbackHeight,
       });
     };
 
@@ -82,9 +100,17 @@ export default function GameViewport({
     });
 
     resizeObserver.observe(element);
+    window.addEventListener('resize', updateSize);
+    window.addEventListener('orientationchange', updateSize);
+    window.visualViewport?.addEventListener('resize', updateSize);
+    window.visualViewport?.addEventListener('scroll', updateSize);
 
     return () => {
       resizeObserver.disconnect();
+      window.removeEventListener('resize', updateSize);
+      window.removeEventListener('orientationchange', updateSize);
+      window.visualViewport?.removeEventListener('resize', updateSize);
+      window.visualViewport?.removeEventListener('scroll', updateSize);
     };
   }, []);
 
@@ -248,7 +274,8 @@ export default function GameViewport({
   return (
     <div
       ref={containerRef}
-      className="relative h-[calc(100dvh-56px)] w-full overflow-hidden sm:h-[calc(100dvh-68px)] md:h-[calc(100dvh-86px)]"
+      className="relative h-[100dvh] w-full overflow-hidden"
+      style={viewportHeight ? { height: `${viewportHeight}px` } : undefined}
     >
       {shouldShowRotatePlaceholder ? (
         <RotateScreenPlaceholder />

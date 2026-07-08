@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
+import { createId } from '@/lib/createId';
 import {
   SCENE_IMAGE_STORAGE_BUCKET,
   SCENE_IMAGE_STORAGE_FOLDER,
@@ -392,7 +393,7 @@ async function uploadSceneMusicFile(
   file: File
 ) {
   const safeName = sanitizeFileName(file.name);
-  const objectPath = `${SCENE_MUSIC_STORAGE_FOLDER}/${sessionId}/worlds/${inGameWorldId}/${crypto.randomUUID()}-${safeName}`;
+  const objectPath = `${SCENE_MUSIC_STORAGE_FOLDER}/${sessionId}/worlds/${inGameWorldId}/${createId()}-${safeName}`;
 
   const { error: uploadError } = await supabase.storage
     .from(SCENE_MUSIC_STORAGE_BUCKET)
@@ -801,7 +802,7 @@ async function uploadSceneImageFile(
   file: File
 ) {
   const safeName = sanitizeFileName(file.name);
-  const objectPath = `${SCENE_IMAGE_STORAGE_FOLDER}/${sessionId}/worlds/${inGameWorldId}/${crypto.randomUUID()}-${safeName}`;
+  const objectPath = `${SCENE_IMAGE_STORAGE_FOLDER}/${sessionId}/worlds/${inGameWorldId}/${createId()}-${safeName}`;
 
   const { error: uploadError } = await supabase.storage
     .from(SCENE_IMAGE_STORAGE_BUCKET)

@@ -16,6 +16,7 @@ import {
   saveAssets,
 } from './api';
 import type { AssetDraft, InventoryAudienceMember } from './types';
+import { createId } from '@/lib/createId';
 
 function toDrafts(items: Awaited<ReturnType<typeof getAssets>>): AssetDraft[] {
   return items.map((item) => ({
@@ -60,11 +61,11 @@ export function useAssets(sessionId: string, inGameWorldId: string | null) {
   useEffect(() => { const id = window.setTimeout(() => void load(), 0); return () => window.clearTimeout(id); }, [load]);
 
   const add = useCallback(() => {
-    const id = `draft-${crypto.randomUUID()}`;
+    const id = `draft-${createId()}`;
     setAssets((current) => [...current, {
       id,
       persistedId: null,
-      assetKey: crypto.randomUUID(),
+      assetKey: createId(),
       name: '', description: '', category: 'other', imagePath: '', imageUrl: null,
       imageFile: null, imagePreviewUrl: null, sortOrder: current.length, isNew: true,
     }]);

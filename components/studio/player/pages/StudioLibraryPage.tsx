@@ -3,13 +3,14 @@
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import type { TabletPlayerExperience } from '@/features/tablet/player/types';
+import { createId } from '@/lib/createId';
 
 type SortMode = 'manual' | 'xp-desc' | 'xp-asc';
 
 const tags = ['Battle', 'Quest', 'Discovery', 'Roleplay', 'Mystery', 'Travel', 'Lore', 'Treasure', 'Boss', 'Other'];
 
 function createEntry(sortOrder: number): TabletPlayerExperience {
-  const entryId = `draft-experience-${crypto.randomUUID()}`;
+  const entryId = `draft-experience-${createId()}`;
   return { id: entryId, headline: 'Headline', description: null, xp: 1, tag: 'Battle', sessionLabel: '1', happenedAt: null, sortOrder, metadata: { client_id: entryId }, isDraft: true };
 }
 

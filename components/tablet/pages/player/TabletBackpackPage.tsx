@@ -115,7 +115,7 @@ export default function TabletBackpackPage({
         </div>
         <p
           className={[
-            'min-h-0 overflow-y-auto font-montserrat text-[13px] leading-[1.5] text-white/75 transition-[opacity,margin] duration-500',
+            'min-h-0 touch-pan-y overflow-y-auto overscroll-contain font-montserrat text-[13px] leading-[1.5] text-white/75 transition-[opacity,margin] duration-500',
             !selected || isImageCompact
               ? 'mt-[9px] flex-1 opacity-100'
               : 'h-0 opacity-0',

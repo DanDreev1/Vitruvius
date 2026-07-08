@@ -11,6 +11,7 @@ import ScaledPageViewport from '@/components/layout/ScaledPageViewport';
 import Header from '@/components/ui/Header';
 import { deleteStudioEntity, loadStudioEntities, type StudioEntity } from '@/features/studio/api';
 import type { StudioRole, StudioTab, StudioTabConfig } from '@/features/studio/types';
+import { createId } from '@/lib/createId';
 
 export type StudioDraftExitActions = {
   canSave: boolean;
@@ -73,7 +74,7 @@ export default function StudioWorkspace<TTab extends StudioTab>({ role, tabs, re
   const createEntity = async () => {
     if (isBusy) return;
     setActiveTab(tabs[0].key);
-    setSelected({ id: `draft-${crypto.randomUUID()}`, name: role === 'master' ? s('newWorld') : t('newCharacter'), avatarUrl: null, isDraft: true });
+    setSelected({ id: `draft-${createId()}`, name: role === 'master' ? s('newWorld') : t('newCharacter'), avatarUrl: null, isDraft: true });
   };
 
   const confirmDelete = async () => {

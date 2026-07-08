@@ -14,6 +14,7 @@ import { useTranslations } from 'next-intl';
 
 import { signInWithEmail } from '@/features/auth/signInWithEmail';
 import { signUpWithEmail } from '@/features/auth/signUpWithEmail';
+import { createId } from '@/lib/createId';
 import { supabase } from '@/lib/supabaseClient';
 import { sessionExitRequest } from './client';
 import type { SessionExitResponse, SessionExitRole } from './types';
@@ -97,7 +98,7 @@ export default function SessionExitProvider({ children }: { children: React.Reac
 
       await refreshPendingExit();
       realtimeChannel = supabase
-        .channel(`session-exit-${data.session.user.id}-${crypto.randomUUID()}`)
+        .channel(`session-exit-${data.session.user.id}-${createId()}`)
         .on(
           'postgres_changes',
           {

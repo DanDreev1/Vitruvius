@@ -17,6 +17,7 @@ import { createStudioCharacterDraft, createStudioDomain } from '@/features/studi
 import { loadStudioCharacter, saveStudioCharacter } from '@/features/studio/player/api';
 import type { StudioCharacterDraft } from '@/features/studio/player/types';
 import type { PlayerStudioTab } from '@/features/studio/types';
+import { createId } from '@/lib/createId';
 
 type Props = {
   tab: PlayerStudioTab;
@@ -25,7 +26,7 @@ type Props = {
   registerDraftExitActions: (actions: StudioDraftExitActions | null) => void;
 };
 
-function id(prefix: string) { return `draft-${prefix}-${crypto.randomUUID()}`; }
+function id(prefix: string) { return `draft-${prefix}-${createId()}`; }
 
 function toTabletDraft(draft: StudioCharacterDraft): TabletPlayerCharacterDraft {
   return { name: draft.name, description: draft.description, avatarUrl: draft.portraitPreviewUrl ?? draft.avatarUrl, portraitFile: draft.portraitFile, portraitPreviewUrl: draft.portraitPreviewUrl, attributes: draft.attributes, parameters: draft.parameters, domains: draft.domains };
@@ -118,7 +119,7 @@ export default function PlayerStudioContent({ tab, entity, onEntityChange, regis
     onDomainNameChange={(domainId, name) => updateDomain(domainId, (domain) => ({ ...domain, name }))}
     onDomainIconChange={(domainId, iconKey) => updateDomain(domainId, (domain) => ({ ...domain, iconKey }))}
     onDomainLevelChange={(domainId, level) => updateDomain(domainId, (domain) => ({ ...domain, level, skills: domain.skills.map((skill) => skill.isPrimary ? { ...skill, level } : skill) }))}
-    onDomainSkillAdd={(domainId) => { const skillId = id('skill'); updateDomain(domainId, (domain) => ({ ...domain, skills: [...domain.skills, { id: skillId, key: `${domain.key}-${crypto.randomUUID()}`, name: t('skillName'), description: t('skillDescription'), iconKey: 'book', isPrimary: false, level: 1, sortOrder: domain.skills.length, metadata: { icon_key: 'book' }, isDraft: true }] })); return skillId; }}
+    onDomainSkillAdd={(domainId) => { const skillId = id('skill'); updateDomain(domainId, (domain) => ({ ...domain, skills: [...domain.skills, { id: skillId, key: `${domain.key}-${createId()}`, name: t('skillName'), description: t('skillDescription'), iconKey: 'book', isPrimary: false, level: 1, sortOrder: domain.skills.length, metadata: { icon_key: 'book' }, isDraft: true }] })); return skillId; }}
     onDomainSkillDelete={(domainId, skillId) => updateDomain(domainId, (domain) => ({ ...domain, skills: domain.skills.filter((skill) => skill.id !== skillId || skill.isPrimary).map((skill, index) => ({ ...skill, sortOrder: index })) }))}
     onDomainSkillNameChange={(domainId, skillId, name) => updateDomain(domainId, (domain) => ({ ...domain, skills: domain.skills.map((skill) => skill.id === skillId ? { ...skill, name } : skill) }))}
     onDomainSkillIconChange={(domainId, skillId, iconKey) => updateDomain(domainId, (domain) => ({ ...domain, skills: domain.skills.map((skill) => skill.id === skillId ? { ...skill, iconKey, metadata: { ...skill.metadata, icon_key: iconKey } } : skill) }))}

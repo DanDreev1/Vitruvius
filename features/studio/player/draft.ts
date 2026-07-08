@@ -1,9 +1,10 @@
 import { createDefaultCharacterCollections } from '@/features/characters/defaults';
 import type { TabletPlayerDomain } from '@/features/tablet/player/types';
 import type { StudioCharacterDraft } from './types';
+import { createId } from '@/lib/createId';
 
 function draftId(prefix: string) {
-  return `draft-${prefix}-${crypto.randomUUID()}`;
+  return `draft-${prefix}-${createId()}`;
 }
 
 export function createStudioCharacterDraft(): StudioCharacterDraft {
@@ -40,7 +41,7 @@ export function createStudioCharacterDraft(): StudioCharacterDraft {
 }
 
 export function createStudioDomain(sortOrder: number): TabletPlayerDomain {
-  const key = `domain-${crypto.randomUUID()}`;
+  const key = `domain-${createId()}`;
   return {
     id: draftId('domain'), key, name: 'Name of the Domain', description: null,
     iconKey: 'skills', level: 1, sortOrder, metadata: {}, isDraft: true,

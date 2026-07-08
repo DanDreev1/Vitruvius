@@ -20,6 +20,7 @@ import type { StudioDraftExitActions } from '@/components/studio/StudioWorkspace
 import { createStudioEntity } from '@/features/studio/api';
 import StudioWorldNotesEditor from './StudioNotesEditor';
 import StudioSettingsEditor from './StudioSettingsEditor';
+import { createId } from '@/lib/createId';
 
 type Row = Record<string, unknown> & { id: string };
 type Field = { key: string; label: string; type?: 'text' | 'textarea' | 'select' | 'checkbox'; options?: string[] };
@@ -309,7 +310,7 @@ export default function MasterStudioContent({ tab, worldId, initialName, onWorld
   }, []);
 
   const createRow = useCallback(async <T,>(_ignoredWorldId: string, collection: WorldCollection, values: Record<string, unknown>) => {
-    const id = `draft-${collection}-${crypto.randomUUID()}`;
+      const id = `draft-${collection}-${createId()}`;
     const row = { id, ...values } as Row;
     if (collection === 'npcs') row.display_url = pendingFiles.current.get(String(row.avatar_url))?.preview ?? null;
     if (collection === 'assets') row.display_url = pendingFiles.current.get(String(row.image_url))?.preview ?? null;
@@ -336,7 +337,7 @@ export default function MasterStudioContent({ tab, worldId, initialName, onWorld
   }, [replaceCollection]);
 
   const uploadFile = useCallback(async (_ignoredWorldId: string, kind: UploadKind, file: File) => {
-    const token = `draft-file:${crypto.randomUUID()}`;
+    const token = `draft-file:${createId()}`;
     const preview = URL.createObjectURL(file);
     const pending = { file, kind, preview };
     pendingFiles.current.set(token, pending);

@@ -100,3 +100,87 @@ body {
   padding: 12px 10px;
   font-size: 15px;
 }
+
+.no-js-scaled-viewport {
+  --no-js-scale: 0.34;
+}
+
+.no-js-page-canvas {
+  display: none;
+  left: 50%;
+  top: 50%;
+  width: 1440px;
+  transform: translate(-50%, -50%) scale(var(--no-js-scale));
+  transform-origin: center center;
+}
+
+.no-js-page-canvas-fluid {
+  width: 1440px;
+}
+
+.no-js-header-backdrop {
+  display: none;
+}
+
+@media (orientation: landscape) and (min-width: 500px) and (min-height: 260px) {
+  .no-js-rotate-prompt {
+    display: none;
+  }
+
+  .no-js-page-canvas {
+    display: block;
+  }
+
+  .no-js-header-backdrop {
+    display: block;
+    height: calc(120px * var(--no-js-scale));
+  }
+}
+
+@media (orientation: landscape) and (min-height: 300px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.33;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 350px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.39;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 390px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.43;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 430px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.47;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 500px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.55;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 650px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.72;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 800px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.88;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 900px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 1;
+  }
+}

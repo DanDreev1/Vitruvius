@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
+import { createId } from '@/lib/createId';
 
 import type {
   PartyAttribute,
@@ -371,7 +372,7 @@ export async function createPartyCheck({
   }
 
   const now = Date.now();
-  const checkId = crypto.randomUUID();
+  const checkId = createId();
   const state: PartyCheckState = {
     id: checkId,
     sessionId,

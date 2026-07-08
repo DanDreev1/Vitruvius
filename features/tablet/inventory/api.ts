@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
+import { createId } from '@/lib/createId';
 
 import { ASSET_IMAGE_BUCKET, ASSET_IMAGE_MAX_BYTES, SAVED_ASSET_IMAGE_BUCKET } from './constants';
 import type {
@@ -63,7 +64,7 @@ export async function publishInventoryMessage(
   text: string
 ) {
   const message: InventoryMessage = {
-    id: crypto.randomUUID(),
+      id: createId(),
     sessionId,
     text,
     createdAt: Date.now(),
@@ -150,7 +151,7 @@ async function uploadAssetImage(sessionId: string, worldId: string, file: File) 
     throw new Error('Item image must be JPEG, PNG, or WebP.');
   }
   if (file.size > ASSET_IMAGE_MAX_BYTES) throw new Error('Item image must be 5 MB or smaller.');
-  const path = `sessions/${sessionId}/worlds/${worldId}/${crypto.randomUUID()}-${safeFileName(file.name)}`;
+  const path = `sessions/${sessionId}/worlds/${worldId}/${createId()}-${safeFileName(file.name)}`;
   const { error } = await supabase.storage.from(ASSET_IMAGE_BUCKET).upload(path, file);
   if (error) throw new Error(`Failed to upload item image: ${error.message}`);
   return path;

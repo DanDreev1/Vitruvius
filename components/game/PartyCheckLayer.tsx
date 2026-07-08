@@ -31,6 +31,7 @@ import type {
   SeatedPlayer,
 } from '@/lib/game/types';
 import { getSeatVisualConfig } from '@/lib/game/getSeatVisualConfig';
+import { createId } from '@/lib/createId';
 import { translateSystemLabel } from '@/components/tablet/systemLabels';
 
 type PartyCheckLayerProps = {
@@ -729,7 +730,7 @@ export default function PartyCheckLayer({
   ) => {
     const dice = rollPartyDice(diceCount);
     const attempt = {
-      id: crypto.randomUUID(),
+              id: createId(),
       diceCount,
       attributeKey: attribute.key,
       attributeLabel: attribute.label,

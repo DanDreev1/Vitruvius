@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
+import { createId } from '@/lib/createId';
 
 import {
   RELATIONSHIP_NPC_ALLOWED_IMAGE_TYPES,
@@ -201,7 +202,7 @@ async function uploadRelationshipAvatar(
     throw new Error('NPC image must be 5 MB or smaller.');
   }
 
-  const objectPath = `${RELATIONSHIP_NPC_STORAGE_FOLDER}/${sessionId}/worlds/${inGameWorldId}/${npcId}-${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+  const objectPath = `${RELATIONSHIP_NPC_STORAGE_FOLDER}/${sessionId}/worlds/${inGameWorldId}/${npcId}-${createId()}-${sanitizeFileName(file.name)}`;
   const { error } = await supabase.storage
     .from(RELATIONSHIP_NPC_STORAGE_BUCKET)
     .upload(objectPath, file, { cacheControl: '3600', upsert: false });
@@ -242,7 +243,7 @@ export async function saveRelationshipChanges({
 
   for (const npc of npcs) {
     let persistedId = npc.persistedId;
-    const generatedId = persistedId ?? crypto.randomUUID();
+  const generatedId = persistedId ?? createId();
     let nextAvatarPath = npc.avatarPath;
 
     if (npc.avatarFile) {

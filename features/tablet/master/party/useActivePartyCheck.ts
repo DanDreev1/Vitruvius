@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabaseClient';
+import { createId } from '@/lib/createId';
 
 import {
   getActivePartyCheck,
@@ -50,7 +51,7 @@ export function useActivePartyCheck(sessionId: string | null) {
   useEffect(() => {
     if (!sessionId) return;
 
-    const channelName = `party-check-db-${sessionId}-${crypto.randomUUID()}`;
+    const channelName = `party-check-db-${sessionId}-${createId()}`;
     const channel = supabase
       .channel(channelName)
       .on(

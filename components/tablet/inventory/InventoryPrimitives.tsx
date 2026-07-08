@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { useTranslations } from 'next-intl';
 
 import type { InventoryCategory } from '@/features/tablet/inventory/types';
@@ -56,8 +57,38 @@ export function EmptyItemTile({ onClick, label }: { onClick?: () => void; label?
 }
 
 export function ItemPortrait({ imageUrl, name, compact = true, onCompactChange }: { imageUrl: string | null; name: string; compact?: boolean; onCompactChange?: (compact: boolean) => void }) {
-  return <div onWheel={(event) => { if (!onCompactChange || Math.abs(event.deltaY) < 8) return; event.stopPropagation(); onCompactChange(event.deltaY < 0); }} className={['relative w-full shrink-0 overflow-hidden rounded-[8px] border-[2px] border-white/20 bg-[#0F1724] bg-cover bg-center transition-[height] duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)]', compact ? 'h-[118px]' : 'h-[280px]'].join(' ')} style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined} aria-label={name}>
-    <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.82))]" />
-    <span className="absolute inset-x-[10px] bottom-[8px] truncate font-montserrat-alt text-[16px] font-extrabold text-white">{name}</span>
-  </div>;
+  const touchStartYRef = useRef<number | null>(null);
+
+  return (
+    <div
+      onWheel={(event) => {
+        if (!onCompactChange || Math.abs(event.deltaY) < 8) return;
+        event.stopPropagation();
+        onCompactChange(event.deltaY < 0);
+      }}
+      onTouchStart={(event) => {
+        touchStartYRef.current = event.touches[0]?.clientY ?? null;
+      }}
+      onTouchEnd={(event) => {
+        if (!onCompactChange || touchStartYRef.current === null) return;
+
+        const endY = event.changedTouches[0]?.clientY ?? touchStartYRef.current;
+        const deltaY = touchStartYRef.current - endY;
+        touchStartYRef.current = null;
+
+        if (Math.abs(deltaY) < 24) return;
+
+        onCompactChange(deltaY > 0);
+      }}
+      className={[
+        'relative w-full shrink-0 touch-pan-y overflow-hidden rounded-[8px] border-[2px] border-white/20 bg-[#0F1724] bg-cover bg-center transition-[height] duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)]',
+        compact ? 'h-[118px]' : 'h-[280px]',
+      ].join(' ')}
+      style={imageUrl ? { backgroundImage: `url(${imageUrl})` } : undefined}
+      aria-label={name}
+    >
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[55%] bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.82))]" />
+      <span className="absolute inset-x-[10px] bottom-[8px] truncate font-montserrat-alt text-[16px] font-extrabold text-white">{name}</span>
+    </div>
+  );
 }
