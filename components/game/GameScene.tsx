@@ -1,0 +1,117 @@
+import { GAME_SCENE_HEIGHT, GAME_SCENE_WIDTH } from "@/lib/game/sceneConfig";
+import type {
+  DensityPreset,
+  GameParticipant,
+  HoverCardData,
+  ResolvedSeatPosition,
+  SeatedPlayer,
+  TableDefinition,
+} from "@/lib/game/types";
+
+import MasterSeat from "./MasterSeat";
+import PartyCheckLayer from "./PartyCheckLayer";
+import PlayerSeat from "./PlayerSeat";
+import TableSceneImageButton from "./TableSceneImageButton";
+import type { SceneImageItem } from "@/features/tablet/master/scene/types";
+import type { PartyCheckState } from "@/features/tablet/master/party/types";
+
+type GameSceneProps = {
+  table: TableDefinition;
+  density: DensityPreset;
+  master: GameParticipant;
+  masterSeat: ResolvedSeatPosition;
+  seatedPlayers: SeatedPlayer[];
+  tableImage: SceneImageItem | null;
+  sessionId: string;
+  currentParticipant: GameParticipant;
+  partyCheck: PartyCheckState | null;
+  persistPartyChanges?: boolean;
+  onPartyCheckChange: (check: PartyCheckState | null) => void;
+  onPartyMessage: (payload: {
+    checkId: string;
+    type: 'roll' | 'inspiration' | 'free_bonus' | 'reset_inspiration' | 'reset_free_bonus';
+    participantId: string;
+    displayName: string;
+    text: string;
+  }) => void;
+  onHoverChange?: (data: HoverCardData | null) => void;
+  onTabletClick?: (targetUserId: string) => void;
+  onTableImageClick?: () => void;
+};
+
+export default function GameScene({
+  table,
+  density,
+  master,
+  masterSeat,
+  seatedPlayers,
+  tableImage,
+  sessionId,
+  currentParticipant,
+  partyCheck,
+  persistPartyChanges = true,
+  onPartyCheckChange,
+  onPartyMessage,
+  onHoverChange,
+  onTabletClick,
+  onTableImageClick,
+}: GameSceneProps) {
+  return (
+    <div
+      className="relative"
+      style={{
+        width: `${GAME_SCENE_WIDTH}px`,
+        height: `${GAME_SCENE_HEIGHT}px`,
+      }}
+    >
+      <div
+        className="absolute left-1/2 top-1/2 rounded-[999px] border border-white/10 bg-[#6B6B6B]"
+        style={{
+          width: `${table.width}px`,
+          height: `${table.height}px`,
+          transform: "translate(-50%, -50%)",
+          boxShadow: "0 30px 80px rgba(0, 0, 0, 0.35)",
+        }}
+      />
+
+      {tableImage && onTableImageClick ? (
+        <TableSceneImageButton
+          image={tableImage}
+          density={density}
+          onClick={onTableImageClick}
+        />
+      ) : null}
+
+      <MasterSeat
+        participant={master}
+        seat={masterSeat}
+        density={density}
+        onHoverChange={onHoverChange}
+        onTabletClick={onTabletClick}
+      />
+
+      {seatedPlayers.map((item) => (
+        <PlayerSeat
+          key={item.participant.id}
+          seatedPlayer={item}
+          density={density}
+          onHoverChange={onHoverChange}
+          onTabletClick={onTabletClick}
+        />
+      ))}
+
+      <PartyCheckLayer
+        sessionId={sessionId}
+        check={partyCheck}
+        currentParticipant={currentParticipant}
+        master={master}
+        masterSeat={masterSeat}
+        seatedPlayers={seatedPlayers}
+        density={density}
+        persistChanges={persistPartyChanges}
+        onCheckChange={onPartyCheckChange}
+        onMessage={onPartyMessage}
+      />
+    </div>
+  );
+}

@@ -1,0 +1,19 @@
+{
+  "Game": {
+    "loading": "Завантаження гри…", "offline": "Офлайн", "master": "Майстер", "player": "Гравець", "dice": "Кубики",
+    "rotateTitle": "Поверніть пристрій", "rotateDescription": "Ігровий стіл доступний лише на широких екранах.", "openImage": "Відкрити зображення «{title}»",
+    "stack": "Стос", "fit": "Вписати", "images": "Зображення", "mode": "Режим: {mode}", "loadingImages": "Завантаження зображень…", "noImages": "Немає доступних зображень", "previous": "Назад", "next": "Далі",
+    "successes": "{count, plural, one {# успіх} few {# успіхи} many {# успіхів} other {# успіху}}", "rollProgress": "Кидок {current}/{total}", "rollPartyDice": "Кинути кубики перевірки",
+    "inspiration": "Натхнення", "freeBonus": "Вільний бонус", "reset": "Скинути", "rollDice": "Кидок кубиків", "close": "Закрити", "loadingAttributes": "Завантаження характеристик…", "attributesError": "Не вдалося завантажити характеристики.",
+    "manual": "Вручну", "diceAmount": "{count, plural, one {# кубик} few {# кубики} many {# кубиків} other {# кубика}}", "diceCount": "Кількість кубиків", "rolling": "Кидаємо…", "rollDiceCount": "Кинути {count, plural, one {# кубик} few {# кубики} many {# кубиків} other {# кубика}}",
+    "groupTotal": "Загальний результат: {count}", "wins": "Перемагає {name}", "accept": "Прийняти", "reject": "Відхилити", "reroll": "Перекинути", "confirmAction": "Підтвердьте дію", "confirmDecision": "Ви впевнені, що хочете виконати дію «{action}» для цієї перевірки?", "dontShowAgain": "Більше не показувати в цій сесії", "no": "Ні", "yes": "Так", "saving": "Збереження…",
+    "messageRoll": "{name}: кидок — {count, plural, one {# кубик} few {# кубики} many {# кубиків} other {# кубика}}, характеристика «{attribute}».", "messageResetBonus": "{name} скидає успіхи від бонусу «{bonus}» для цієї перевірки.", "messageUseBonus": "{name} використовує «{bonus}» і додає 1 успіх.", "messageResetAll": "{name} скидає всі успіхи від Натхнення та Вільного бонусу для цієї перевірки.",
+    "actions": {"accept":"прийняти","reject":"відхилити","reroll":"перекинути"}
+  },
+  "SessionExit": {
+    "endSessionTitle": "Завершити сесію?", "exitGameTitle": "Вийти з гри?", "endSessionDescription": "Кімната закриється для всіх. Після цього кожен учасник вибере, що зробити зі своїми ігровими даними.", "exitGameDescription": "Ви залишите стіл, а потім виберете, що зробити зі своїм персонажем.",
+    "cancel": "Скасувати", "processing": "Обробка…", "endSession": "Завершити сесію", "exitGame": "Вийти з гри", "sessionEnded": "Сесію завершено", "keepEntity": "Зберегти {entity}?", "temporaryUntil": "Тимчасові дані доступні до", "world": "світ", "character": "персонажа",
+    "anonymousHelp": "Увійдіть або створіть обліковий запис, щоб зберегти {entity}. Інакше тимчасові дані буде видалено.", "email": "Електронна пошта", "password": "Пароль", "login": "Увійти", "createAccount": "Створити обліковий запис", "saveAsNew": "Зберегти як новий", "saveAsNewHelp": "Створити окрему копію", "updateCurrent": "Оновити поточний", "updateCurrentHelp": "Замінити наявну версію", "dontSave": "Не зберігати {entity}",
+    "exitError": "Не вдалося вийти з гри.", "processError": "Не вдалося обробити дані сесії.", "handoffError": "Не вдалося підготувати перенесення даних сесії.", "confirmEmail": "Підтвердьте електронну пошту, потім увійдіть, щоб зберегти дані сесії.", "authError": "Помилка авторизації."
+  }
+}

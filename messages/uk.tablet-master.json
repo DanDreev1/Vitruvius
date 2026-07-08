@@ -1,0 +1,188 @@
+{
+  "TabletMaster": {
+    "common": {
+      "all": "Усі",
+      "role": "Роль: {role}",
+      "master": "Майстер",
+      "player": "Гравець",
+      "party": "Партія",
+      "scene": "Сцена",
+      "character": "Персонаж",
+      "save": "Зберегти",
+      "saving": "Зберігаємо…",
+      "saved": "Збережено",
+      "edit": "Зміна",
+      "add": "Додати",
+      "delete": "Видалити",
+      "deleting": "Видаляємо…",
+      "cancel": "Скасувати",
+      "close": "Закрити",
+      "previous": "Назад",
+      "next": "Далі",
+      "upload": "Завантажити",
+      "uploading": "Завантажуємо…",
+      "selected": "{count, plural, one {# вибрано} few {# вибрано} many {# вибрано} other {# вибрано}}",
+      "chooseImage": "Вибрати картинку",
+      "name": "Ім'я",
+      "description": "Опис",
+      "saveChanges": "Зберегти"
+    },
+    "navigation": {
+      "scene": "Сцена",
+      "party": "Партія",
+      "relationship": "Зв'язки",
+      "assets": "Асети",
+      "notes": "Нотатки",
+      "settings": "Налаштування"
+    },
+    "systemLabels": {
+      "attributes": {
+        "constitution": "Статура",
+        "awareness": "Уважність",
+        "agility": "Спритність",
+        "thinking": "Мислення",
+        "charisma": "Харизма",
+        "will": "Воля"
+      },
+      "parameters": {
+        "health": "Здоров'я",
+        "inspiration": "Натхнення",
+        "stress": "Стрес"
+      }
+    },
+    "scene": {
+      "tabs": {
+        "images": "Картинки",
+        "music": "Музика"
+      },
+      "audience": {
+        "roleScene": "Роль: Сцена",
+        "rolePlayer": "Роль: Гравець"
+      },
+      "images": {
+        "addImage": "Додати картинку",
+        "delete": "Видалити",
+        "hide": "Сховати",
+        "show": "Показати",
+        "stack": "Стос",
+        "fit": "Вписати",
+        "images": "Картинки",
+        "mode": "Режим: {mode}",
+        "loading": "Завантажуємо картинки…",
+        "uploading": "Завантажуємо…",
+        "noPreview": "Картинки поки немає",
+        "visibleTargets": "Видно вибраним цілям",
+        "hiddenPlayers": "Сховано від гравців"
+      },
+      "music": {
+        "playlist": "Плейлист",
+        "selectedTrack": "Вибрано: {title}",
+        "noSelectedTrack": "Трек не вибрано",
+        "addMusic": "Додати музику",
+        "uploading": "Завантажуємо…",
+        "playing": "Грає",
+        "paused": "Пауза",
+        "previousTrack": "Попередній трек",
+        "nextTrack": "Наступний трек",
+        "pause": "Пауза",
+        "play": "Грати",
+        "repeatTrack": "Повторювати трек",
+        "autoNextTrack": "Наступний автоматично",
+        "sceneMusicTime": "Час музики сцени",
+        "loading": "Завантажуємо музику…",
+        "empty": "Музику не завантажено",
+        "selected": "Вибрано",
+        "addCover": "Додати обкладинку",
+        "replaceCover": "Замінити обкладинку",
+        "globalVolume": "Загальна гучність",
+        "delete": "Видалити"
+      }
+    },
+    "party": {
+      "modes": {
+        "individual": "Один",
+        "group": "Група",
+        "conflict": "Конфлікт"
+      },
+      "threshold": {
+        "add": "Додати складність {value}",
+        "remove": "Прибрати складність {value}",
+        "title": "Складність {value}"
+      },
+      "statusTitle": "Статус гравця",
+      "statusSubtitle": "Виберіть одного гравця, щоб змінювати параметри.",
+      "statusUnavailable": "Параметри доступні, тільки якщо вибрано рівно одного гравця.",
+      "loadingParameters": "Завантажуємо параметри…",
+      "difficultyTitle": "Складність",
+      "difficultySubtitle": "Зберіть активну перевірку для столу.",
+      "activeCheck": "На столі вже є активна перевірка. Завершіть або скасуйте її перед створенням нової.",
+      "cancelling": "Скасовуємо…",
+      "groupThresholds": "Складності групи",
+      "thresholds": "Складності",
+      "advantage": "Перевага",
+      "disadvantage": "Перешкода",
+      "remove": "Прибрати",
+      "creating": "Створюємо…",
+      "sendCheck": "Надіслати перевірку",
+      "selectUserFirst": "Спочатку виберіть користувача.",
+      "targets": "Цілі",
+      "loadingTargets": "Завантажуємо цілі…"
+    },
+    "assets": {
+      "weapon": "Зброя",
+      "consumable": "Витратник",
+      "quest": "Квест",
+      "other": "Інше",
+      "createItem": "Створити предмет",
+      "empty": "Додайте предмет до бібліотеки асетів.",
+      "giveItem": "Видати предмет",
+      "recipients": "Отримувачі",
+      "selectCharacters": "Виберіть одного або кількох персонажів",
+      "quantity": "Кількість",
+      "deleteTitle": "Видалити {name}?",
+      "fallbackItem": "цей предмет",
+      "deleteDescription": "Уже видані копії залишаться в рюкзаках гравців."
+    },
+    "relationships": {
+      "player": "Гравець",
+      "rolePlayer": "Роль: Гравець",
+      "noPlayers": "Доступних персонажів гравців немає.",
+      "dragToReorder": "Перетягнути для сортування",
+      "deleteNpc": "Видалити NPC",
+      "imageRequired": "Потрібна картинка",
+      "characterName": "Ім'я персонажа",
+      "characterDescription": "Опис персонажа",
+      "relationship": "Стосунки",
+      "decreaseRelationship": "Зменшити стосунки",
+      "increaseRelationship": "Збільшити стосунки",
+      "shownToPlayer": "Показано гравцю",
+      "hiddenFromPlayer": "Сховано від гравця",
+      "addNpc": "Додати NPC",
+      "cancelChanges": "Скасувати зміни",
+      "saveRelationships": "Зберегти стосунки",
+      "editRelationships": "Редагувати стосунки",
+      "loading": "Завантажуємо стосунки…",
+      "emptyTitle": "NPC поки немає",
+      "emptyDescription": "Увійдіть у режим зміни й додайте першого персонажа на карту стосунків.",
+      "previousNpcs": "Попередні NPC",
+      "nextNpcs": "Наступні NPC",
+      "npcPage": "Сторінка NPC {page}",
+      "deleteTitle": "Видалити {name}?",
+      "fallbackNpc": "цього NPC",
+      "deleteDescription": "NPC, картинку й усі стосунки з персонажами буде видалено одразу.",
+      "levels": {
+        "-5": "Ненависть",
+        "-4": "Ворожнеча",
+        "-3": "Напруга",
+        "-2": "Недовіра",
+        "-1": "Підозра",
+        "0": "Байдужість",
+        "1": "Інтерес",
+        "2": "Довіра",
+        "3": "Близькість",
+        "4": "Дружба",
+        "5": "Вірність"
+      }
+    }
+  }
+}

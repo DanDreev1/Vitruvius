@@ -1,0 +1,468 @@
+'use client';
+
+import { useRef } from 'react';
+import { useTranslations } from 'next-intl';
+import { useLobbyScreen } from '@/features/lobby/useLobbyScreen';
+import type { LobbyScreenProps } from '@/features/lobby/types';
+import BackHomeButton from '@/components/ui/BackHomeButton';
+import { LobbyCountdown } from './LobbyCountdown';
+import { LobbyExitModal } from './LobbyExitModal';
+import { NicknameModal } from './NicknameModal';
+
+export default function LobbyScreen({ code }: LobbyScreenProps) {
+    const t = useTranslations('Lobby');
+    const {
+        isLoading,
+        session,
+        participants,
+        currentParticipant,
+        characters,
+        worlds,
+        activeSlide,
+        copied,
+        isMaster,
+        readyCount,
+        canToggleReady,
+        readyFeedbackMessage,
+        startGameMinPlayersFeedbackMessage,
+        startGameNicknameFeedbackMessage,
+        startGameReadyFeedbackMessage,
+        startGameSubmitError,
+        isStartingGame,
+        isNicknameModalOpen,
+        nicknameDraft,
+        nicknameError,
+        isSavingNickname,
+        isAvatarUploadDisabled,
+        avatarStatusMessage,
+        isLobbyExitModalOpen,
+        isLobbyExitSubmitting,
+        lobbyCleanupAt,
+        emptyCharacterMessage,
+        emptyWorldMessage,
+        setActiveSlide,
+        onTouchStart,
+        onTouchEnd,
+        handleCopyCode,
+        handleToggleReady,
+        handleChangeNickname,
+        handleCloseNicknameModal,
+        handleNicknameDraftChange,
+        handleSaveNickname,
+        handleAvatarChangeRequest,
+        handleAvatarFileChange,
+        handleSelectCharacter,
+        handleSelectWorld,
+        handleRequestLobbyExit,
+        handleCloseLobbyExitModal,
+        handleConfirmLobbyExit,
+        handleLobbyTimeout,
+        handleStartGame
+    } = useLobbyScreen({ code });
+
+    const avatarInputRef = useRef<HTMLInputElement | null>(null);
+    const lobbyActionFeedbackMessages = [
+        readyFeedbackMessage,
+        startGameMinPlayersFeedbackMessage,
+        startGameNicknameFeedbackMessage,
+        startGameReadyFeedbackMessage,
+        startGameSubmitError
+    ].filter((message): message is string => Boolean(message));
+
+    return (
+        <div className="h-[900px] text-white">
+            <main className="h-[900px] w-full max-w-none px-0">
+                <div className="grid h-[900px] grid-cols-[minmax(0,4fr)_minmax(288px,1fr)] gap-0">
+                    {/* LEFT SIDE */}
+                    <section className="relative mb-0 flex min-w-0 flex-col items-center justify-center pr-10">
+                        <div className="absolute left-8 top-8 z-20">
+                            <BackHomeButton
+                                onClick={handleRequestLobbyExit}
+                                disabled={isLoading || isLobbyExitSubmitting}
+                                label={t('leaveGame')}
+                            />
+                        </div>
+
+                        <div className="mt-24 mb-10 flex w-full flex-col items-center text-center md:mb-12">
+                            <h1 className="font-montserrat-alt mb-6 text-[60px] font-bold leading-none">
+                                {t('waiting')}
+                            </h1>
+
+                            <div className="flex flex-row items-center gap-5">
+                                <p className="font-montserrat text-[32px] font-bold leading-none">
+                                    {t('code', {code: session?.code ?? code})}
+                                </p>
+
+                                <button
+                                    type="button"
+                                    onClick={handleCopyCode}
+                                    className="btn-primary w-full max-w-[150px] sm:w-auto"
+                                >
+                                    {copied ? t('copied') : t('copy')}
+                                </button>
+                            </div>
+
+                            <LobbyCountdown
+                                cleanupAt={lobbyCleanupAt}
+                                onExpire={handleLobbyTimeout}
+                            />
+                        </div>
+
+                        {/* ONLY THIS AREA SLIDES */}
+                        <div className="flex w-full justify-center">
+                            <div className="w-full max-w-[900px]">
+                                <div className="relative w-full">
+                                    {activeSlide === 1 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveSlide(0)}
+                                            className="absolute left-0 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-[#091332] lg:flex"
+                                            aria-label="Previous slide"
+                                        >
+                                            ←
+                                        </button>
+                                    )}
+
+                                    {activeSlide === 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveSlide(1)}
+                                            className="absolute right-0 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-[#091332] lg:flex"
+                                            aria-label="Next slide"
+                                        >
+                                            →
+                                        </button>
+                                    )}
+
+                                    <div
+                                        className="w-full overflow-hidden"
+                                        onTouchStart={onTouchStart}
+                                        onTouchEnd={onTouchEnd}
+                                    >
+                                        <div
+                                            className={`flex w-[200%] transition-transform duration-300 ease-out ${activeSlide === 0 ? 'translate-x-0' : '-translate-x-1/2'
+                                                }`}
+                                        >
+                                            {/* SLIDE 1 - EDIT PROFILE */}
+                                            <div className="w-1/2 px-2 lg:px-16">
+                                                <div className="mx-auto flex w-full max-w-[560px] flex-col items-center text-center">
+                                                    <h2 className="font-montserrat-alt mb-8 text-[32px] font-bold leading-none md:text-[40px]">
+                                                        {t('editProfile')}
+                                                    </h2>
+
+                                                    <div className="mb-8 flex w-full items-center justify-center gap-5">
+                                                        <div className="flex shrink-0 flex-col items-center">
+                                                            <button
+                                                                type="button"
+                                                                className="group relative h-[112px] w-[112px] rounded-full focus:outline-none disabled:cursor-not-allowed"
+                                                                onClick={() => {
+                                                                    if (handleAvatarChangeRequest()) {
+                                                                        avatarInputRef.current?.click();
+                                                                    }
+                                                                }}
+                                                                disabled={isAvatarUploadDisabled}
+                                                                aria-label={t('changeAvatar')}
+                                                                title={t('changeAvatar')}
+                                                            >
+                                                                <span
+                                                                    className="block h-[100px] w-[100px] overflow-hidden rounded-full border-2 border-white/10 bg-[#8B8B8B] transition-colors group-hover:border-[#D6B25E] group-focus-visible:border-[#D6B25E]"
+                                                                    aria-hidden="true"
+                                                                >
+                                                                    {currentParticipant?.avatar_url ? (
+                                                                        <img
+                                                                            src={currentParticipant.avatar_url}
+                                                                            alt={t('profileAvatar')}
+                                                                            className="h-full w-full object-cover"
+                                                                        />
+                                                                    ) : null}
+                                                                </span>
+
+                                                                <span
+                                                                    className="absolute bottom-0 right-0 flex h-[48px] w-[48px] items-center justify-center rounded-full border-2 border-[#0B1020] bg-white shadow-[0_10px_24px_rgba(0,0,0,0.28)] transition-transform group-hover:scale-105"
+                                                                    aria-hidden="true"
+                                                                >
+                                                                    <span
+                                                                        className="block h-6 w-6 bg-contain bg-center bg-no-repeat"
+                                                                        style={{ backgroundImage: "url('/PaintBrush.png')" }}
+                                                                    />
+                                                                </span>
+                                                            </button>
+
+                                                            <input
+                                                                ref={avatarInputRef}
+                                                                type="file"
+                                                                accept="image/*"
+                                                                className="hidden"
+                                                                disabled={isAvatarUploadDisabled}
+                                                                onChange={(event) => {
+                                                                    const file = event.currentTarget.files?.[0] ?? null;
+                                                                    void handleAvatarFileChange(file);
+                                                                    event.currentTarget.value = '';
+                                                                }}
+                                                            />
+
+                                                            <p className="font-montserrat mt-2 min-h-[18px] max-w-[150px] text-center text-[12px] font-semibold leading-tight text-[#D6B25E]">
+                                                                {avatarStatusMessage ?? ''}
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="min-w-0 text-left">
+                                                            <p className="font-montserrat text-[22px] font-bold leading-none md:text-[30px]">
+                                                                {currentParticipant?.display_name ?? t('nickname')}
+                                                            </p>
+                                                            <p className="font-montserrat mt-2 text-[18px] leading-none text-[#E7E7E7] md:text-[22px]">
+                                                                {t('role', {role: currentParticipant?.role === 'master' ? t('master') : t('player')})}
+                                                            </p>
+                                                        </div>
+
+                                                        <div
+                                                            className={`h-5 w-5 rounded-full ${currentParticipant?.is_ready ? 'bg-[#00FF19]' : 'bg-[#5D5D5D]'
+                                                                }`}
+                                                        />
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleChangeNickname}
+                                                        className="btn-primary max-w-[560px]"
+                                                    >
+                                                        {t('changeNickname')}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* SLIDE 2 - CHOOSE CHARACTER / WORLD */}
+                                            <div className="w-1/2 px-2 lg:px-16">
+                                                <div className="mx-auto flex w-full max-w-[560px] flex-col items-center text-center">
+                                                    <h2 className="font-montserrat-alt mb-8 text-[28px] font-bold leading-none md:text-[36px]">
+                                                        {isMaster ? t('chooseWorld') : t('chooseCharacter')}
+                                                    </h2>
+
+                                                    <div className="w-full rounded-[28px] border border-white/15 bg-white/5 p-4 text-left">
+                                                        {isMaster ? (
+                                                            worlds.length === 0 ? (
+                                                                <p className="font-montserrat text-center text-[16px] leading-[1.5] text-[#E7E7E7]">
+                                                                    {emptyWorldMessage}
+                                                                </p>
+                                                            ) : (
+                                                                <div className="space-y-3">
+                                                                    {worlds.map((world) => {
+                                                                        const isSelected =
+                                                                            currentParticipant?.selected_world_id === world.id;
+
+                                                                        return (
+                                                                            <button
+                                                                                key={world.id}
+                                                                                type="button"
+                                                                                onClick={() => handleSelectWorld(world.id)}
+                                                                                className={`flex w-full items-center gap-4 rounded-[24px] border px-4 py-4 text-left transition-colors ${isSelected
+                                                                                    ? 'border-[#D6B25E] bg-[#D6B25E]/10'
+                                                                                    : 'border-white/10 bg-white/5'
+                                                                                    }`}
+                                                                            >
+                                                                                {world.avatar_url ? (
+                                                                                    <img
+                                                                                        src={world.avatar_url}
+                                                                                        alt={world.name}
+                                                                                        className="h-[72px] w-[72px] shrink-0 rounded-[18px] object-cover"
+                                                                                    />
+                                                                                ) : (
+                                                                                    <div className="h-[72px] w-[72px] shrink-0 rounded-[18px] bg-[#D9D9D9]" />
+                                                                                )}
+
+                                                                                <div className="min-w-0 flex-1">
+                                                                                    <p className="font-montserrat text-[20px] font-bold leading-none">
+                                                                                        {world.name}
+                                                                                    </p>
+                                                                                    <p className="font-montserrat mt-2 line-clamp-2 text-[15px] text-[#E7E7E7]">
+                                                                                        {t('savedWorld')}
+                                                                                    </p>
+                                                                                </div>
+
+                                                                                <div className="font-montserrat text-[14px] font-bold">
+                                                                                    {isSelected ? t('selected') : t('choose')}
+                                                                                </div>
+                                                                            </button>
+                                                                        );
+                                                                    })}
+                                                                </div>
+                                                            )
+                                                        ) : characters.length === 0 ? (
+                                                            <p className="text-center text-[16px] leading-[1.5] text-[#E7E7E7]">
+                                                                {emptyCharacterMessage}
+                                                            </p>
+                                                        ) : (
+                                                            <div className="space-y-3">
+                                                                {characters.map((character) => {
+                                                                    const isSelected =
+                                                                        currentParticipant?.selected_character_id === character.id;
+
+                                                                    return (
+                                                                        <button
+                                                                            key={character.id}
+                                                                            type="button"
+                                                                            onClick={() => handleSelectCharacter(character)}
+                                                                            className={`flex w-full items-center gap-4 rounded-[24px] border px-4 py-4 text-left transition-colors ${isSelected
+                                                                                ? 'border-[#D6B25E] bg-[#D6B25E]/10'
+                                                                                : 'border-white/10 bg-white/5'
+                                                                                }`}
+                                                                        >
+                                                                            {character.avatar_url ? (
+                                                                                <img
+                                                                                    src={character.avatar_url}
+                                                                                    alt={character.name}
+                                                                                    className="h-[72px] w-[72px] shrink-0 rounded-[18px] object-cover"
+                                                                                />
+                                                                            ) : (
+                                                                                <div className="h-[72px] w-[72px] shrink-0 rounded-[18px] bg-[#D9D9D9]" />
+                                                                            )}
+
+                                                                            <div className="min-w-0 flex-1">
+                                                                                <p className="text-[20px] font-bold leading-none">
+                                                                                    {character.name}
+                                                                                </p>
+                                                                                <p className="mt-2 line-clamp-2 text-[15px] text-[#E7E7E7]">
+                                                                                    {character.description || 'No description'}
+                                                                                </p>
+                                                                            </div>
+
+                                                                            <div className="text-[14px] font-bold">
+                                                                                {isSelected ? t('selected') : t('choose')}
+                                                                            </div>
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* DOTS */}
+                                    <div className="mt-6 flex items-center justify-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveSlide(0)}
+                                            className={`h-3.5 w-3.5 rounded-full ${activeSlide === 0 ? 'bg-white' : 'bg-white/30'
+                                                }`}
+                                            aria-label="Open profile slide"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setActiveSlide(1)}
+                                            className={`h-3.5 w-3.5 rounded-full ${activeSlide === 1 ? 'bg-white' : 'bg-white/30'
+                                                }`}
+                                            aria-label="Open selection slide"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* RIGHT SIDE */}
+                    <aside className="w-full border-l-2 border-[#7C5CFF] px-5 py-10">
+                        <div className="flex h-full min-h-[620px] flex-col">
+                            <h2 className="font-montserrat-alt mb-7 text-[27px] font-bold leading-none">
+                                {t('players', {count: participants.length})}
+                            </h2>
+
+                            <div className="flex-1 space-y-5 overflow-y-auto pr-2">
+                                {participants.map((participant) => (
+                                    <div key={participant.id} className="flex items-center gap-4">
+                                        {participant.avatar_url ? (
+                                            <img
+                                                src={participant.avatar_url}
+                                                alt={participant.display_name || 'Player'}
+                                                className="h-[60px] w-[60px] rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="h-[60px] w-[60px] rounded-full bg-[#D9D9D9]" />
+                                        )}
+
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-montserrat text-[20px] font-bold leading-none">
+                                                {participant.display_name || t('nickname')}
+                                            </p>
+                                            <p className="font-montserrat mt-2 text-[16px] leading-none text-[#E7E7E7]">
+                                                {t('role', {role: participant.role === 'master' ? t('master') : t('player')})}
+                                            </p>
+                                        </div>
+
+                                        <div
+                                            className={`h-5 w-5 shrink-0 rounded-full ${participant.is_ready ? 'bg-[#00FF19]' : 'bg-[#5D5D5D]'
+                                                }`}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className={`mt-8 grid gap-4 ${isMaster ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                                <button
+                                    type="button"
+                                    onClick={handleToggleReady}
+                                    className="btn-primary"
+                                    disabled={isLoading || !canToggleReady}
+                                >
+                                    {currentParticipant?.is_ready ? t('notReady') : t('ready')}
+                                </button>
+
+                                {isMaster && (
+                                    <button
+                                        type="button"
+                                        onClick={handleStartGame}
+                                        className="btn-primary"
+                                        disabled={isLoading || !currentParticipant || isStartingGame}
+                                    >
+                                        {isStartingGame ? t('starting') : t('startGame')}
+                                    </button>
+                                )}
+                            </div>
+
+                            {lobbyActionFeedbackMessages.length > 0 ? (
+                                <div className="mt-4 rounded-[18px] border border-[#D6B25E]/30 bg-[#D6B25E]/10 px-4 py-3 text-left shadow-[0_12px_28px_rgba(0,0,0,0.18)]">
+                                    <p className="font-montserrat-alt text-[15px] font-bold leading-none text-[#D6B25E]">
+                                        {t('actionNeeded')}
+                                    </p>
+                                    <div className="mt-2 space-y-1">
+                                        {lobbyActionFeedbackMessages.map((message) => (
+                                            <p
+                                                key={message}
+                                                className="font-montserrat text-[14px] font-semibold leading-[1.45] text-[#F0E8CF]"
+                                            >
+                                                {message}
+                                            </p>
+                                        ))}
+                                    </div>
+                                </div>
+                            ) : null}
+
+                            <p className="font-montserrat mt-4 text-center text-[14px] text-white/60">
+                                {t('readyCount', {ready: readyCount, total: participants.length})}
+                            </p>
+                        </div>
+                    </aside>
+                </div>
+            </main>
+
+            <NicknameModal
+                isOpen={isNicknameModalOpen}
+                value={nicknameDraft}
+                error={nicknameError}
+                isSaving={isSavingNickname}
+                onChange={handleNicknameDraftChange}
+                onClose={handleCloseNicknameModal}
+                onSave={handleSaveNickname}
+            />
+
+            <LobbyExitModal
+                isOpen={isLobbyExitModalOpen}
+                isSubmitting={isLobbyExitSubmitting}
+                onClose={handleCloseLobbyExitModal}
+                onConfirm={handleConfirmLobbyExit}
+            />
+        </div>
+    );
+}

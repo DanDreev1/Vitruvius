@@ -1,11 +1,186 @@
 @import "tailwindcss";
 
+html,
+body {
+  background-color: #0b1020;
+  font-family: var(--font-montserrat), sans-serif;
+}
+
+/* Neutral application scrollbar. Keep scrolling discoverable without the
+   browser's bright track, arrow buttons, or an accent-colored thumb. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 158, 177, 0.55) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  min-height: 32px;
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(148, 158, 177, 0.52);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(183, 191, 207, 0.72);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-button,
+*::-webkit-scrollbar-corner {
+  display: none;
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+.font-montserrat {
+  font-family: var(--font-montserrat), sans-serif;
+}
+
+.font-montserrat-alt {
+  font-family: var(--font-montserrat-alternates), sans-serif;
+}
+
+@keyframes table-scene-image-idle {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-0.45deg);
+  }
+
+  50% {
+    transform: translate3d(0, -8px, 0) rotate(0.45deg);
+  }
+}
+
 @layer components {
   .btn-primary {
-    @apply flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full bg-white px-6 py-[25px] text-center text-[20px] font-bold leading-none text-black transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50;
+    font-family: var(--font-montserrat-alternates), sans-serif;
+    @apply flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-full bg-white min-h-[56px] px-5 py-4 text-[17px] sm:min-h-[62px] sm:text-[18px] md:min-h-[74px] md:text-[22px] text-center font-bold leading-none text-black transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-[18px] bg-white px-6 py-[25px] text-center text-[20px] font-bold leading-none text-black transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50;
+    font-family: var(--font-montserrat-alternates), sans-serif;
+    @apply flex w-full cursor-pointer items-center justify-center overflow-hidden rounded-3xl bg-white min-h-[56px] px-5 py-4 text-[17px] sm:min-h-[62px] sm:text-[18px] md:min-h-[74px] md:text-[22px] text-center font-bold leading-none text-black transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
+
+.fixed-page-canvas .btn-primary,
+.fixed-page-canvas .btn-secondary {
+  min-height: 74px;
+  padding: 16px 20px;
+  font-size: 22px;
+}
+
+.fixed-page-canvas main .home-compact-button {
+  min-height: 60px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  font-size: 20px;
+}
+
+.fixed-page-canvas .creators-compact .btn-primary,
+.fixed-page-canvas .creators-compact .btn-secondary {
+  min-height: 52px;
+  padding: 11px 24px;
+  font-size: 15px;
+}
+
+.fixed-page-canvas aside .btn-primary {
+  min-height: 60px;
+  padding: 12px 10px;
+  font-size: 15px;
+}
+
+.no-js-scaled-viewport {
+  --no-js-scale: 0.34;
+}
+
+.no-js-page-canvas {
+  display: none;
+  left: 50%;
+  top: 50%;
+  width: 1440px;
+  transform: translate(-50%, -50%) scale(var(--no-js-scale));
+  transform-origin: center center;
+}
+
+.no-js-page-canvas-fluid {
+  width: 1440px;
+}
+
+.no-js-header-backdrop {
+  display: none;
+}
+
+@media (orientation: landscape) and (min-width: 500px) and (min-height: 260px) {
+  .no-js-rotate-prompt {
+    display: none;
+  }
+
+  .no-js-page-canvas {
+    display: block;
+  }
+
+  .no-js-header-backdrop {
+    display: block;
+    height: calc(120px * var(--no-js-scale));
+  }
+}
+
+@media (orientation: landscape) and (min-height: 300px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.33;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 350px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.39;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 390px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.43;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 430px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.47;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 500px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.55;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 650px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.72;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 800px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 0.88;
+  }
+}
+
+@media (orientation: landscape) and (min-height: 900px) {
+  .no-js-scaled-viewport {
+    --no-js-scale: 1;
   }
 }
