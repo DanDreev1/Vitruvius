@@ -1,10 +1,16 @@
 import { supabase } from '@/lib/supabaseClient';
+import { createStorageReference, resolvePublicStorageUrl } from '@/lib/storageUrl';
 
 import {
   PLAYER_TABLET_CUSTOM_ICON_STORAGE_FOLDER,
   PLAYER_TABLET_PORTRAIT_STORAGE_BUCKET,
   PLAYER_TABLET_PORTRAIT_STORAGE_FOLDER,
 } from './constants';
+import {
+  assertTabletTextLength,
+  TABLET_DESCRIPTION_MAX_LENGTH,
+  TABLET_SHORT_TEXT_MAX_LENGTH,
+} from '../textLimits';
 import type {
   TabletPlayerAttribute,
   TabletPlayerCharacter,
@@ -107,8 +113,8 @@ function mapDomainSkill(row: InGameDomainSkillRow): TabletPlayerDomainSkill {
   return {
     id: row.id,
     key: row.skill_key,
-    name: row.name,
-    description: row.description,
+    name: row.name.slice(0, TABLET_SHORT_TEXT_MAX_LENGTH),
+    description: row.description?.slice(0, TABLET_DESCRIPTION_MAX_LENGTH) ?? null,
     iconKey,
     isPrimary: row.is_primary,
     level: row.level,
@@ -120,11 +126,11 @@ function mapDomainSkill(row: InGameDomainSkillRow): TabletPlayerDomainSkill {
 function mapExperience(row: InGameExperienceRow): TabletPlayerExperience {
   return {
     id: row.id,
-    headline: row.headline,
-    description: row.description,
+    headline: row.headline.slice(0, TABLET_SHORT_TEXT_MAX_LENGTH),
+    description: row.description?.slice(0, TABLET_DESCRIPTION_MAX_LENGTH) ?? null,
     xp: row.xp,
     tag: row.tag,
-    sessionLabel: row.session_label,
+    sessionLabel: row.session_label?.slice(0, TABLET_SHORT_TEXT_MAX_LENGTH) ?? null,
     happenedAt: row.happened_at,
     sortOrder: row.sort_order,
     metadata: row.metadata ?? {},
@@ -178,8 +184,8 @@ async function getTabletPlayerDomains(
   return domainRows.map((domain) => ({
     id: domain.id,
     key: domain.domain_key,
-    name: domain.name,
-    description: domain.description,
+    name: domain.name.slice(0, TABLET_SHORT_TEXT_MAX_LENGTH),
+    description: domain.description?.slice(0, TABLET_DESCRIPTION_MAX_LENGTH) ?? null,
     iconKey: domain.icon_key,
     level: domain.level,
     sortOrder: domain.sort_order,
@@ -261,9 +267,12 @@ export async function getTabletPlayerCharacter(
 
   return {
     id: characterRow.id,
-    name: characterRow.name,
-    description: characterRow.description,
-    avatarUrl: characterRow.avatar_url,
+    name: characterRow.name.slice(0, 32),
+    description: characterRow.description?.slice(0, TABLET_DESCRIPTION_MAX_LENGTH) ?? null,
+    avatarUrl: resolvePublicStorageUrl(
+      characterRow.avatar_url,
+      PLAYER_TABLET_PORTRAIT_STORAGE_BUCKET
+    ),
     attributes: ((attributesResult.data ?? []) as InGameAttributeRow[]).map(
       mapAttribute
     ),
@@ -331,6 +340,8 @@ async function saveTabletPlayerDomains(
   }
 
   for (const domain of domains) {
+    assertTabletTextLength(domain.name, TABLET_SHORT_TEXT_MAX_LENGTH, 'Domain name');
+    assertTabletTextLength(domain.description, TABLET_DESCRIPTION_MAX_LENGTH, 'Domain description');
     const domainPayload = {
       domain_key: domain.key,
       name: domain.name,
@@ -402,6 +413,8 @@ async function saveTabletPlayerDomains(
     }
 
     for (const skill of domain.skills) {
+      assertTabletTextLength(skill.name, TABLET_SHORT_TEXT_MAX_LENGTH, 'Skill name');
+      assertTabletTextLength(skill.description, TABLET_DESCRIPTION_MAX_LENGTH, 'Skill description');
       const skillPayload = {
         skill_key: skill.key,
         name: skill.name,
@@ -450,6 +463,9 @@ export async function saveTabletPlayerExperiences(
   experiences: TabletPlayerExperience[]
 ) {
   for (const experience of experiences) {
+    assertTabletTextLength(experience.headline, TABLET_SHORT_TEXT_MAX_LENGTH, 'Experience headline');
+    assertTabletTextLength(experience.description, TABLET_DESCRIPTION_MAX_LENGTH, 'Experience description');
+    assertTabletTextLength(experience.sessionLabel, TABLET_SHORT_TEXT_MAX_LENGTH, 'Session label');
     const experiencePayload = {
       headline: experience.headline,
       description: experience.description,
@@ -516,10 +532,12 @@ export async function saveTabletPlayerCharacterPatch(
     const characterUpdates: Record<string, unknown> = {};
 
     if (patch.character?.name !== undefined) {
+      assertTabletTextLength(patch.character.name, 32, 'Character name');
       characterUpdates.name = patch.character.name;
     }
 
     if (patch.character?.description !== undefined) {
+      assertTabletTextLength(patch.character.description, TABLET_DESCRIPTION_MAX_LENGTH, 'Character description');
       characterUpdates.description = patch.character.description;
     }
 
@@ -589,7 +607,6 @@ export async function uploadTabletPlayerPortrait(
   file: File
 ) {
   void uploaderUserId;
-  const version = Date.now();
   const { data: character, error: characterError } = await supabase
     .from('in_game_characters')
     .select('session_id')
@@ -610,11 +627,10 @@ export async function uploadTabletPlayerPortrait(
     throw new Error(`Failed to upload portrait: ${uploadError.message}`);
   }
 
-  const { data } = supabase.storage
-    .from(PLAYER_TABLET_PORTRAIT_STORAGE_BUCKET)
-    .getPublicUrl(objectPath);
-
-  return `${data.publicUrl}?v=${version}`;
+  return createStorageReference(
+    PLAYER_TABLET_PORTRAIT_STORAGE_BUCKET,
+    objectPath
+  );
 }
 
 export async function uploadTabletPlayerCustomIcon(

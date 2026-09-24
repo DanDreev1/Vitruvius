@@ -86,7 +86,7 @@ export function getSeatVisualConfig(
     density.tabletSideOffset
   );
 
-  const TABLET_BASE_ROTATION = 30;
+  const TABLET_BASE_ROTATION = 120;
 
   return {
     diceX: diceOffset.x,

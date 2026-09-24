@@ -1,6 +1,16 @@
 import { supabase } from '@/lib/supabaseClient';
 
 import type { NoteDraft, NotesOwner, TabletNote } from './types';
+import {
+  assertTabletTextLength,
+  TABLET_NOTE_CONTENT_MAX_LENGTH,
+  TABLET_SHORT_TEXT_MAX_LENGTH,
+} from '../textLimits';
+
+function validateNote(title: string, content: string) {
+  assertTabletTextLength(title, TABLET_SHORT_TEXT_MAX_LENGTH, 'Note title');
+  assertTabletTextLength(content, TABLET_NOTE_CONTENT_MAX_LENGTH, 'Note content');
+}
 
 const config = {
   master: {
@@ -24,8 +34,8 @@ export async function getNotes(owner: NotesOwner): Promise<TabletNote[]> {
 
   return (data ?? []).map((row) => ({
     id: row.id as string,
-    title: (row.title as string | null) ?? '',
-    content: (row.content as string | null) ?? '',
+    title: ((row.title as string | null) ?? '').slice(0, TABLET_SHORT_TEXT_MAX_LENGTH),
+    content: ((row.content as string | null) ?? '').slice(0, TABLET_NOTE_CONTENT_MAX_LENGTH),
     x: Number(row.position_x ?? 0),
     y: Number(row.position_y ?? 0),
   }));
@@ -36,6 +46,7 @@ export async function createNote(
   draft: NoteDraft,
   position: { x: number; y: number }
 ) {
+  validateNote(draft.title, draft.content);
   const fields = config[owner.kind];
   const { data, error } = await supabase
     .from(fields.table)
@@ -60,6 +71,7 @@ export async function createNote(
 }
 
 export async function updateNote(owner: NotesOwner, note: TabletNote) {
+  validateNote(note.title, note.content);
   const fields = config[owner.kind];
   const { error } = await supabase
     .from(fields.table)

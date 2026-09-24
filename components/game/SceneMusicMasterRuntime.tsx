@@ -25,6 +25,7 @@ import type {
 } from '@/features/tablet/master/scene/types';
 import { useSceneMusicEndMode } from '@/features/tablet/master/scene/useSceneMusicEndMode';
 import { supabase } from '@/lib/supabaseClient';
+import { resolvePublicStorageUrl } from '@/lib/storageUrl';
 
 type MusicTimeRequestPayload = {
   sessionId?: string;
@@ -75,8 +76,8 @@ function mapRecordToItem(record: SceneMusicRecord): SceneMusicItem {
   return {
     id: record.id,
     title: record.title,
-    audioUrl: record.audio_url,
-    coverUrl: record.cover_url,
+    audioUrl: resolvePublicStorageUrl(record.audio_url, 'temporary-scene-music') ?? '',
+    coverUrl: resolvePublicStorageUrl(record.cover_url, 'temporary-scene-images'),
     isActive: record.is_active,
     isPlaying: record.is_playing,
     currentTimeSeconds: record.current_time_seconds ?? 0,

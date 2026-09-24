@@ -29,7 +29,11 @@ export async function POST(request: Request) {
     const { error } = await admin.storage.from(target.bucket).upload(path, file, { contentType: file.type, upsert: false });
     if (error) throw error;
     const displayUrl = target.public ? admin.storage.from(target.bucket).getPublicUrl(path).data.publicUrl : (await admin.storage.from(target.bucket).createSignedUrl(path, 3600)).data?.signedUrl ?? null;
-    return Response.json({ value: target.public ? displayUrl : path, displayUrl, path });
+    return Response.json({
+      value: target.public ? `${target.bucket}/${path}` : path,
+      displayUrl,
+      path,
+    });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : 'Could not upload file.' }, { status: 500 });
   }

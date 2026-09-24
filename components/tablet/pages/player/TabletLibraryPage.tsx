@@ -606,7 +606,7 @@ function TabletLibraryEditor({
 
       <aside className="rounded-[12px] border border-white p-[16px]">
         <div className="space-y-[10px]">
-          <input
+          <input maxLength={80}
             value={draftEntry.headline}
             onChange={(event) => {
               setDraftEntry((currentDraft) => ({
@@ -621,7 +621,7 @@ function TabletLibraryEditor({
             placeholder={t('headline')}
           />
 
-          <textarea
+          <textarea maxLength={300}
             value={draftEntry.description ?? ''}
             onChange={(event) => {
               setDraftEntry((currentDraft) => ({
@@ -681,7 +681,7 @@ function TabletLibraryEditor({
             </label>
           </div>
 
-          <input
+          <input maxLength={80}
             value={draftEntry.sessionLabel ?? ''}
             onChange={(event) => {
               setDraftEntry((currentDraft) => ({

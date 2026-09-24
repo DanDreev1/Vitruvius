@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabaseClient';
+import { createStorageReference } from '@/lib/storageUrl';
 import { prepareInGameCharactersForSession } from '@/features/characters/api';
 import {
     LOBBY_AVATAR_STORAGE_BUCKET,
@@ -152,6 +153,9 @@ export async function updateParticipantNickname(
     participantId: string,
     displayName: string
 ) {
+    if (!displayName.trim() || displayName.length > 36) {
+        throw new Error('Nickname must be between 1 and 36 characters.');
+    }
     const { error } = await supabase
         .from('session_participants')
         .update({ display_name: displayName })
@@ -182,10 +186,14 @@ export async function uploadParticipantAvatar(
         .getPublicUrl(filePath);
 
     const avatarUrl = `${data.publicUrl}?v=${version}`;
+    const avatarReference = createStorageReference(
+        LOBBY_AVATAR_STORAGE_BUCKET,
+        filePath
+    );
 
     const { error: updateError } = await supabase
         .from('session_participants')
-        .update({ avatar_url: avatarUrl })
+        .update({ avatar_url: avatarReference })
         .eq('id', participantId);
 
     if (updateError) throw new Error(updateError.message);

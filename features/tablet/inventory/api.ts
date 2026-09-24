@@ -9,6 +9,7 @@ import type {
   InventoryItem,
   InventoryMessage,
 } from './types';
+import { clampTabletMessage } from '../textLimits';
 
 export const INVENTORY_CHANGED_EVENT = 'inventory-changed';
 export const INVENTORY_MESSAGE_EVENT = 'inventory-message';
@@ -63,10 +64,12 @@ export async function publishInventoryMessage(
   sessionId: string,
   text: string
 ) {
+  const safeText = clampTabletMessage(text);
+  if (!safeText) return;
   const message: InventoryMessage = {
       id: createId(),
     sessionId,
-    text,
+    text: safeText,
     createdAt: Date.now(),
   };
   window.dispatchEvent(

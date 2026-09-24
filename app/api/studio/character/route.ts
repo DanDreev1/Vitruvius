@@ -21,7 +21,13 @@ function validPayload(value: unknown): value is StudioCharacterPayload {
     Array.isArray(draft.attributes) && draft.attributes.length === 6 &&
     Array.isArray(draft.parameters) && draft.parameters.length >= 3 &&
     Array.isArray(draft.domains) && draft.domains.length > 0 && draft.domains.length <= 5 &&
-    Array.isArray(draft.inventoryItems) && Array.isArray(draft.notes) && Array.isArray(draft.experiences)
+    Array.isArray(draft.inventoryItems) &&
+    Array.isArray(draft.notes) &&
+    draft.notes.every((note) =>
+      typeof note.title === 'string' && note.title.trim().length > 0 && note.title.length <= 80 &&
+      typeof note.content === 'string' && note.content.length <= 1000
+    ) &&
+    Array.isArray(draft.experiences)
   );
 }
 
@@ -148,7 +154,7 @@ async function savePortrait(admin: Admin, characterId: string, form: FormData, c
   const path = `characters/${characterId}/avatar/${randomUUID()}${extension}`;
   const { error } = await admin.storage.from('character-avatars').upload(path, portrait, { contentType: portrait.type });
   if (error) throw error;
-  return admin.storage.from('character-avatars').getPublicUrl(path).data.publicUrl;
+  return `character-avatars/${path}`;
 }
 
 export async function GET(request: Request) {

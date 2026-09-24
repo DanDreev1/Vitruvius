@@ -5,8 +5,8 @@ export const densityPresets: Record<'comfortable' | 'compact' | 'dense', Density
     avatarSize: 85,
     diceWidth: 100,
     diceHeight: 100,
-    tabletWidth: 100,
-    tabletHeight: 15,
+    tabletWidth: 84,
+    tabletHeight: 42,
     badgeFontSize: 16,
 
     diceForwardOffset: 175,
@@ -24,8 +24,8 @@ export const densityPresets: Record<'comfortable' | 'compact' | 'dense', Density
     avatarSize: 78,
     diceWidth: 100,
     diceHeight: 100,
-    tabletWidth: 100,
-    tabletHeight: 15,
+    tabletWidth: 84,
+    tabletHeight: 42,
     badgeFontSize: 15,
 
     diceForwardOffset: 150,
@@ -43,8 +43,8 @@ export const densityPresets: Record<'comfortable' | 'compact' | 'dense', Density
     avatarSize: 68,
     diceWidth: 90,
     diceHeight: 90,
-    tabletWidth: 90,
-    tabletHeight: 15,
+    tabletWidth: 76,
+    tabletHeight: 38,
     badgeFontSize: 14,
 
     diceForwardOffset: 135,

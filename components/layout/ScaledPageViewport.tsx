@@ -1,9 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+import Header from '@/components/ui/Header';
 
 const DESIGN_WIDTH = 1440;
 const DESIGN_HEIGHT = 900;
+const HEADER_HEIGHT = 120;
+const HEADER_PREFERENCE_KEY = 'vitruvius:page-header-collapsed';
 const MIN_PORTRAIT_SUPPORTED_WIDTH = 700;
 const MIN_LANDSCAPE_SUPPORTED_WIDTH = 500;
 const MIN_LANDSCAPE_SUPPORTED_HEIGHT = 260;
@@ -19,6 +23,13 @@ type ViewportSize = {
   effectTicks: number;
 };
 
+type PinchGesture = {
+  startDistance: number;
+  startZoom: number;
+  contentX: number;
+  contentY: number;
+};
+
 const EMPTY_VIEWPORT: ViewportSize = {
   width: 0,
   height: 0,
@@ -32,6 +43,21 @@ const EMPTY_VIEWPORT: ViewportSize = {
 
 function firstPositive(...values: number[]) {
   return values.find((value) => Number.isFinite(value) && value > 0) ?? 0;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getTouchPoint(first: Touch, second: Touch) {
+  return {
+    x: (first.clientX + second.clientX) / 2,
+    y: (first.clientY + second.clientY) / 2,
+    distance: Math.hypot(
+      second.clientX - first.clientX,
+      second.clientY - first.clientY
+    ),
+  };
 }
 
 function getViewportSize(): ViewportSize {
@@ -152,12 +178,23 @@ export default function ScaledPageViewport({
   children,
   headerBackdrop = false,
   fluidWidth = false,
+  collapsibleHeader = false,
+  contentDesignHeight = 780,
 }: {
   children: React.ReactNode;
   headerBackdrop?: boolean;
   fluidWidth?: boolean;
+  collapsibleHeader?: boolean;
+  contentDesignHeight?: number;
 }) {
   const [viewport, setViewport] = useState<ViewportSize>(EMPTY_VIEWPORT);
+  const [isHeaderCollapsed, setIsHeaderCollapsed] = useState(false);
+  const [gestureZoom, setGestureZoom] = useState(1);
+  const [gestureOffset, setGestureOffset] = useState({ x: 0, y: 0 });
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const pinchGestureRef = useRef<PinchGesture | null>(null);
+  const gestureZoomRef = useRef(1);
+  const gestureOffsetRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const update = () =>
@@ -211,13 +248,129 @@ export default function ScaledPageViewport({
     };
   }, []);
 
+  useEffect(() => {
+    if (!collapsibleHeader) return;
+
+    const restorePreference = window.setTimeout(() => {
+      setIsHeaderCollapsed(
+        window.localStorage.getItem(HEADER_PREFERENCE_KEY) === 'true'
+      );
+    }, 0);
+
+    return () => window.clearTimeout(restorePreference);
+  }, [collapsibleHeader]);
+
+  useEffect(() => {
+    const element = viewportRef.current;
+    if (!element || !viewport.width || !viewport.height) return;
+
+    const currentDesignHeight = () =>
+      collapsibleHeader
+        ? contentDesignHeight + (isHeaderCollapsed ? 0 : HEADER_HEIGHT)
+        : DESIGN_HEIGHT;
+
+    const fittedScaleFor = (designHeight: number) =>
+      Math.max(
+        0.01,
+        Math.min(viewport.width / DESIGN_WIDTH, viewport.height / designHeight)
+      );
+
+    const handleTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 2) return;
+      event.preventDefault();
+
+      const point = getTouchPoint(event.touches[0], event.touches[1]);
+      const designHeight = currentDesignHeight();
+      const fittedScale = fittedScaleFor(designHeight);
+      const scale = fittedScale * gestureZoomRef.current;
+      const canvasWidth = fluidWidth ? viewport.width / fittedScale : DESIGN_WIDTH;
+      const centeredLeft = (viewport.width - canvasWidth * scale) / 2;
+      const centeredTop = (viewport.height - designHeight * scale) / 2;
+
+      pinchGestureRef.current = {
+        startDistance: Math.max(point.distance, 1),
+        startZoom: gestureZoomRef.current,
+        contentX:
+          (point.x - centeredLeft - gestureOffsetRef.current.x) / scale,
+        contentY:
+          (point.y - centeredTop - gestureOffsetRef.current.y) / scale,
+      };
+    };
+
+    const handleTouchMove = (event: TouchEvent) => {
+      const gesture = pinchGestureRef.current;
+      if (!gesture || event.touches.length !== 2) return;
+      event.preventDefault();
+
+      const point = getTouchPoint(event.touches[0], event.touches[1]);
+      const nextZoom = clamp(
+        gesture.startZoom * (point.distance / gesture.startDistance),
+        0.75,
+        2.5
+      );
+      const designHeight = currentDesignHeight();
+      const fittedScale = fittedScaleFor(designHeight);
+      const nextScale = fittedScale * nextZoom;
+      const canvasWidth = fluidWidth ? viewport.width / fittedScale : DESIGN_WIDTH;
+      const centeredLeft = (viewport.width - canvasWidth * nextScale) / 2;
+      const centeredTop = (viewport.height - designHeight * nextScale) / 2;
+      const nextOffset = {
+        x: point.x - gesture.contentX * nextScale - centeredLeft,
+        y: point.y - gesture.contentY * nextScale - centeredTop,
+      };
+
+      gestureZoomRef.current = nextZoom;
+      gestureOffsetRef.current = nextOffset;
+      setGestureZoom(nextZoom);
+      setGestureOffset(nextOffset);
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      if (event.touches.length < 2) pinchGestureRef.current = null;
+    };
+
+    element.addEventListener('touchstart', handleTouchStart, { passive: false });
+    element.addEventListener('touchmove', handleTouchMove, { passive: false });
+    element.addEventListener('touchend', handleTouchEnd);
+    element.addEventListener('touchcancel', handleTouchEnd);
+
+    return () => {
+      element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchmove', handleTouchMove);
+      element.removeEventListener('touchend', handleTouchEnd);
+      element.removeEventListener('touchcancel', handleTouchEnd);
+    };
+  }, [
+    collapsibleHeader,
+    contentDesignHeight,
+    fluidWidth,
+    isHeaderCollapsed,
+    viewport.height,
+    viewport.width,
+  ]);
+
+  const toggleHeader = () => {
+    setIsHeaderCollapsed((current) => {
+      const next = !current;
+      window.localStorage.setItem(HEADER_PREFERENCE_KEY, String(next));
+      return next;
+    });
+  };
+
+  const renderedChildren = collapsibleHeader ? (
+    <>
+      {!isHeaderCollapsed ? <Header fixedLayout onCollapse={toggleHeader} /> : null}
+      {children}
+    </>
+  ) : children;
+
   if (!viewport.width || !viewport.height || !viewport.supportedWidth) {
     return (
       <NoHydrationViewportFallback
         headerBackdrop={headerBackdrop}
         fluidWidth={fluidWidth}
       >
-        {children}
+        {renderedChildren}
       </NoHydrationViewportFallback>
     );
   }
@@ -233,34 +386,71 @@ export default function ScaledPageViewport({
     return <RotateDevicePrompt />;
   }
 
-  const scale = Math.max(
+  const designHeight = collapsibleHeader
+    ? contentDesignHeight + (isHeaderCollapsed ? 0 : HEADER_HEIGHT)
+    : DESIGN_HEIGHT;
+  const fittedScale = Math.max(
     0.01,
-    Math.min(viewport.width / DESIGN_WIDTH, viewport.height / DESIGN_HEIGHT)
+    Math.min(viewport.width / DESIGN_WIDTH, viewport.height / designHeight)
   );
-  const canvasWidth = fluidWidth ? viewport.width / scale : DESIGN_WIDTH;
-  const left = fluidWidth ? 0 : (viewport.width - DESIGN_WIDTH * scale) / 2;
-  const top = (viewport.height - DESIGN_HEIGHT * scale) / 2;
+  const scale = fittedScale * gestureZoom;
+  const canvasWidth = fluidWidth ? viewport.width / fittedScale : DESIGN_WIDTH;
+  const left =
+    (viewport.width - canvasWidth * scale) / 2 + gestureOffset.x;
+  const top =
+    (viewport.height - designHeight * scale) / 2 + gestureOffset.y;
+  const showHeaderBackdrop = collapsibleHeader
+    ? !isHeaderCollapsed
+    : headerBackdrop;
 
   return (
-    <div className="fixed inset-0 overflow-hidden bg-[#0B1020]">
-      {headerBackdrop ? (
+    <div ref={viewportRef} className="fixed inset-0 overflow-hidden bg-[#0B1020]">
+      {showHeaderBackdrop ? (
         <div
           className="absolute inset-x-0 bg-[#182135]"
           style={{ top, height: 120 * scale }}
         />
       ) : null}
       <div
-        className="fixed-page-canvas absolute h-[900px] overflow-hidden bg-transparent"
+        className="fixed-page-canvas absolute overflow-hidden bg-transparent"
         style={{
           left,
           top,
           width: canvasWidth,
+          height: designHeight,
           transform: `scale(${scale})`,
           transformOrigin: 'top left',
         }}
       >
-        {children}
+        {renderedChildren}
       </div>
+
+      {collapsibleHeader && isHeaderCollapsed ? (
+        <button
+          type="button"
+          onClick={toggleHeader}
+          aria-label={isHeaderCollapsed ? 'Show header' : 'Hide header'}
+          title={isHeaderCollapsed ? 'Show header' : 'Hide header'}
+          className="fixed right-3 top-3 z-[100] flex items-center justify-center rounded-full border border-white/15 bg-[#182135]/95 text-white shadow-[0_8px_28px_rgba(0,0,0,.4)] backdrop-blur transition hover:border-[#D6B25E]/70 hover:text-[#D6B25E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D6B25E]"
+          style={{ width: 48 * scale, height: 48 * scale }}
+        >
+          <svg
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+            style={{ width: 24 * scale, height: 24 * scale }}
+          >
+            <path
+              d="m6 15 6-6 6 6"
+              fill="none"
+              stroke="currentColor"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2.25"
+            />
+          </svg>
+        </button>
+      ) : null}
+
     </div>
   );
 }

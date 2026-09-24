@@ -16,6 +16,7 @@ type HeaderProps = {
   avatarSrc?: string | null;
   avatarPlaceholderSrc?: string;
   fixedLayout?: boolean;
+  onCollapse?: () => void;
 };
 
 export default function Header({
@@ -26,6 +27,7 @@ export default function Header({
   avatarSrc = null,
   avatarPlaceholderSrc = '/Profile_Placeholder.png',
   fixedLayout = false,
+  onCollapse,
 }: HeaderProps) {
   const t = useTranslations('Header');
   const [profileAvatar, setProfileAvatar] = useState<string | null>(null);
@@ -99,6 +101,27 @@ export default function Header({
               className="h-full w-full object-cover"
             />
           </Link>
+
+          {onCollapse ? (
+            <button
+              type="button"
+              onClick={onCollapse}
+              aria-label="Hide header"
+              title="Hide header"
+              className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full border border-white/15 bg-[#0B1020]/55 text-white transition hover:border-[#D6B25E]/70 hover:text-[#D6B25E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D6B25E]"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6">
+                <path
+                  d="m6 9 6 6 6-6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2.25"
+                />
+              </svg>
+            </button>
+          ) : null}
         </div>
       </div>
     </header>

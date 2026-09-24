@@ -17,6 +17,9 @@ import GameScene from "./GameScene";
 import PlayerHoverCard from "./PlayerHoverCard";
 import RotateScreenPlaceholder from "./RotateScreenPlaceholder";
 
+const GAME_TABLE_ZOOM_STORAGE_KEY = 'vitruvius:game-table-zoom';
+const GAME_TABLE_PINCH_DISTANCE_PER_ZOOM = 500;
+
 type GameViewportProps = {
   sessionId: string;
   master: GameParticipant;
@@ -39,6 +42,14 @@ type GameViewportProps = {
 
 function clampValue(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function getTouchPoint(first: Touch, second: Touch) {
+  return {
+    x: (first.clientX + second.clientX) / 2,
+    y: (first.clientY + second.clientY) / 2,
+    distance: Math.hypot(second.clientX - first.clientX, second.clientY - first.clientY),
+  };
 }
 
 function getViewportSize() {
@@ -71,6 +82,23 @@ export default function GameViewport({
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [hoveredCard, setHoveredCard] = useState<HoverCardData | null>(null);
+  const [gestureZoom, setGestureZoom] = useState(1);
+  const [gestureOffset, setGestureOffset] = useState({ x: 0, y: 0 });
+  const [lockedBaseScale, setLockedBaseScale] = useState<number | null>(null);
+  const gestureZoomRef = useRef(1);
+  const gestureOffsetRef = useRef({ x: 0, y: 0 });
+  const pinchRef = useRef<{
+    distance: number;
+    zoom: number;
+    sceneX: number;
+    sceneY: number;
+  } | null>(null);
+  const panRef = useRef<{
+    x: number;
+    y: number;
+    offsetX: number;
+    offsetY: number;
+  } | null>(null);
 
   const viewportHeight = viewportSize.height ? Math.max(1, viewportSize.height) : null;
 
@@ -112,6 +140,22 @@ export default function GameViewport({
       window.visualViewport?.removeEventListener('resize', updateSize);
       window.visualViewport?.removeEventListener('scroll', updateSize);
     };
+  }, []);
+
+  useEffect(() => {
+    const restoreZoom = window.setTimeout(() => {
+      const storedValue = window.localStorage.getItem(
+        GAME_TABLE_ZOOM_STORAGE_KEY
+      );
+      if (storedValue === null) return;
+      const storedZoom = Number(storedValue);
+      if (!Number.isFinite(storedZoom)) return;
+      const nextZoom = clampValue(storedZoom, 0.75, 4);
+      gestureZoomRef.current = nextZoom;
+      setGestureZoom(nextZoom);
+    }, 0);
+
+    return () => window.clearTimeout(restoreZoom);
   }, []);
 
   const resolvedScene = useMemo(() => {
@@ -157,7 +201,7 @@ export default function GameViewport({
     return Math.min(scaleX, scaleY);
   }, [availableWidth, availableHeight, resolvedScene]);
 
-  const scale = useMemo(() => {
+  const baseScale = useMemo(() => {
     if (!resolvedScene) {
       return 1;
     }
@@ -166,6 +210,9 @@ export default function GameViewport({
     return rawScale * layoutScaleMultiplier;
   }, [rawScale, resolvedScene]);
 
+  const effectiveBaseScale = lockedBaseScale ?? baseScale;
+  const scale = effectiveBaseScale * gestureZoom;
+
   const translateX = useMemo(() => {
     if (!resolvedScene) {
       return 0;
@@ -173,9 +220,10 @@ export default function GameViewport({
 
     return (
       (containerSize.width - resolvedScene.bounds.width * scale) / 2 -
-      resolvedScene.bounds.minX * scale
+      resolvedScene.bounds.minX * scale +
+      gestureOffset.x
     );
-  }, [containerSize.width, resolvedScene, scale]);
+  }, [containerSize.width, gestureOffset.x, resolvedScene, scale]);
 
   const translateY = useMemo(() => {
     if (!resolvedScene) {
@@ -184,9 +232,127 @@ export default function GameViewport({
 
     return (
       (containerSize.height - resolvedScene.bounds.height * scale) / 2 -
-      resolvedScene.bounds.minY * scale
+      resolvedScene.bounds.minY * scale +
+      gestureOffset.y
     );
-  }, [containerSize.height, resolvedScene, scale]);
+  }, [containerSize.height, gestureOffset.y, resolvedScene, scale]);
+
+  useEffect(() => {
+    const element = containerRef.current;
+    if (!element || !resolvedScene) return;
+
+    const centeredPosition = (nextScale: number) => ({
+      x:
+        (containerSize.width - resolvedScene.bounds.width * nextScale) / 2 -
+        resolvedScene.bounds.minX * nextScale,
+      y:
+        (containerSize.height - resolvedScene.bounds.height * nextScale) / 2 -
+        resolvedScene.bounds.minY * nextScale,
+    });
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length === 1 && gestureZoomRef.current > 1) {
+        const target = event.target as Element | null;
+        if (!target?.closest('button, input, select, textarea, a, [role="button"]')) {
+          const touch = event.touches[0];
+          panRef.current = {
+            x: touch.clientX,
+            y: touch.clientY,
+            offsetX: gestureOffsetRef.current.x,
+            offsetY: gestureOffsetRef.current.y,
+          };
+        }
+        return;
+      }
+      if (event.touches.length !== 2) return;
+      event.preventDefault();
+      panRef.current = null;
+      const point = getTouchPoint(event.touches[0], event.touches[1]);
+      if (lockedBaseScale === null) setLockedBaseScale(baseScale);
+      const currentScale = effectiveBaseScale * gestureZoomRef.current;
+      const centered = centeredPosition(currentScale);
+      pinchRef.current = {
+        distance: Math.max(point.distance, 1),
+        zoom: gestureZoomRef.current,
+        sceneX: (point.x - centered.x - gestureOffsetRef.current.x) / currentScale,
+        sceneY: (point.y - centered.y - gestureOffsetRef.current.y) / currentScale,
+      };
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (event.touches.length === 1 && panRef.current) {
+        event.preventDefault();
+        const touch = event.touches[0];
+        const nextOffset = {
+          x: panRef.current.offsetX + touch.clientX - panRef.current.x,
+          y: panRef.current.offsetY + touch.clientY - panRef.current.y,
+        };
+        gestureOffsetRef.current = nextOffset;
+        setGestureOffset(nextOffset);
+        return;
+      }
+      const pinch = pinchRef.current;
+      if (!pinch || event.touches.length !== 2) return;
+      event.preventDefault();
+      const point = getTouchPoint(event.touches[0], event.touches[1]);
+      const distanceDelta = point.distance - pinch.distance;
+      const zoomDelta =
+        Math.abs(distanceDelta) < 8
+          ? 0
+          : distanceDelta / GAME_TABLE_PINCH_DISTANCE_PER_ZOOM;
+      const nextZoom = clampValue(
+        pinch.zoom + zoomDelta,
+        0.75,
+        4
+      );
+      const nextScale = effectiveBaseScale * nextZoom;
+      const centered = centeredPosition(nextScale);
+      const nextOffset = {
+        x: point.x - pinch.sceneX * nextScale - centered.x,
+        y: point.y - pinch.sceneY * nextScale - centered.y,
+      };
+      gestureZoomRef.current = nextZoom;
+      gestureOffsetRef.current = nextOffset;
+      setGestureZoom(nextZoom);
+      setGestureOffset(nextOffset);
+    };
+
+    const onTouchEnd = (event: TouchEvent) => {
+      if (event.touches.length < 2 && pinchRef.current) {
+        window.localStorage.setItem(
+          GAME_TABLE_ZOOM_STORAGE_KEY,
+          String(gestureZoomRef.current)
+        );
+        pinchRef.current = null;
+      }
+      if (event.touches.length === 0) panRef.current = null;
+    };
+    const preventNativeGesture = (event: Event) => event.preventDefault();
+
+    element.addEventListener('touchstart', onTouchStart, { passive: false });
+    element.addEventListener('touchmove', onTouchMove, { passive: false });
+    element.addEventListener('touchend', onTouchEnd);
+    element.addEventListener('touchcancel', onTouchEnd);
+    element.addEventListener('gesturestart', preventNativeGesture, { passive: false });
+    element.addEventListener('gesturechange', preventNativeGesture, { passive: false });
+    element.addEventListener('gestureend', preventNativeGesture, { passive: false });
+    return () => {
+      element.removeEventListener('touchstart', onTouchStart);
+      element.removeEventListener('touchmove', onTouchMove);
+      element.removeEventListener('touchend', onTouchEnd);
+      element.removeEventListener('touchcancel', onTouchEnd);
+      element.removeEventListener('gesturestart', preventNativeGesture);
+      element.removeEventListener('gesturechange', preventNativeGesture);
+      element.removeEventListener('gestureend', preventNativeGesture);
+    };
+  }, [
+    baseScale,
+    containerSize.height,
+    containerSize.width,
+    effectiveBaseScale,
+    lockedBaseScale,
+    resolvedScene,
+  ]);
 
   const hoverCardMetrics = useMemo(() => {
     const cardWidth = clampValue(260 * scale, 170, 280);
@@ -275,7 +441,10 @@ export default function GameViewport({
     <div
       ref={containerRef}
       className="relative h-[100dvh] w-full overflow-hidden"
-      style={viewportHeight ? { height: `${viewportHeight}px` } : undefined}
+      style={{
+        ...(viewportHeight ? { height: `${viewportHeight}px` } : {}),
+        touchAction: 'none',
+      }}
     >
       {shouldShowRotatePlaceholder ? (
         <RotateScreenPlaceholder />
@@ -289,7 +458,7 @@ export default function GameViewport({
           />
 
           <div
-            className="absolute left-0 top-0 origin-top-left"
+            className="absolute left-0 top-0 origin-top-left will-change-transform"
             style={{
               width: "1600px",
               height: "900px",

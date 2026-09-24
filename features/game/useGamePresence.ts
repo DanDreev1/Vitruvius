@@ -8,6 +8,7 @@ import {
   PARTICIPANT_PROFILE_CHANGED_EVENT,
 } from '@/features/tablet/settings/profile';
 import type { GameParticipant } from '@/lib/game/types';
+import { resolvePublicStorageUrl } from '@/lib/storageUrl';
 
 const HEARTBEAT_INTERVAL_MS = 5_000;
 const OFFLINE_THRESHOLD_MS = 15_000;
@@ -53,7 +54,7 @@ function mapParticipantRow(row: {
     role: row.role,
     displayName:
       row.display_name ?? (row.role === 'master' ? roleLabels.master : roleLabels.player),
-    avatarUrl: row.avatar_url ?? null,
+    avatarUrl: resolvePublicStorageUrl(row.avatar_url, 'profile-avatars'),
     joinedAt: row.joined_at,
     lastSeenAt: row.last_seen_at,
     connectionStatus: getEffectiveConnectionStatus(row.last_seen_at, dbStatus),

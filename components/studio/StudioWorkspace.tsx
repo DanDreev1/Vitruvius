@@ -8,7 +8,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import ScaledPageViewport from '@/components/layout/ScaledPageViewport';
-import Header from '@/components/ui/Header';
 import { deleteStudioEntity, loadStudioEntities, type StudioEntity } from '@/features/studio/api';
 import type { StudioRole, StudioTab, StudioTabConfig } from '@/features/studio/types';
 import { createId } from '@/lib/createId';
@@ -124,8 +123,7 @@ export default function StudioWorkspace<TTab extends StudioTab>({ role, tabs, re
   };
 
   return (
-    <ScaledPageViewport headerBackdrop>
-      <Header fixedLayout />
+    <ScaledPageViewport collapsibleHeader>
       {!selected ? (
         <main className="flex h-[780px] items-center justify-center px-6 py-8">
           <section className="flex h-[660px] w-full max-w-[1120px] flex-col rounded-[28px] border border-white/[.08] bg-[#141D2E] p-6">

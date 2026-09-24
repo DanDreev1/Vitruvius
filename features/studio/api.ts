@@ -3,6 +3,7 @@
 import { getOwnedCharacters, getOwnedWorlds } from '@/features/lobby/api';
 import { supabase } from '@/lib/supabaseClient';
 import type { StudioRole } from './types';
+import { resolvePublicStorageUrl } from '@/lib/storageUrl';
 
 export type StudioEntity = { id: string; name: string; avatarUrl: string | null; isDraft?: boolean };
 
@@ -15,7 +16,12 @@ async function getAuth() {
 export async function loadStudioEntities(role: StudioRole): Promise<StudioEntity[]> {
   const session = await getAuth();
   const rows = role === 'master' ? await getOwnedWorlds(session.user.id) : await getOwnedCharacters(session.user.id);
-  return rows.map((row) => ({ id: row.id, name: row.name, avatarUrl: row.avatar_url }));
+  const bucket = role === 'master' ? 'world-avatars' : 'character-avatars';
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    avatarUrl: resolvePublicStorageUrl(row.avatar_url, bucket),
+  }));
 }
 
 async function entityRequest<T>(method: 'POST' | 'DELETE', body: object) {
@@ -28,7 +34,14 @@ async function entityRequest<T>(method: 'POST' | 'DELETE', body: object) {
 
 export async function createStudioEntity(role: StudioRole, data?: { name?: string }) {
   const result = await entityRequest<{ entity: { id: string; name: string; avatar_url: string | null } }>('POST', { kind: role === 'master' ? 'world' : 'character', data });
-  return { id: result.entity.id, name: result.entity.name, avatarUrl: result.entity.avatar_url } satisfies StudioEntity;
+  return {
+    id: result.entity.id,
+    name: result.entity.name,
+    avatarUrl: resolvePublicStorageUrl(
+      result.entity.avatar_url,
+      role === 'master' ? 'world-avatars' : 'character-avatars'
+    ),
+  } satisfies StudioEntity;
 }
 
 export async function deleteStudioEntity(role: StudioRole, id: string) {

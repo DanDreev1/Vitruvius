@@ -16,6 +16,9 @@ export async function loadInGameWorldProfile(worldId: string) {
 }
 
 export async function saveInGameWorldName(worldId: string, name: string) {
+  if (!name.trim() || name.length > 80) {
+    throw new Error('World name must be between 1 and 80 characters.');
+  }
   const { error } = await supabase
     .from('in_game_worlds')
     .update({ name })
