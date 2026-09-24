@@ -12,12 +12,13 @@ import type {
   SceneImageRecord,
 } from '@/features/tablet/master/scene/types';
 import { supabase } from '@/lib/supabaseClient';
+import { resolvePublicStorageUrl } from '@/lib/storageUrl';
 
 function mapRecordToItem(record: SceneImageRecord): SceneImageItem {
   return {
     id: record.id,
     title: record.title,
-    imageUrl: record.image_url,
+    imageUrl: resolvePublicStorageUrl(record.image_url, 'temporary-scene-images') ?? '',
     isActive: record.is_active,
     sortOrder: record.sort_order,
   };

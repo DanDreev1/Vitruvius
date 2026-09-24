@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 
-import Header from '@/components/ui/Header';
 import ScaledPageViewport from '@/components/layout/ScaledPageViewport';
 import { createRoom } from '@/features/home/createRoom';
 import { joinRoomByCode } from '@/features/home/joinRoomByCode';
@@ -120,9 +119,7 @@ export default function HomePageClient() {
   }
 
   return (
-    <ScaledPageViewport headerBackdrop>
-      <Header fixedLayout />
-
+    <ScaledPageViewport collapsibleHeader>
       <main className="flex h-[780px] items-center justify-center overflow-hidden px-10 py-[70px]">
         <section className="flex w-full max-w-[620px] flex-col items-center">
           <Image

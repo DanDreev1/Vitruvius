@@ -1,6 +1,10 @@
 import { supabase } from '@/lib/supabaseClient';
 import { createId } from '@/lib/createId';
 import {
+  createStorageReference,
+  parseStorageReference,
+} from '@/lib/storageUrl';
+import {
   SCENE_IMAGE_STORAGE_BUCKET,
   SCENE_IMAGE_STORAGE_FOLDER,
   SCENE_MUSIC_STORAGE_BUCKET,
@@ -413,6 +417,10 @@ async function uploadSceneMusicFile(
 
   return {
     publicUrl: data.publicUrl,
+    storageReference: createStorageReference(
+      SCENE_MUSIC_STORAGE_BUCKET,
+      objectPath
+    ),
     title: stripExtension(file.name) || 'Untitled track',
   };
 }
@@ -422,7 +430,7 @@ export async function createInGameWorldSceneMusic(
   file: File,
   sessionId: string
 ) {
-  const [{ publicUrl, title }, sortOrder] = await Promise.all([
+  const [{ storageReference, title }, sortOrder] = await Promise.all([
     uploadSceneMusicFile(sessionId, inGameWorldId, file),
     getNextSceneMusicSortOrder(inGameWorldId),
   ]);
@@ -432,7 +440,7 @@ export async function createInGameWorldSceneMusic(
     .insert({
       in_game_world_id: inGameWorldId,
       title,
-      audio_url: publicUrl,
+      audio_url: storageReference,
       sort_order: sortOrder,
       is_active: false,
       is_playing: false,
@@ -453,11 +461,15 @@ export async function updateInGameWorldSceneMusicCover(
   file: File,
   sessionId: string
 ) {
-  const { publicUrl } = await uploadSceneImageFile(sessionId, inGameWorldId, file);
+  const { publicUrl, storageReference } = await uploadSceneImageFile(
+    sessionId,
+    inGameWorldId,
+    file
+  );
 
   const { error } = await supabase
     .from('in_game_worlds_scene_music')
-    .update({ cover_url: publicUrl })
+    .update({ cover_url: storageReference })
     .eq('id', musicId)
     .eq('in_game_world_id', inGameWorldId);
 
@@ -609,12 +621,10 @@ export async function updateInGameWorldSceneMusicTime(
 
 function getSceneMusicStoragePathFromPublicUrl(audioUrl: string | null) {
   if (!audioUrl) return null;
-
-  const marker = `/object/public/${SCENE_MUSIC_STORAGE_BUCKET}/`;
-  const markerIndex = audioUrl.indexOf(marker);
-  if (markerIndex === -1) return null;
-
-  return decodeURIComponent(audioUrl.slice(markerIndex + marker.length));
+  const reference = parseStorageReference(audioUrl, SCENE_MUSIC_STORAGE_BUCKET);
+  return reference?.bucket === SCENE_MUSIC_STORAGE_BUCKET
+    ? reference.objectPath
+    : null;
 }
 
 export async function deleteInGameWorldSceneMusic(
@@ -821,6 +831,10 @@ async function uploadSceneImageFile(
 
   return {
     publicUrl: data.publicUrl,
+    storageReference: createStorageReference(
+      SCENE_IMAGE_STORAGE_BUCKET,
+      objectPath
+    ),
     storagePath: objectPath,
     mimeType: file.type || null,
     title: stripExtension(file.name) || 'Untitled image',
@@ -848,7 +862,7 @@ export async function createInGameWorldSceneImage(
   file: File,
   sessionId: string
 ) {
-  const [{ publicUrl, storagePath, mimeType, title }, sortOrder] = await Promise.all([
+  const [{ storageReference, storagePath, mimeType, title }, sortOrder] = await Promise.all([
     uploadSceneImageFile(sessionId, inGameWorldId, file),
     getNextSceneImageSortOrder(inGameWorldId),
   ]);
@@ -858,7 +872,7 @@ export async function createInGameWorldSceneImage(
     .insert({
       in_game_world_id: inGameWorldId,
       title,
-      image_url: publicUrl,
+      image_url: storageReference,
       storage_path: storagePath,
       mime_type: mimeType,
       sort_order: sortOrder,

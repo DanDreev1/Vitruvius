@@ -11,6 +11,7 @@ import {
   getPartyRollMessagesRealtimeChannelName,
 } from './api';
 import type { PartyRollMessage, PartyRollMessageType } from './types';
+import { clampTabletMessage } from '../../textLimits';
 
 const PARTY_ROLL_MESSAGE_TTL_MS = 5000;
 
@@ -36,7 +37,9 @@ export function usePartyRollMessages(sessionId: string | null) {
 
   const addMessage = useCallback(
     (message: PartyRollMessage) => {
-      setMessages((prevMessages) => [message, ...prevMessages].slice(0, 4));
+      const safeMessage = { ...message, text: clampTabletMessage(message.text) };
+      if (!safeMessage.text) return;
+      setMessages((prevMessages) => [safeMessage, ...prevMessages].slice(0, 4));
       scheduleMessageRemoval(message.id);
     },
     [scheduleMessageRemoval]

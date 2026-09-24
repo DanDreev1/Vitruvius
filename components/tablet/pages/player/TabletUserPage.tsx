@@ -110,7 +110,7 @@ export default function TabletUserPage({
             {t('dataUnavailable')}
           </p>
         ) : isEditMode ? (
-          <textarea
+          <textarea maxLength={300}
             value={descriptionDraft}
             onChange={(event) => onDescriptionChange?.(event.target.value)}
             className="mt-[24px] h-[444px] w-full resize-none rounded-[14px] border border-white/35 bg-white/8 px-[16px] py-[14px] font-montserrat text-[20px] font-semibold leading-[1.25] text-white outline-none placeholder:text-white/45 focus:border-white"

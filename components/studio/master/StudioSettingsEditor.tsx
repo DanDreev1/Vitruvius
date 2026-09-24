@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { Panel, SectionTitle } from '@/components/tablet/pages/shared/TabletPagePrimitives';
 import type { StudioWorldData } from '@/features/studio/master/types';
 import { useSceneAudioVolume } from '@/features/tablet/useSceneAudioVolume';
+import { resolvePublicStorageUrl } from '@/lib/storageUrl';
 
 type Props = {
   worldId: string;
@@ -31,7 +32,9 @@ export default function StudioSettingsEditor({
   const t = useTranslations('StudioMaster');
   const imageInputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(data.world.name);
-  const [avatarPreview, setAvatarPreview] = useState(data.world.avatar_url);
+  const [avatarPreview, setAvatarPreview] = useState(
+    resolvePublicStorageUrl(data.world.avatar_url, 'world-avatars')
+  );
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const { volume, setVolume } = useSceneAudioVolume();

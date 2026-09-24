@@ -31,6 +31,7 @@ type SavedSceneMusic = {
   title: string;
   audio_url: string;
   cover_url: string | null;
+  volume: number;
   sort_order: number;
   is_active: boolean;
 };
@@ -203,7 +204,7 @@ async function getSavedWorldCollections(worldId: string) {
 
     supabase
       .from('worlds_scene_music')
-      .select('id, title, audio_url, cover_url, sort_order, is_active')
+      .select('id, title, audio_url, cover_url, volume, sort_order, is_active')
       .eq('world_id', worldId)
       .order('sort_order', { ascending: true }),
 
@@ -348,6 +349,7 @@ async function createSelectedInGameWorld(
           title: music.title,
           audio_url: music.audio_url,
           cover_url: music.cover_url,
+          volume: music.volume,
           sort_order: music.sort_order,
           is_active: music.is_active,
           is_playing: false,

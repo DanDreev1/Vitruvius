@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 
 const collections = {
   images: { table: 'worlds_scene_images', fields: ['title', 'image_url', 'storage_path', 'mime_type', 'sort_order', 'is_active'] },
-  music: { table: 'worlds_scene_music', fields: ['title', 'audio_url', 'cover_url', 'sort_order', 'is_active'] },
+  music: { table: 'worlds_scene_music', fields: ['title', 'audio_url', 'cover_url', 'volume', 'sort_order', 'is_active'] },
   npcs: { table: 'worlds_relationship_npcs', fields: ['name', 'description', 'avatar_url', 'sort_order'] },
   assets: { table: 'worlds_assets', fields: ['asset_key', 'name', 'description', 'category', 'image_url', 'sort_order'] },
   notes: { table: 'worlds_notes', fields: ['title', 'content', 'position_x', 'position_y'] },
@@ -24,6 +24,15 @@ async function authorize(request: Request, worldId: string) {
 
 function pick(data: Record<string, unknown>, fields: readonly string[]) {
   return Object.fromEntries(fields.filter((field) => field in data).map((field) => [field, data[field]]));
+}
+
+function validateNote(data: Record<string, unknown>) {
+  if (typeof data.title !== 'string' || data.title.trim().length === 0 || data.title.length > 80) {
+    throw new Response('Note title must be between 1 and 80 characters.', { status: 400 });
+  }
+  if (typeof data.content !== 'string' || data.content.length > 1000) {
+    throw new Response('Note content must be 1000 characters or fewer.', { status: 400 });
+  }
 }
 
 async function signedUrl(admin: Awaited<ReturnType<typeof authorize>>['admin'], bucket: string, value: string | null) {
@@ -64,6 +73,7 @@ export async function PATCH(request: Request) {
       return Response.json({ row: data });
     }
     if (!body.collection || !body.id || !(body.collection in collections)) return Response.json({ error: 'Invalid collection.' }, { status: 400 });
+    if (body.collection === 'notes') validateNote(body.data);
     const config = collections[body.collection];
     const { data, error } = await admin.from(config.table).update(pick(body.data, config.fields)).eq('id', body.id).eq('world_id', body.worldId).select('*').single();
     if (error) throw error;
@@ -79,6 +89,7 @@ export async function POST(request: Request) {
     const body = (await request.json()) as { worldId?: string; collection?: Collection; data?: Record<string, unknown> };
     if (!body.worldId || !body.collection || !(body.collection in collections)) return Response.json({ error: 'Invalid create request.' }, { status: 400 });
     const { admin } = await authorize(request, body.worldId);
+    if (body.collection === 'notes') validateNote(body.data ?? {});
     const config = collections[body.collection];
     const values = { ...pick(body.data ?? {}, config.fields), world_id: body.worldId } as Record<string, unknown>;
     if (body.collection === 'assets' && !values.asset_key) values.asset_key = `asset-${randomUUID()}`;

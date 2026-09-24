@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 
 import ScaledPageViewport from '@/components/layout/ScaledPageViewport';
-import Header from '@/components/ui/Header';
 import StudioAccessGate from '@/components/studio/StudioAccessGate';
 
 export default async function StudioPage() {
@@ -13,8 +12,7 @@ export default async function StudioPage() {
     { href: '/studio/master', eyebrow: t('masterStudio'), title: t('worlds'), description: t('worldDescription'), icon: '/navigation-imgs/master/Scene.png' },
   ];
   return <StudioAccessGate>{(
-    <ScaledPageViewport headerBackdrop>
-      <Header fixedLayout />
+    <ScaledPageViewport collapsibleHeader>
       <main className="flex h-[780px] items-center justify-center px-10 py-12">
         <section className="w-full max-w-[980px]">
           <div className="text-center"><p className="font-montserrat text-[11px] font-bold uppercase tracking-[.24em] text-white/35">{t('prepare')}</p><h1 className="mt-3 font-montserrat-alt text-[58px] font-extrabold text-white">Vitruvius Studio</h1><p className="mx-auto mt-3 max-w-[650px] font-montserrat text-[16px] text-white/50">{t('intro')}</p></div>

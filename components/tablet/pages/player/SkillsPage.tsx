@@ -496,7 +496,7 @@ function SkillCard({
         </div>
 
         {canEdit ? (
-          <input
+          <input maxLength={80}
             value={skill.name}
             onChange={(event) =>
               onSkillNameChange?.(domain.id, skill.id, event.target.value)
@@ -519,7 +519,7 @@ function SkillCard({
       </div>
 
       {canEdit ? (
-        <textarea
+        <textarea maxLength={300}
           value={skill.description ?? ''}
           onChange={(event) =>
             onSkillDescriptionChange?.(domain.id, skill.id, event.target.value)
@@ -812,7 +812,7 @@ export default function TabletSkillsPage({
                 </div>
 
                 {canEdit ? (
-                  <input
+                  <input maxLength={80}
                     value={activeDomain.name}
                     onChange={(event) =>
                       onDomainNameChange?.(activeDomain.id, event.target.value)

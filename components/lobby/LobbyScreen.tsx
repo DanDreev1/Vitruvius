@@ -8,6 +8,7 @@ import BackHomeButton from '@/components/ui/BackHomeButton';
 import { LobbyCountdown } from './LobbyCountdown';
 import { LobbyExitModal } from './LobbyExitModal';
 import { NicknameModal } from './NicknameModal';
+import { resolvePublicStorageUrl } from '@/lib/storageUrl';
 
 export default function LobbyScreen({ code }: LobbyScreenProps) {
     const t = useTranslations('Lobby');
@@ -170,7 +171,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                                                 >
                                                                     {currentParticipant?.avatar_url ? (
                                                                         <img
-                                                                            src={currentParticipant.avatar_url}
+                                                                            src={resolvePublicStorageUrl(currentParticipant.avatar_url, 'profile-avatars') ?? currentParticipant.avatar_url}
                                                                             alt={t('profileAvatar')}
                                                                             className="h-full w-full object-cover"
                                                                         />
@@ -262,7 +263,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                                                             >
                                                                                 {world.avatar_url ? (
                                                                                     <img
-                                                                                        src={world.avatar_url}
+                                                                                        src={resolvePublicStorageUrl(world.avatar_url, 'world-avatars') ?? world.avatar_url}
                                                                                         alt={world.name}
                                                                                         className="h-[72px] w-[72px] shrink-0 rounded-[18px] object-cover"
                                                                                     />
@@ -309,7 +310,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                                                         >
                                                                             {character.avatar_url ? (
                                                                                 <img
-                                                                                    src={character.avatar_url}
+                                                                                    src={resolvePublicStorageUrl(character.avatar_url, 'character-avatars') ?? character.avatar_url}
                                                                                     alt={character.name}
                                                                                     className="h-[72px] w-[72px] shrink-0 rounded-[18px] object-cover"
                                                                                 />
@@ -374,7 +375,7 @@ export default function LobbyScreen({ code }: LobbyScreenProps) {
                                     <div key={participant.id} className="flex items-center gap-4">
                                         {participant.avatar_url ? (
                                             <img
-                                                src={participant.avatar_url}
+                                                src={resolvePublicStorageUrl(participant.avatar_url, 'profile-avatars') ?? participant.avatar_url}
                                                 alt={participant.display_name || 'Player'}
                                                 className="h-[60px] w-[60px] rounded-full object-cover"
                                             />

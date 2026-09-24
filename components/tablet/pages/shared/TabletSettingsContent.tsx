@@ -426,33 +426,35 @@ export default function TabletSettingsContent({
 
           <LanguageSwitcher />
 
-          <div className="rounded-[20px] border border-white/10 bg-[#243047] px-[20px] py-[18px]">
-            <div className="mb-[14px] flex items-center justify-between gap-[16px]">
-              <div>
-                <p className="font-montserrat-alt text-[20px] font-extrabold text-white">
-                  {t('partyConfirmations')}
-                </p>
-                <p className="mt-[4px] font-montserrat text-[14px] text-white/65">
-                  {t('partyConfirmationsDescription')}
-                </p>
+          {participant?.role === 'master' ? (
+            <div className="rounded-[20px] border border-white/10 bg-[#243047] px-[20px] py-[18px]">
+              <div className="mb-[14px] flex items-center justify-between gap-[16px]">
+                <div>
+                  <p className="font-montserrat-alt text-[20px] font-extrabold text-white">
+                    {t('partyConfirmations')}
+                  </p>
+                  <p className="mt-[4px] font-montserrat text-[14px] text-white/65">
+                    {t('partyConfirmationsDescription')}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={restorePartyConfirmations}
+                  disabled={!arePartyConfirmationsSuppressed}
+                  className="rounded-[14px] bg-white px-[16px] py-[9px] font-montserrat text-[13px] font-extrabold text-black disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {t('restore')}
+                </button>
               </div>
 
-              <button
-                type="button"
-                onClick={restorePartyConfirmations}
-                disabled={!arePartyConfirmationsSuppressed}
-                className="rounded-[14px] bg-white px-[16px] py-[9px] font-montserrat text-[13px] font-extrabold text-black disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                {t('restore')}
-              </button>
+              <p className="font-montserrat text-[14px] leading-[1.5] text-white/65">
+                {arePartyConfirmationsSuppressed
+                  ? t('confirmationsHidden')
+                  : t('confirmationsEnabled')}
+              </p>
             </div>
-
-            <p className="font-montserrat text-[14px] leading-[1.5] text-white/65">
-              {arePartyConfirmationsSuppressed
-                ? t('confirmationsHidden')
-                : t('confirmationsEnabled')}
-            </p>
-          </div>
+          ) : null}
         </Panel>
 
         <Panel className="flex flex-col justify-between">

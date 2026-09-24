@@ -4,6 +4,7 @@ import ParticipantAvatar from "./ParticipantAvatar";
 import OfflinePill from "./OfflinePill";
 import Image from "next/image";
 import { useTranslations } from 'next-intl';
+import TableTabletButton from './TableTabletButton';
 
 type PlayerSeatProps = {
   seatedPlayer: SeatedPlayer;
@@ -70,17 +71,14 @@ export default function PlayerSeat({
           />
         </div>
 
-        <button
-          type="button"
+        <TableTabletButton
+          width={density.tabletWidth}
+          height={density.tabletHeight}
+          x={visual.tabletX}
+          y={visual.tabletY}
+          rotation={visual.tabletRotation}
+          label={`Open ${participant.displayName} tablet`}
           onClick={() => onTabletClick?.(participant.userId)}
-          className="absolute rounded-[999px] bg-black/90"
-          style={{
-            width: density.tabletWidth,
-            height: density.tabletHeight,
-            left: `calc(50% + ${visual.tabletX}px)`,
-            top: `calc(50% + ${visual.tabletY}px)`,
-            transform: `translate(-50%, -50%) rotate(${visual.tabletRotation}deg)`,
-          }}
         />
 
         {participant.connectionStatus === "offline" ? (

@@ -1,6 +1,7 @@
 'use client';
 
 import { supabase } from '@/lib/supabaseClient';
+import { createStorageReference, resolvePublicStorageUrl } from '@/lib/storageUrl';
 
 export const PROFILE_UPDATED_EVENT = 'vitruvius-profile-updated';
 export const PROFILE_AVATAR_BUCKET = 'profile-avatars';
@@ -8,7 +9,9 @@ export const PROFILE_AVATAR_BUCKET = 'profile-avatars';
 export function getUserProfile(user: { user_metadata?: Record<string, unknown> }) {
   return {
     nickname: typeof user.user_metadata?.nickname === 'string' ? user.user_metadata.nickname : '',
-    avatarUrl: typeof user.user_metadata?.avatar_url === 'string' ? user.user_metadata.avatar_url : null,
+    avatarUrl: typeof user.user_metadata?.avatar_url === 'string'
+      ? resolvePublicStorageUrl(user.user_metadata.avatar_url, PROFILE_AVATAR_BUCKET)
+      : null,
   };
 }
 
@@ -17,6 +20,9 @@ function announceProfileUpdate() {
 }
 
 export async function saveProfileNickname(nickname: string) {
+  if (!nickname.trim() || nickname.length > 36) {
+    throw new Error('Nickname must be between 1 and 36 characters.');
+  }
   const { data: current } = await supabase.auth.getUser();
   const { data, error } = await supabase.auth.updateUser({
     data: { ...(current.user?.user_metadata ?? {}), nickname },
@@ -35,9 +41,10 @@ export async function saveProfileAvatar(userId: string, file: File) {
 
   const { data: urlData } = supabase.storage.from(PROFILE_AVATAR_BUCKET).getPublicUrl(path);
   const avatarUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+  const avatarReference = createStorageReference(PROFILE_AVATAR_BUCKET, path);
   const { data: current } = await supabase.auth.getUser();
   const { error } = await supabase.auth.updateUser({
-    data: { ...(current.user?.user_metadata ?? {}), avatar_url: avatarUrl },
+    data: { ...(current.user?.user_metadata ?? {}), avatar_url: avatarReference },
   });
   if (error) throw new Error(error.message);
   announceProfileUpdate();

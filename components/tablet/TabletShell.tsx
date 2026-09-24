@@ -9,6 +9,7 @@ import {
   PLAYER_TABLET_ATTRIBUTE_MAX_VALUE,
   PLAYER_TABLET_ATTRIBUTE_MIN_VALUE,
   PLAYER_TABLET_CHARACTER_NAME_MAX_LENGTH,
+  PLAYER_TABLET_DESCRIPTION_MAX_LENGTH,
   PLAYER_TABLET_CUSTOM_ICON_MAX_FILE_SIZE_BYTES,
   PLAYER_TABLET_DOMAIN_MAX_LEVEL,
   PLAYER_TABLET_DOMAIN_MIN_LEVEL,
@@ -16,6 +17,7 @@ import {
   PLAYER_TABLET_HEALTH_MULTIPLIER,
   PLAYER_TABLET_INSPIRATION_MAX_VALUE,
   PLAYER_TABLET_MAX_DOMAINS,
+  PLAYER_TABLET_NAME_MAX_LENGTH,
   PLAYER_TABLET_PARAMETER_MIN_VALUE,
   PLAYER_TABLET_PORTRAIT_ALLOWED_MIME_TYPES,
   PLAYER_TABLET_PORTRAIT_COOLDOWN_NOTICE_MS,
@@ -797,7 +799,7 @@ function PlayerTabletShellLayout({
   const handleDescriptionChange = (value: string) => {
     setDraft((currentDraft) => ({
       ...currentDraft,
-      description: value,
+      description: value.slice(0, PLAYER_TABLET_DESCRIPTION_MAX_LENGTH),
     }));
     setSaveError(null);
   };
@@ -896,7 +898,7 @@ function PlayerTabletShellLayout({
         domain.id === domainId
           ? {
               ...domain,
-              name: value,
+              name: value.slice(0, PLAYER_TABLET_NAME_MAX_LENGTH),
             }
           : domain
       ),
@@ -963,7 +965,7 @@ function PlayerTabletShellLayout({
                 skill.id === skillId
                   ? {
                       ...skill,
-                      name: value,
+                      name: value.slice(0, PLAYER_TABLET_NAME_MAX_LENGTH),
                     }
                   : skill
               ),
@@ -1040,7 +1042,7 @@ function PlayerTabletShellLayout({
                 skill.id === skillId
                   ? {
                       ...skill,
-                      description: value,
+                      description: value.slice(0, PLAYER_TABLET_DESCRIPTION_MAX_LENGTH),
                     }
                   : skill
               ),

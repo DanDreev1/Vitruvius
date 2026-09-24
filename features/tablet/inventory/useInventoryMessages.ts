@@ -10,12 +10,15 @@ import {
   INVENTORY_MESSAGE_EVENT,
 } from './api';
 import type { InventoryMessage } from './types';
+import { clampTabletMessage } from '../textLimits';
 
 export function useInventoryMessages(sessionId: string | null) {
   const [messages, setMessages] = useState<InventoryMessage[]>([]);
   const timersRef = useRef<Map<string, number>>(new Map());
   const add = useCallback((message: InventoryMessage) => {
-    setMessages((current) => [message, ...current].slice(0, 4));
+    const safeMessage = { ...message, text: clampTabletMessage(message.text) };
+    if (!safeMessage.text) return;
+    setMessages((current) => [safeMessage, ...current].slice(0, 4));
     const timer = window.setTimeout(() => {
       setMessages((current) => current.filter((item) => item.id !== message.id));
       timersRef.current.delete(message.id);

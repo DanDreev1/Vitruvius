@@ -255,7 +255,10 @@ export async function queueOverwrittenFiles(
 }
 
 function getStoragePath(value: string, bucket: string) {
-  if (!/^https?:\/\//i.test(value)) return value;
+  if (!/^https?:\/\//i.test(value)) {
+    const bucketPrefix = `${bucket}/`;
+    return value.startsWith(bucketPrefix) ? value.slice(bucketPrefix.length) : value;
+  }
   const marker = `/object/public/${bucket}/`;
   const markerIndex = value.indexOf(marker);
   if (markerIndex < 0) return null;
@@ -318,7 +321,7 @@ async function copyStorageReference({
       });
     if (!error) {
       return publicDestination
-        ? admin.storage.from(destinationBucket).getPublicUrl(destinationPath).data.publicUrl
+        ? `${destinationBucket}/${destinationPath}`
         : destinationPath;
     }
     const { data: downloaded, error: downloadError } = await admin.storage
@@ -330,7 +333,7 @@ async function copyStorageReference({
         .upload(destinationPath, downloaded, { upsert: true });
       if (!uploadError) {
         return publicDestination
-          ? admin.storage.from(destinationBucket).getPublicUrl(destinationPath).data.publicUrl
+          ? `${destinationBucket}/${destinationPath}`
           : destinationPath;
       }
       lastError = new Error(

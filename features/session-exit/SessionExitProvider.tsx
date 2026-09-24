@@ -232,22 +232,22 @@ export default function SessionExitProvider({ children }: { children: React.Reac
       {children}
 
       {confirmation ? (
-        <div className="fixed inset-0 z-[1000] grid place-items-center bg-black/75 p-5 backdrop-blur-sm">
-          <section className="w-full max-w-[460px] rounded-[26px] border border-white/12 bg-[#172033] p-[24px] shadow-2xl">
-            <h2 className="font-montserrat-alt text-[26px] font-extrabold text-white">
+        <div className="fixed inset-0 z-[1000] grid place-items-center overflow-y-auto bg-black/75 p-2 backdrop-blur-sm">
+          <section className="max-h-[calc(100dvh-16px)] w-full max-w-[360px] overflow-y-auto rounded-[16px] border border-white/12 bg-[#172033] p-[16px] shadow-2xl">
+            <h2 className="font-montserrat-alt text-[19px] font-extrabold leading-tight text-white">
               {confirmation.role === 'master' ? t('endSessionTitle') : t('exitGameTitle')}
             </h2>
-            <p className="mt-[10px] font-montserrat text-[14px] leading-relaxed text-white/60">
+            <p className="mt-[6px] font-montserrat text-[11px] leading-[1.45] text-white/60">
               {confirmation.role === 'master'
                 ? t('endSessionDescription')
                 : t('exitGameDescription')}
             </p>
-            {error ? <p className="mt-3 text-[13px] text-[#E88A8A]">{error}</p> : null}
-            <div className="mt-[22px] flex justify-end gap-[10px]">
-              <button type="button" disabled={isBusy} onClick={() => setConfirmation(null)} className="rounded-[12px] border border-white/15 px-[18px] py-[11px] font-montserrat text-[13px] font-bold text-white">
+            {error ? <p className="mt-2 text-[11px] text-[#E88A8A]">{error}</p> : null}
+            <div className="mt-[13px] flex justify-end gap-[7px]">
+              <button type="button" disabled={isBusy} onClick={() => setConfirmation(null)} className="min-h-[36px] rounded-[9px] border border-white/15 px-[12px] py-[7px] font-montserrat text-[11px] font-bold text-white">
                 {t('cancel')}
               </button>
-              <button type="button" disabled={isBusy} onClick={() => void confirmExit()} className="rounded-[12px] bg-[#D6B25E] px-[18px] py-[11px] font-montserrat text-[13px] font-extrabold text-black disabled:opacity-50">
+              <button type="button" disabled={isBusy} onClick={() => void confirmExit()} className="min-h-[36px] rounded-[9px] bg-[#D6B25E] px-[12px] py-[7px] font-montserrat text-[11px] font-extrabold text-black disabled:opacity-50">
                 {isBusy ? t('processing') : confirmation.role === 'master' ? t('endSession') : t('exitGame')}
               </button>
             </div>
@@ -256,47 +256,47 @@ export default function SessionExitProvider({ children }: { children: React.Reac
       ) : null}
 
       {state.pending ? (
-        <div className="fixed inset-0 z-[990] grid place-items-center overflow-y-auto bg-[#070C17]/90 p-4 backdrop-blur-[10px] sm:p-6">
-          <section className="relative w-full max-w-[590px] overflow-hidden rounded-[30px] border border-white/10 bg-[#172033] shadow-[0_32px_90px_rgba(0,0,0,.55)]">
+        <div className="fixed inset-0 z-[990] grid place-items-center overflow-y-auto bg-[#070C17]/90 p-2 backdrop-blur-[10px] sm:p-6">
+          <section className="relative max-h-[calc(100dvh-16px)] w-full max-w-[450px] overflow-y-auto rounded-[18px] border border-white/10 bg-[#172033] shadow-[0_32px_90px_rgba(0,0,0,.55)]">
             <div className="h-[3px] bg-gradient-to-r from-transparent via-white/35 to-transparent" />
-            <div className="p-[22px] sm:p-[30px]">
-              <div className="flex items-start gap-[15px]">
-                <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[16px] border border-white/10 bg-white/[.06] font-montserrat-alt text-[20px] font-extrabold uppercase text-white/85">
+            <div className="p-[16px]">
+              <div className="flex items-start gap-[10px]">
+                <div className="flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[12px] border border-white/10 bg-white/[.06] font-montserrat-alt text-[16px] font-extrabold uppercase text-white/85">
                   {entityName.charAt(0)}
                 </div>
                 <div className="min-w-0 pt-[1px]">
                   <p className="font-montserrat text-[10px] font-extrabold uppercase tracking-[.24em] text-white/45">{t('sessionEnded')}</p>
-                  <h2 className="mt-[5px] font-montserrat-alt text-[25px] font-extrabold leading-[1.15] text-white sm:text-[29px]">{t('keepEntity', { entity: entityName })}</h2>
+                  <h2 className="mt-[3px] font-montserrat-alt text-[20px] font-extrabold leading-[1.12] text-white">{t('keepEntity', { entity: entityName })}</h2>
                 </div>
               </div>
-              <div className="mt-[20px] flex items-center gap-[12px] rounded-[16px] border border-white/[.07] bg-[#0E1627]/75 px-[15px] py-[12px]">
+              <div className="mt-[11px] flex items-center gap-[9px] rounded-[12px] border border-white/[.07] bg-[#0E1627]/75 px-[11px] py-[8px]">
                 <div className="h-[8px] w-[8px] shrink-0 rounded-full bg-white/35" />
                 <div>
                   <p className="font-montserrat text-[10px] font-bold uppercase tracking-[.12em] text-white/35">{t('temporaryUntil')}</p>
-                  <p className="mt-[2px] font-montserrat text-[13px] font-bold text-white/75">{new Date(state.pending.cleanupAt).toLocaleString()}</p>
+                  <p className="mt-[1px] font-montserrat text-[11px] font-bold text-white/75">{new Date(state.pending.cleanupAt).toLocaleString()}</p>
                 </div>
               </div>
 
             {state.isAnonymous ? (
-              <div className="mt-[18px] rounded-[20px] border border-white/10 bg-white/[.035] p-[16px] sm:p-[18px]">
-                <p className="font-montserrat text-[13px] leading-relaxed text-white/65">
+              <div className="mt-[10px] rounded-[14px] border border-white/10 bg-white/[.035] p-[11px]">
+                <p className="font-montserrat text-[11px] leading-[1.4] text-white/65">
                   {t('anonymousHelp', { entity: entityName })}
                 </p>
-                <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={t('email')} className="mt-[14px] h-[46px] w-full rounded-[13px] border border-white/10 bg-[#0B1020] px-[14px] font-montserrat text-[14px] text-white outline-none transition focus:border-white/30" />
-                <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={t('password')} className="mt-[9px] h-[46px] w-full rounded-[13px] border border-white/10 bg-[#0B1020] px-[14px] font-montserrat text-[14px] text-white outline-none transition focus:border-white/30" />
-                <div className="mt-[12px] grid grid-cols-2 gap-[9px]">
-                  <button type="button" disabled={isBusy} onClick={() => void authenticateAnonymous('login')} className="rounded-[13px] border border-white/15 px-[14px] py-[12px] font-montserrat text-[13px] font-bold text-white transition hover:bg-white/[.05] disabled:opacity-40">{t('login')}</button>
-                  <button type="button" disabled={isBusy} onClick={() => void authenticateAnonymous('signup')} className="rounded-[13px] bg-white px-[14px] py-[12px] font-montserrat text-[13px] font-extrabold text-[#172033] transition hover:bg-white/90 disabled:opacity-40">{t('createAccount')}</button>
+                <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder={t('email')} className="mt-[8px] h-[38px] w-full rounded-[10px] border border-white/10 bg-[#0B1020] px-[11px] font-montserrat text-[12px] text-white outline-none transition focus:border-white/30" />
+                <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={t('password')} className="mt-[6px] h-[38px] w-full rounded-[10px] border border-white/10 bg-[#0B1020] px-[11px] font-montserrat text-[12px] text-white outline-none transition focus:border-white/30" />
+                <div className="mt-[8px] grid grid-cols-2 gap-[6px]">
+                  <button type="button" disabled={isBusy} onClick={() => void authenticateAnonymous('login')} className="rounded-[10px] border border-white/15 px-[10px] py-[8px] font-montserrat text-[11px] font-bold text-white transition hover:bg-white/[.05] disabled:opacity-40">{t('login')}</button>
+                  <button type="button" disabled={isBusy} onClick={() => void authenticateAnonymous('signup')} className="rounded-[10px] bg-white px-[10px] py-[8px] font-montserrat text-[11px] font-extrabold text-[#172033] transition hover:bg-white/90 disabled:opacity-40">{t('createAccount')}</button>
                 </div>
               </div>
             ) : (
-              <div className={`mt-[18px] grid gap-[10px] ${canSaveCurrent ? 'sm:grid-cols-2' : ''}`}>
-                <button type="button" disabled={isBusy} onClick={() => void resolveExit('save', 'new')} className="group flex min-h-[68px] items-center justify-between rounded-[17px] bg-white px-[18px] text-left transition hover:bg-white/90 disabled:opacity-40">
+              <div className={`mt-[10px] grid gap-[7px] ${canSaveCurrent ? 'grid-cols-2' : ''}`}>
+                <button type="button" disabled={isBusy} onClick={() => void resolveExit('save', 'new')} className="group flex min-h-[52px] items-center justify-between rounded-[12px] bg-white px-[12px] text-left transition hover:bg-white/90 disabled:opacity-40">
                   <span><span className="block font-montserrat text-[14px] font-extrabold text-[#172033]">{t('saveAsNew')}</span><span className="mt-[2px] block font-montserrat text-[10px] font-semibold text-[#172033]/55">{t('saveAsNewHelp')}</span></span>
                   <span className="text-[20px] text-[#172033]/45 transition-transform group-hover:translate-x-1">→</span>
                 </button>
                 {canSaveCurrent ? (
-                  <button type="button" disabled={isBusy} onClick={() => void resolveExit('save', 'current')} className="group flex min-h-[68px] items-center justify-between rounded-[17px] border border-white/15 bg-white/[.045] px-[18px] text-left transition hover:bg-white/[.08] disabled:opacity-40">
+                  <button type="button" disabled={isBusy} onClick={() => void resolveExit('save', 'current')} className="group flex min-h-[52px] items-center justify-between rounded-[12px] border border-white/15 bg-white/[.045] px-[12px] text-left transition hover:bg-white/[.08] disabled:opacity-40">
                     <span><span className="block font-montserrat text-[14px] font-extrabold text-white">{t('updateCurrent')}</span><span className="mt-[2px] block font-montserrat text-[10px] font-semibold text-white/40">{t('updateCurrentHelp')}</span></span>
                     <span className="text-[20px] text-white/30 transition-transform group-hover:translate-x-1">→</span>
                   </button>
@@ -304,8 +304,8 @@ export default function SessionExitProvider({ children }: { children: React.Reac
               </div>
             )}
 
-            <div className="mt-[18px] border-t border-white/[.07] pt-[14px]">
-              <button type="button" disabled={isBusy} onClick={() => void resolveExit('discard')} className="w-full rounded-[14px] px-[18px] py-[11px] font-montserrat text-[13px] font-bold text-white/45 transition hover:bg-white/[.04] hover:text-[#E88A8A] disabled:opacity-40">
+            <div className="mt-[10px] border-t border-white/[.07] pt-[7px]">
+              <button type="button" disabled={isBusy} onClick={() => void resolveExit('discard')} className="w-full rounded-[10px] px-[12px] py-[7px] font-montserrat text-[11px] font-bold text-white/45 transition hover:bg-white/[.04] hover:text-[#E88A8A] disabled:opacity-40">
                 {t('dontSave', { entity: entityName })}
               </button>
             </div>

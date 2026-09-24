@@ -85,13 +85,13 @@ export default function TabletNav({
       <button
         type="button"
         onClick={onClose}
-        className="relative flex h-[44px] w-[64px] items-center justify-center rounded-[14px] transition-opacity duration-200 hover:opacity-75"
+        className="relative flex h-[54px] w-[72px] items-center justify-center rounded-[14px] transition-opacity duration-200 hover:opacity-75"
         title={commonT('closeTablet')}
       >
         <Image src="/Logo_Icon.png" alt="" width={48} height={28} />
       </button>
 
-      <div className="mt-[54px] flex flex-col items-center gap-[30px]">
+      <div className="mt-[48px] flex flex-col items-center gap-[20px]">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.key;
 
@@ -100,13 +100,13 @@ export default function TabletNav({
               key={tab.key}
               type="button"
               onClick={() => onTabChange(tab.key)}
-              className="group relative flex h-[54px] w-[64px] items-center justify-center"
+              className="group relative flex h-[64px] w-[72px] items-center justify-center"
               title={targetRole === 'player' ? getPlayerTabTitle(tab.key, playerT) : getMasterTabTitle(tab.key, masterT)}
             >
               {isActive ? (
                 <motion.span
                   layoutId={`tablet-active-frame-${targetRole}-${activeFrameSide}`}
-                  className="pointer-events-none absolute h-[58px] w-[58px]"
+                  className="pointer-events-none absolute h-[66px] w-[66px]"
                   transition={{
                     type: 'spring',
                     stiffness: 420,
@@ -117,17 +117,17 @@ export default function TabletNav({
                     src={activeFrameSrc}
                     alt=""
                     fill
-                    sizes="58px"
+                    sizes="66px"
                     className="object-contain"
                   />
                 </motion.span>
               ) : (
-                <span className="pointer-events-none absolute h-[58px] w-[58px] opacity-0 transition-opacity duration-200 group-hover:opacity-45">
+                <span className="pointer-events-none absolute h-[66px] w-[66px] opacity-0 transition-opacity duration-200 group-hover:opacity-45">
                   <Image
                     src={activeFrameSrc}
                     alt=""
                     fill
-                    sizes="58px"
+                    sizes="66px"
                     className="object-contain"
                   />
                 </span>
@@ -137,8 +137,8 @@ export default function TabletNav({
                 <Image
                   src={tab.iconSrc}
                   alt=""
-                  width={34}
-                  height={34}
+                  width={38}
+                  height={38}
                   className="relative z-10"
                 />
               ) : (

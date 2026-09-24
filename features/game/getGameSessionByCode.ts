@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabaseClient';
 import type { GameParticipant } from '@/lib/game/types';
+import { resolvePublicStorageUrl } from '@/lib/storageUrl';
 
 type GameSessionData = {
   id: string;
@@ -52,7 +53,7 @@ export async function getGameSessionByCode(code: string, labels = { master: 'Mas
     displayName:
       participant.display_name ??
       (participant.role === 'master' ? labels.master : labels.player),
-    avatarUrl: participant.avatar_url ?? null,
+    avatarUrl: resolvePublicStorageUrl(participant.avatar_url, 'profile-avatars'),
     joinedAt: participant.joined_at,
     connectionStatus:
       participant.connection_status === 'offline' ? 'offline' : 'online',
